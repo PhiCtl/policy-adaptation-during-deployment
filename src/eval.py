@@ -18,7 +18,6 @@ def evaluate(env, agent, args, video, adapt=False):
 
 	for i in tqdm(range(args.pad_num_episodes)):
 		ep_agent = deepcopy(agent) # make a new copy
-		print("Evaluate")
 		if args.use_curl: # initialize replay buffer for CURL
 			replay_buffer = utils.ReplayBuffer(
 				obs_shape=env.observation_space.shape,
@@ -27,7 +26,7 @@ def evaluate(env, agent, args, video, adapt=False):
 				batch_size=args.pad_batch_size
 			)
 		video.init(enabled=False) # Was True
-
+		print("Evaluate")
 		obs = env.reset()
 		done = False
 		episode_reward = 0
