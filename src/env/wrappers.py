@@ -18,7 +18,9 @@ def make_pad_env(
 		episode_length=1000,
 		frame_stack=3,
 		action_repeat=4,
-		mode='train'
+		mode='train',
+		dependent=False,
+		threshold=0
 	):
 	"""Make environment for PAD experiments"""
 	env = dmc2gym.make(
@@ -35,7 +37,7 @@ def make_pad_env(
 	env.seed(seed)
 	env = GreenScreen(env, mode)
 	env = FrameStack(env, frame_stack)
-	env = ColorWrapper(env, mode)
+	env = ColorWrapper(env, mode, dependent, threshold)
 
 	assert env.action_space.low.min() >= -1
 	assert env.action_space.high.max() <= 1
@@ -45,11 +47,13 @@ def make_pad_env(
 
 class ColorWrapper(gym.Wrapper):
 	"""Wrapper for the color experiments"""
-	def __init__(self, env, mode):
+	def __init__(self, env, mode, dependent=False, threshold=0): # Default might not be needed here
 		assert isinstance(env, FrameStack), 'wrapped env must be a framestack'
 		gym.Wrapper.__init__(self, env)
 		self._max_episode_steps = env._max_episode_steps
 		self._mode = mode
+		self._dependent = dependent
+		self._threshold = threshold
 		self.time_step = 0
 		if 'color' in self._mode:
 			self._load_colors()
@@ -69,7 +73,13 @@ class ColorWrapper(gym.Wrapper):
 
 	def step(self, action):
 		self.time_step += 1
-		return self.env.step(action)
+		# Make a step
+		next_obs, reward, done, _ = self.env.step(action)
+		# Then randomize color if reward below a certain value
+		if self._mode in {'color_easy', 'color_hard'} and self._dependent:
+			if reward < self._threshold : # TODO : refine the way the reward influences the background color
+				self.randomize()
+		return next_obs, reward, done, _
 
 	def randomize(self):
 		assert 'color' in self._mode, f'can only randomize in color mode, received {self._mode}'		

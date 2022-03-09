@@ -12,6 +12,8 @@ def parse_args():
 	parser.add_argument('--action_repeat', default=4, type=int)
 	parser.add_argument('--episode_length', default=1000, type=int)
 	parser.add_argument('--mode', default='train', type=str)
+	parser.add_argument('--dependent', default=False, type=bool)
+	parser.add_argument('--threshold', default=0.0, type=float)
 	
 	# agent
 	parser.add_argument('--init_steps', default=1000, type=int)

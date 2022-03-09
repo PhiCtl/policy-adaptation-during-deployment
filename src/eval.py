@@ -26,7 +26,7 @@ def evaluate(env, agent, args, video, adapt=False):
 				capacity=args.train_steps,
 				batch_size=args.pad_batch_size
 			)
-		video.init(enabled=True)
+		video.init(enabled=False) # Was True
 
 		obs = env.reset()
 		done = False
@@ -93,7 +93,9 @@ def init_env(args):
 			seed=args.seed,
 			episode_length=args.episode_length,
 			action_repeat=args.action_repeat,
-			mode=args.mode
+			mode=args.mode,
+			dependent=args.dependent,
+			threshold=args.threshold
 		)
 
 
