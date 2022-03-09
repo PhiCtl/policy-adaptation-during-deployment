@@ -8,4 +8,5 @@ CUDA_VISIBLE_DEVICES=0 python3 src/eval.py \
     --seed 0 \
     --work_dir logs/cartpole_swingup/inv/0 \
     --pad_checkpoint 500k \
-    --dependent 1
+    --dependent 1 \
+    --threshold 3.50
