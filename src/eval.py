@@ -18,7 +18,7 @@ def evaluate(env, agent, args, video, adapt=False):
 
 	for i in tqdm(range(args.pad_num_episodes)):
 		ep_agent = deepcopy(agent) # make a new copy
-
+		print("Evaluate")
 		if args.use_curl: # initialize replay buffer for CURL
 			replay_buffer = utils.ReplayBuffer(
 				obs_shape=env.observation_space.shape,
@@ -36,7 +36,6 @@ def evaluate(env, agent, args, video, adapt=False):
 		ep_agent.train()
 
 		while not done:
-			print("Take a step")
 			# Take step
 			with utils.eval_mode(ep_agent):
 				action = ep_agent.select_action(obs)
