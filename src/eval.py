@@ -36,6 +36,7 @@ def evaluate(env, agent, args, video, adapt=False):
 		ep_agent.train()
 
 		while not done:
+			print("Take a step")
 			# Take step
 			with utils.eval_mode(ep_agent):
 				action = ep_agent.select_action(obs)
@@ -114,9 +115,7 @@ def main(args):
 		action_shape=env.action_space.shape,
 		args=args
 	)
-	print("Agent has been created")
 	agent.load(model_dir, args.pad_checkpoint)
-	print("Agent has been loaded")
 
 	# Evaluate agent without PAD
 	print(f'Evaluating {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
