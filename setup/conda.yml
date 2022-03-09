@@ -4,7 +4,6 @@ channels:
 dependencies:
   - python=3.6
   - pytorch
-  - torchvision
   - cudatoolkit=9.2
   - absl-py
   - pyparsing
@@ -20,3 +19,4 @@ dependencies:
     - scikit-image
     - seaborn
     - tqdm
+    - torchvision
