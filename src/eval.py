@@ -38,7 +38,6 @@ def evaluate(env, agent, args, video, adapt=False):
 			with utils.eval_mode(ep_agent):
 				action = ep_agent.select_action(obs)
 			next_obs, reward, done, _ = env.step(action)
-			print("{} : {}".format(i, reward))
 			episode_reward += reward
 			
 			# Make self-supervised update if flag is true
