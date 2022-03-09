@@ -26,13 +26,13 @@ def evaluate(env, agent, args, video, adapt=False):
 				batch_size=args.pad_batch_size
 			)
 		video.init(enabled=False) # Was True
-		print("Evaluate")
 		obs = env.reset()
 		done = False
 		episode_reward = 0
 		losses = []
 		step = 0
 		ep_agent.train()
+		print("Evaluate")
 
 		while not done:
 			# Take step
