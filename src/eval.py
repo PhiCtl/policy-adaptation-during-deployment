@@ -87,6 +87,7 @@ def evaluate(env, agent, args, video, adapt=False):
 
 def init_env(args):
 		utils.set_seed_everywhere(args.seed)
+		print("Env has been initialized")
 		return make_pad_env(
 			domain_name=args.domain_name,
 			task_name=args.task_name,
@@ -115,6 +116,7 @@ def main(args):
 		args=args
 	)
 	agent.load(model_dir, args.pad_checkpoint)
+	print("Agent has been created")
 
 	# Evaluate agent without PAD
 	print(f'Evaluating {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
