@@ -87,7 +87,6 @@ def evaluate(env, agent, args, video, adapt=False):
 
 def init_env(args):
 		utils.set_seed_everywhere(args.seed)
-		print("Env has been initialized")
 		return make_pad_env(
 			domain_name=args.domain_name,
 			task_name=args.task_name,
@@ -110,6 +109,7 @@ def main(args):
 	# Prepare agent
 	assert torch.cuda.is_available(), 'must have cuda enabled'
 	cropped_obs_shape = (3*args.frame_stack, 84, 84)
+	print("First assertion")
 	agent = make_agent(
 		obs_shape=cropped_obs_shape,
 		action_shape=env.action_space.shape,
