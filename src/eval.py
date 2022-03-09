@@ -109,14 +109,14 @@ def main(args):
 	# Prepare agent
 	assert torch.cuda.is_available(), 'must have cuda enabled'
 	cropped_obs_shape = (3*args.frame_stack, 84, 84)
-	print("First assertion")
 	agent = make_agent(
 		obs_shape=cropped_obs_shape,
 		action_shape=env.action_space.shape,
 		args=args
 	)
-	agent.load(model_dir, args.pad_checkpoint)
 	print("Agent has been created")
+	agent.load(model_dir, args.pad_checkpoint)
+	print("Agent has been loaded")
 
 	# Evaluate agent without PAD
 	print(f'Evaluating {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
