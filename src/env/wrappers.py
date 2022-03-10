@@ -78,6 +78,7 @@ class ColorWrapper(gym.Wrapper):
 		# Then modify observation if reward below a certain value
 		if self._mode in {'color_easy', 'color_hard'} and self._dependent:
 			if reward < self._threshold :
+				print(type(next_obs), next_obs.shape)
 				next_obs += np.random.normal(0, 0.5, next_obs.shape)
 		return next_obs, reward, done, _
 
