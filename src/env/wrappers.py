@@ -82,8 +82,8 @@ class ColorWrapper(gym.Wrapper):
 		# Then modify observation if reward below a certain value
 		if self._mode in {'color_easy', 'color_hard'} and self._dependent:
 			if reward < self._threshold :
-				self.randomize()
-				#next_obs = self.add_noise(next_obs)
+				#self.randomize()
+				next_obs = self.add_noise(next_obs)
 		return next_obs, reward, done, _
 
 	# def step(self, action):
