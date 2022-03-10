@@ -71,25 +71,35 @@ class ColorWrapper(gym.Wrapper):
 			})
 		return self.env.reset()
 
-	# def step(self, action):
-	# 	self.time_step += 1
-	# 	# Make a step
-	# 	next_obs, reward, done, _ = self.env.step(action)
-	# 	# Then randomize color if reward below a certain value
-	# 	if self._mode in {'color_easy', 'color_hard'} and self._dependent:
-	# 		if reward < self._threshold : # TODO : refine the way the reward influences the background color
-	# 			self.randomize()
-	# 	return next_obs, reward, done, _
-
 	def step(self, action):
 		self.time_step += 1
 		# Make a step
 		next_obs, reward, done, _ = self.env.step(action)
-		# Then randomize envt with certain probability
-		rd = randint(10)
-		if self._mode in {'color_easy', 'color_hard'} and rd > 4 :
-			self.randomize()
+		# Then modify observation if reward below a certain value
+		if self._mode in {'color_easy', 'color_hard'} and self._dependent:
+			if reward < self._threshold :
+				next_obs += np.random.normal(0, 0.1, next_obs.shape)
 		return next_obs, reward, done, _
+
+	# def step(self, action):
+	# 	self.time_step += 1
+	# 	# Make a step
+	# 	next_obs, reward, done, _ = self.env.step(action)
+	# 	# Then randomize envt with certain probability
+	# 	rd = randint(10)
+	# 	if self._mode in {'color_easy', 'color_hard'} and rd > 4 :
+	# 		self.randomize()
+	# 	return next_obs, reward, done, _
+
+	# def step(self, action, mean_reward, t_wind):
+	# 	self.time_step += 1
+	# 	# Make a step
+	# 	next_obs, reward, done, _ = self.env.step(action)
+	# 	# Then randomize envt with certain probability
+	# 	rd = randint(10)
+	# 	if self._mode in {'color_easy', 'color_hard'} and t_wind % 10 == 0 and mean_reward < self._threshold:
+	# 		self.randomize()
+	# 	return next_obs, reward, done, _
 
 	def randomize(self):
 		assert 'color' in self._mode, f'can only randomize in color mode, received {self._mode}'		

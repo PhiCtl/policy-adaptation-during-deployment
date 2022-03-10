@@ -31,6 +31,7 @@ def evaluate(env, agent, args, video, adapt=False):
 		episode_reward = 0
 		losses = []
 		step = 0
+		mean_reward = 0
 		ep_agent.train()
 
 		while not done:
