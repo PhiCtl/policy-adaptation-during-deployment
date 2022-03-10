@@ -71,6 +71,10 @@ class ColorWrapper(gym.Wrapper):
 			})
 		return self.env.reset()
 
+	def add_noise(self, obs):
+		new_obs = (obs.astype(np.float64) + randint(-3, 3, obs.shape))
+		return np.clip(new_obs,0, 255).astype(np.uint8)
+
 	def step(self, action):
 		self.time_step += 1
 		# Make a step
@@ -78,8 +82,8 @@ class ColorWrapper(gym.Wrapper):
 		# Then modify observation if reward below a certain value
 		if self._mode in {'color_easy', 'color_hard'} and self._dependent:
 			if reward < self._threshold :
-				print(type(next_obs), next_obs.shape)
-				next_obs += np.random.normal(0, 0.5, next_obs.shape)
+				self.randomize()
+				#next_obs = self.add_noise(next_obs)
 		return next_obs, reward, done, _
 
 	# def step(self, action):
