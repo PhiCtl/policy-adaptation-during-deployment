@@ -11,7 +11,7 @@ python3 src/eval.py \
 	--domain_name cartpole \
 	--task_name swingup \
 	--action_repeat 8 \
-	--mode video \
+	--mode video0 \
 	--use_inv \
 	--num_shared_layers 8 \
 	--seed 0 \
