@@ -21,7 +21,8 @@ def make_pad_env(
 		action_repeat=4,
 		mode='train',
 		dependent=False,
-		threshold=0
+		threshold=0,
+		window=5
 	):
 	"""Make environment for PAD experiments"""
 	env = dmc2gym.make(
@@ -36,9 +37,9 @@ def make_pad_env(
 		frame_skip=action_repeat
 	)
 	env.seed(seed)
-	env = GreenScreen(env, mode, threshold, dependent)
+	env = GreenScreen(env, mode, threshold, dependent, window)
 	env = FrameStack(env, frame_stack)
-	env = ColorWrapper(env, mode, threshold, dependent)
+	env = ColorWrapper(env, mode, threshold, dependent, window)
 
 	assert env.action_space.low.min() >= -1
 	assert env.action_space.high.max() <= 1
@@ -58,13 +59,14 @@ def shift_hue(x, f=0.1) :
 
 class ColorWrapper(gym.Wrapper):
 	"""Wrapper for the color experiments"""
-	def __init__(self, env, mode, threshold, dependent):
+	def __init__(self, env, mode, threshold, dependent, window):
 		assert isinstance(env, FrameStack), 'wrapped env must be a framestack'
 		gym.Wrapper.__init__(self, env)
 		self._max_episode_steps = env._max_episode_steps
 		self._mode = mode
 		self._threshold = threshold
 		self._dependent = dependent
+		self._window = window
 		self.time_step = 0
 		if 'color' in self._mode:
 			self._load_colors()
@@ -87,7 +89,7 @@ class ColorWrapper(gym.Wrapper):
 		# Make a step
 		next_obs, reward, done, _, speed = self.env.step(action, rewards)
 		if self._mode in {'color_easy', 'color_hard'} and self._dependent :
-			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1)
+			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth = self._window)
 			if avg_reward > self._threshold :
 				next_obs = shift_hue(next_obs)
 		return next_obs, reward, done, _, speed
@@ -241,11 +243,12 @@ def do_green_screen(x, bg):
 
 class GreenScreen(gym.Wrapper):
 	"""Green screen for video experiments"""
-	def __init__(self, env, mode, threshold, dependent):
+	def __init__(self, env, mode, threshold, dependent, window):
 		gym.Wrapper.__init__(self, env)
 		self._mode = mode
 		self._threshold = threshold
 		self._dependent = dependent
+		self._window = window
 		self._speed = 1
 		if 'video' in mode:
 			self._video = mode
@@ -282,7 +285,7 @@ class GreenScreen(gym.Wrapper):
 		obs, reward, done, info = self.env.step(action)
 		# Compute moving average
 		rewards.append(reward)
-		avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1)
+		avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
 		# Increase video speed if reward above threshold
 		if self._dependent and avg_reward > self._threshold:
 			self._speed += 1

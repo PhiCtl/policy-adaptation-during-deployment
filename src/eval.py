@@ -81,7 +81,6 @@ def evaluate(env, agent, args, video, adapt=False):
 			obs = next_obs
 			step += 1
 
-		print(step, episode_reward)
 		video.save(f'{args.mode}_pad_{i}.mp4' if adapt else f'{args.mode}_eval_{i}.mp4')
 		episode_rewards.append(episode_reward)
 		recorder.end_episode()
@@ -100,7 +99,8 @@ def init_env(args):
 			action_repeat=args.action_repeat,
 			mode=args.mode,
 			dependent=args.dependent,
-			threshold=args.threshold
+			threshold=args.threshold,
+			window=args.window
 		)
 
 
@@ -141,6 +141,7 @@ def main(args):
 		'eval_reward': eval_reward,
 		'pad_reward': pad_reward
 	}, results_fp)
+	print(f' Threshold {args.threshold} Window size {args.window}')
 	print('Saved results to', results_fp)
 
 

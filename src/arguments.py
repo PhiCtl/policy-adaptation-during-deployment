@@ -14,6 +14,7 @@ def parse_args():
 	parser.add_argument('--mode', default='train', type=str)
 	parser.add_argument('--dependent', default=False, type=bool)
 	parser.add_argument('--threshold', default=0.0, type=float)
+	parser.add_argument('--window', default=5, type=int)
 	
 	# agent
 	parser.add_argument('--init_steps', default=1000, type=int)
