@@ -49,8 +49,8 @@ class AdaptRecorder(object):
         tmp2 = [l.extend( (self.max_ep_lgth - len(l)) * [0.0]) for l in self.speeds_tot]
         self.rewards_tot = np.array(self.rewards_tot).transpose()
         self.speeds_tot = np.array(self.speeds_tot).transpose()
-        df_r = pd.DataFrame(self.rewards_tot, columns=[f'episode_{i}_reward' for i in range(len(self.rewards_tot))])
-        df_s = pd.DataFrame(self.speeds_tot, columns=[f'episode_{i}_speed' for i in range(len(self.speeds_tot))])
+        df_r = pd.DataFrame(self.rewards_tot, columns=[f'episode_{i}_reward' for i in range(self.rewards_tot.shape[0])])
+        df_s = pd.DataFrame(self.speeds_tot, columns=[f'episode_{i}_speed' for i in range(self.speeds_tot.shape[0])])
         df_tot = df_r.merge(df_s)
         # Rename file and folders
         file_name += "_pad.csv" if adapt else "_eval.csv" # TODO : beware, cause will overwrite existing files
