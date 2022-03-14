@@ -9,7 +9,7 @@ import dmc2gym
 from dm_control.suite import common
 import cv2
 from collections import deque
-from src.utils import moving_average_reward
+from utils import moving_average_reward
 
 
 def make_pad_env(
@@ -277,7 +277,7 @@ class GreenScreen(gym.Wrapper):
 		obs, reward, done, info = self.env.step(action)
 		# Compute moving average
 		rewards.append(reward)
-		avg_reward = moving_average_reward(rewards, current_ep=(len(rewards)))
+		avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1)
 		# Increase video speed if reward above threshold
 		if self._dependent and avg_reward > self._threshold:
 			self._speed += 1
