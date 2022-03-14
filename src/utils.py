@@ -56,7 +56,7 @@ class AdaptRecorder(object):
         file_name += "_pad.csv" if adapt else "_eval.csv" # TODO : beware, cause will overwrite existing files
         df_tot.to_csv(os.path.join(self._save_dir, file_name))
 
-def moving_average_reward(rewards, current_ep=None, wind_lgth=3):
+def moving_average_reward(rewards, current_ep=None, wind_lgth=5):
     # Causal convolutional filter
     w = np.concatenate((np.zeros(wind_lgth -1), np.ones(wind_lgth))).astype(np.float64) / (2*wind_lgth - 1)
     avg = convolve1d(rewards, w, mode='constant')
