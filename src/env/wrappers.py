@@ -38,21 +38,33 @@ def make_pad_env(
 	env.seed(seed)
 	env = GreenScreen(env, mode, threshold, dependent)
 	env = FrameStack(env, frame_stack)
-	env = ColorWrapper(env, mode)
+	env = ColorWrapper(env, mode, threshold, dependent)
 
 	assert env.action_space.low.min() >= -1
 	assert env.action_space.high.max() <= 1
 
 	return env
 
+def shift_hue(x, f=0.1) :
+	# Image should be still in HSV format here
+	assert isinstance(x, np.ndarray), 'inputs must be numpy arrays'
+	assert x.dtype == np.uint8, 'inputs must be uint8 arrays'
+
+	im = TF.to_pil_image(torch.ByteTensor(x))
+	im = TF.adjust_hue(im, f)
+	out = np.moveaxis(np.array(im).astype(np.uint8), -1, 0)[:3]
+
+	return out
 
 class ColorWrapper(gym.Wrapper):
 	"""Wrapper for the color experiments"""
-	def __init__(self, env, mode):
+	def __init__(self, env, mode, threshold, dependent):
 		assert isinstance(env, FrameStack), 'wrapped env must be a framestack'
 		gym.Wrapper.__init__(self, env)
 		self._max_episode_steps = env._max_episode_steps
 		self._mode = mode
+		self._threshold = threshold
+		self._dependent = dependent
 		self.time_step = 0
 		if 'color' in self._mode:
 			self._load_colors()
@@ -74,6 +86,10 @@ class ColorWrapper(gym.Wrapper):
 		self.time_step += 1
 		# Make a step
 		next_obs, reward, done, _, speed = self.env.step(action, rewards)
+		if self._mode in {'color_easy', 'color_hard'} and self._dependent :
+			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1)
+			if avg_reward > self._threshold :
+				next_obs = shift_hue(next_obs)
 		return next_obs, reward, done, _, speed
 
 	def randomize(self):
@@ -189,18 +205,6 @@ def rgb_to_hsv(r, g, b):
 	h = (h/6.0) % 1.0
 	return h, s, v
 
-def shift_hue(x, f=0.1) :
-	# Image should be still in HSV format here
-	assert isinstance(x, np.ndarray), 'inputs must be numpy arrays'
-	assert x.dtype == np.uint8, 'inputs must be uint8 arrays'
-
-	im = TF.to_pil_image(torch.ByteTensor(x))
-	im = TF.adjust_hue(im, f)
-	out = np.moveaxis(np.array(im).astype(np.uint8), -1, 0)[:3]
-
-	return out
-
-
 
 def do_green_screen(x, bg):
 	"""Removes green background from observation and replaces with bg; not optimized for speed"""
@@ -271,6 +275,7 @@ class GreenScreen(gym.Wrapper):
 
 	def reset(self):
 		self._current_frame = 0
+		self._speed = 1
 		return self._greenscreen(self.env.reset())
 
 	def step(self, action, rewards):

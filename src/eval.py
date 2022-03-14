@@ -81,6 +81,7 @@ def evaluate(env, agent, args, video, adapt=False):
 			obs = next_obs
 			step += 1
 
+		print(step, episode_reward)
 		video.save(f'{args.mode}_pad_{i}.mp4' if adapt else f'{args.mode}_eval_{i}.mp4')
 		episode_rewards.append(episode_reward)
 		recorder.end_episode()
