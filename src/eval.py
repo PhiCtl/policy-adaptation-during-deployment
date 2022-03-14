@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import os
+import pandas as pd
 from copy import deepcopy
 from tqdm import tqdm
 import utils
@@ -9,14 +10,13 @@ from video import VideoRecorder
 from arguments import parse_args
 from env.wrappers import make_pad_env
 from agent.agent import make_agent
-from utils import get_curl_pos_neg
+from utils import get_curl_pos_neg, AdaptRecorder
 
 
 def evaluate(env, agent, args, video, adapt=False):
 	"""Evaluate an agent, optionally adapt using PAD"""
 	episode_rewards = []
-	reward_series = []
-	speed_b, speed_f = 0, 0
+	recorder = AdaptRecorder(args.work_dir)
 
 	for i in tqdm(range(args.pad_num_episodes)):
 		ep_agent = deepcopy(agent) # make a new copy
@@ -40,8 +40,9 @@ def evaluate(env, agent, args, video, adapt=False):
 			# Take step
 			with utils.eval_mode(ep_agent):
 				action = ep_agent.select_action(obs)
-			next_obs, reward, done, _ = env.step(action, rewards)
+			next_obs, reward, done, _, speed = env.step(action, rewards)
 			episode_reward += reward
+			recorder.update(speed, reward)
 			
 			# Make self-supervised update if flag is true
 			if adapt:
@@ -80,11 +81,12 @@ def evaluate(env, agent, args, video, adapt=False):
 			obs = next_obs
 			step += 1
 
-		reward_series.append(rewards)
 		video.save(f'{args.mode}_pad_{i}.mp4' if adapt else f'{args.mode}_eval_{i}.mp4')
 		episode_rewards.append(episode_reward)
+		recorder.end_episode()
 
-	return np.mean(episode_rewards), np.std(episode_rewards) #, reward_series
+	recorder.save("performance", adapt)
+	return np.mean(episode_rewards), np.std(episode_rewards)
 
 
 def init_env(args):

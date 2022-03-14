@@ -73,8 +73,8 @@ class ColorWrapper(gym.Wrapper):
 	def step(self, action, rewards):
 		self.time_step += 1
 		# Make a step
-		next_obs, reward, done, _ = self.env.step(action, rewards)
-		return next_obs, reward, done, _
+		next_obs, reward, done, _, speed = self.env.step(action, rewards)
+		return next_obs, reward, done, _, speed
 
 	def randomize(self):
 		assert 'color' in self._mode, f'can only randomize in color mode, received {self._mode}'		
@@ -160,9 +160,9 @@ class FrameStack(gym.Wrapper):
 
 	def step(self, action, rewards):
 		# Make a step
-		obs, reward, done, info = self.env.step(action, rewards)
+		obs, reward, done, info, speed = self.env.step(action, rewards)
 		self._frames.append(obs)
-		return self._get_obs(), reward, done, info
+		return self._get_obs(), reward, done, info, speed
 
 	def _get_obs(self):
 		assert len(self._frames) == self._k
@@ -282,7 +282,7 @@ class GreenScreen(gym.Wrapper):
 		if self._dependent and avg_reward > self._threshold:
 			self._speed += 1
 		self._current_frame += self._speed
-		return self._greenscreen(obs), reward, done, info
+		return self._greenscreen(obs), reward, done, info, self._speed
 	
 	def _interpolate_bg(self, bg, size:tuple):
 		"""Interpolate background to size of observation"""

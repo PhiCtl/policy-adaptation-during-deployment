@@ -1,3 +1,4 @@
+import pandas as pd
 import torch
 import numpy as np
 from scipy.ndimage import convolve1d
@@ -20,6 +21,33 @@ class eval_mode(object):
             model.train(state)
         return False
 
+class AdaptRecorder(object):
+
+    def __init__(self, save_dir):
+        self._save_dir = save_dir
+        self.speeds_tot, self.speeds = [], [] # Specific to video perturbations
+        self.rewards_tot, self.rewards = [], []
+
+    def reset(self):
+        self.speeds, self.rewards = [], []
+
+    def update(self, speed, reward):
+        self.speeds.append(speed)
+        self.rewards.append(reward)
+
+    def end_episode(self):
+        self.speeds_tot.append(self.speeds)
+        self.rewards_tot.append(self.rewards)
+
+        self.reset()
+
+    def save(self, file_name, adapt):
+        df_r = pd.DataFrame(self.rewards_tot, columns=[f'episode_{i}_reward' for i in range(len(self.rewards_tot))])
+        df_s = pd.DataFrame(self.speeds_tot, columns=[f'episode_{i}_speed' for i in range(len(self.speeds_tot))])
+        df_tot = df_r.merge(df_s)
+        # Rename file and folders
+        file_name += "_pad.csv" if adapt else "_eval.csv" # TODO : beware, cause will overwrite existing files
+        df_tot.to_csv(os.path.join(self._save_dir, file_name))
 
 def moving_average_reward(rewards, current_ep=None, wind_lgth=3):
     # Causal convolutional filter
