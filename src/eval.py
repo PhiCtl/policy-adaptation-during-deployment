@@ -15,6 +15,8 @@ from utils import get_curl_pos_neg
 def evaluate(env, agent, args, video, adapt=False):
 	"""Evaluate an agent, optionally adapt using PAD"""
 	episode_rewards = []
+	reward_series = []
+	speed_b, speed_f = 0, 0
 
 	for i in tqdm(range(args.pad_num_episodes)):
 		ep_agent = deepcopy(agent) # make a new copy
@@ -31,14 +33,14 @@ def evaluate(env, agent, args, video, adapt=False):
 		episode_reward = 0
 		losses = []
 		step = 0
-		mean_reward = 0
+		rewards = []
 		ep_agent.train()
 
 		while not done:
 			# Take step
 			with utils.eval_mode(ep_agent):
 				action = ep_agent.select_action(obs)
-			next_obs, reward, done, _ = env.step(action)
+			next_obs, reward, done, _ = env.step(action, rewards)
 			episode_reward += reward
 			
 			# Make self-supervised update if flag is true
@@ -78,10 +80,11 @@ def evaluate(env, agent, args, video, adapt=False):
 			obs = next_obs
 			step += 1
 
+		reward_series.append(rewards)
 		video.save(f'{args.mode}_pad_{i}.mp4' if adapt else f'{args.mode}_eval_{i}.mp4')
 		episode_rewards.append(episode_reward)
 
-	return np.mean(episode_rewards), np.std(episode_rewards)
+	return np.mean(episode_rewards), np.std(episode_rewards) #, reward_series
 
 
 def init_env(args):

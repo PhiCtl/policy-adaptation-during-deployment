@@ -9,6 +9,7 @@ import dmc2gym
 from dm_control.suite import common
 import cv2
 from collections import deque
+from src.utils import moving_average_reward
 
 
 def make_pad_env(
@@ -35,9 +36,9 @@ def make_pad_env(
 		frame_skip=action_repeat
 	)
 	env.seed(seed)
-	env = GreenScreen(env, mode)
+	env = GreenScreen(env, mode, threshold, dependent)
 	env = FrameStack(env, frame_stack)
-	env = ColorWrapper(env, mode, dependent, threshold)
+	env = ColorWrapper(env, mode)
 
 	assert env.action_space.low.min() >= -1
 	assert env.action_space.high.max() <= 1
@@ -47,13 +48,11 @@ def make_pad_env(
 
 class ColorWrapper(gym.Wrapper):
 	"""Wrapper for the color experiments"""
-	def __init__(self, env, mode, dependent=False, threshold=0): # Default might not be needed here
+	def __init__(self, env, mode):
 		assert isinstance(env, FrameStack), 'wrapped env must be a framestack'
 		gym.Wrapper.__init__(self, env)
 		self._max_episode_steps = env._max_episode_steps
 		self._mode = mode
-		self._dependent = dependent
-		self._threshold = threshold
 		self.time_step = 0
 		if 'color' in self._mode:
 			self._load_colors()
@@ -71,40 +70,11 @@ class ColorWrapper(gym.Wrapper):
 			})
 		return self.env.reset()
 
-	def add_noise(self, obs):
-		new_obs = (obs.astype(np.float64) + randint(-3, 3, obs.shape))
-		return np.clip(new_obs,0, 255).astype(np.uint8)
-
-	def step(self, action):
+	def step(self, action, rewards):
 		self.time_step += 1
 		# Make a step
-		next_obs, reward, done, _ = self.env.step(action)
-		# Then modify observation if reward below a certain value
-		if self._mode in {'color_easy', 'color_hard'} and self._dependent:
-			if reward < self._threshold :
-				#self.randomize()
-				next_obs = self.add_noise(next_obs)
+		next_obs, reward, done, _ = self.env.step(action, rewards)
 		return next_obs, reward, done, _
-
-	# def step(self, action):
-	# 	self.time_step += 1
-	# 	# Make a step
-	# 	next_obs, reward, done, _ = self.env.step(action)
-	# 	# Then randomize envt with certain probability
-	# 	rd = randint(10)
-	# 	if self._mode in {'color_easy', 'color_hard'} and rd > 4 :
-	# 		self.randomize()
-	# 	return next_obs, reward, done, _
-
-	# def step(self, action, mean_reward, t_wind):
-	# 	self.time_step += 1
-	# 	# Make a step
-	# 	next_obs, reward, done, _ = self.env.step(action)
-	# 	# Then randomize envt with certain probability
-	# 	rd = randint(10)
-	# 	if self._mode in {'color_easy', 'color_hard'} and t_wind % 10 == 0 and mean_reward < self._threshold:
-	# 		self.randomize()
-	# 	return next_obs, reward, done, _
 
 	def randomize(self):
 		assert 'color' in self._mode, f'can only randomize in color mode, received {self._mode}'		
@@ -188,8 +158,9 @@ class FrameStack(gym.Wrapper):
 			self._frames.append(obs)
 		return self._get_obs()
 
-	def step(self, action):
-		obs, reward, done, info = self.env.step(action)
+	def step(self, action, rewards):
+		# Make a step
+		obs, reward, done, info = self.env.step(action, rewards)
 		self._frames.append(obs)
 		return self._get_obs(), reward, done, info
 
@@ -217,6 +188,18 @@ def rgb_to_hsv(r, g, b):
 		h = 4.0+gc-rc
 	h = (h/6.0) % 1.0
 	return h, s, v
+
+def shift_hue(x, f=0.1) :
+	# Image should be still in HSV format here
+	assert isinstance(x, np.ndarray), 'inputs must be numpy arrays'
+	assert x.dtype == np.uint8, 'inputs must be uint8 arrays'
+
+	im = TF.to_pil_image(torch.ByteTensor(x))
+	im = TF.adjust_hue(im, f)
+	out = np.moveaxis(np.array(im).astype(np.uint8), -1, 0)[:3]
+
+	return out
+
 
 
 def do_green_screen(x, bg):
@@ -254,9 +237,12 @@ def do_green_screen(x, bg):
 
 class GreenScreen(gym.Wrapper):
 	"""Green screen for video experiments"""
-	def __init__(self, env, mode):
+	def __init__(self, env, mode, threshold, dependent):
 		gym.Wrapper.__init__(self, env)
 		self._mode = mode
+		self._threshold = threshold
+		self._dependent = dependent
+		self._speed = 1
 		if 'video' in mode:
 			self._video = mode
 			if not self._video.endswith('.mp4'):
@@ -287,9 +273,15 @@ class GreenScreen(gym.Wrapper):
 		self._current_frame = 0
 		return self._greenscreen(self.env.reset())
 
-	def step(self, action):
-		self._current_frame += 1
+	def step(self, action, rewards):
 		obs, reward, done, info = self.env.step(action)
+		# Compute moving average
+		rewards.append(reward)
+		avg_reward = moving_average_reward(rewards, current_ep=(len(rewards)))
+		# Increase video speed if reward above threshold
+		if self._dependent and avg_reward > self._threshold:
+			self._speed += 1
+		self._current_frame += self._speed
 		return self._greenscreen(obs), reward, done, info
 	
 	def _interpolate_bg(self, bg, size:tuple):
