@@ -21,9 +21,9 @@ class eval_mode(object):
         return False
 
 
-def moving_average_reward(rewards, current_ep=None, wind_lgth=5):
+def moving_average_reward(rewards, current_ep=None, wind_lgth=3):
     # Causal convolutional filter
-    w = np.concatenate((np.zeros(wind_lgth -1), np.ones(wind_lgth)), dtype=np.float64) / (2*wind_lgth - 1)
+    w = np.concatenate((np.zeros(wind_lgth -1), np.ones(wind_lgth))).astype(np.float64) / (2*wind_lgth - 1)
     avg = convolve1d(rewards, w, mode='constant')
     if current_ep is None:
         return avg
@@ -53,7 +53,6 @@ def make_dir(dir_path):
     except OSError:
         pass
     return dir_path
-
 
 class ReplayBuffer(object):
     """Buffer to store environment transitions"""
