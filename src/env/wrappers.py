@@ -295,7 +295,7 @@ class GreenScreen(gym.Wrapper):
 				self._change = self._hue_shift
 
 		self._current_frame += self._speed
-		return self._greenscreen(obs), reward, done, info, self._speed
+		return self._greenscreen(obs), reward, done, info, self._change
 	
 	def _interpolate_bg(self, bg, size:tuple):
 		"""Interpolate background to size of observation"""
