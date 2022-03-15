@@ -24,22 +24,23 @@ class eval_mode(object):
 
 class AdaptRecorder(object):
 
-    def __init__(self, save_dir):
+    def __init__(self, save_dir, type):
         self._save_dir = save_dir
-        self.speeds_tot, self.speeds = [], [] # Specific to video perturbations
+        self._type = type
+        self.changes_tot, self.changes = [], []
         self.rewards_tot, self.rewards = [], []
         self.max_ep_lgth = 0
 
     def reset(self):
-        self.speeds, self.rewards = [], []
+        self.changes, self.rewards = [], []
 
-    def update(self, speed, reward):
-        self.speeds.append(speed)
+    def update(self, change, reward):
+        self.changes.append(change)
         self.rewards.append(reward)
 
     def end_episode(self):
         self.max_ep_lgth = max(self.max_ep_lgth, len(self.rewards))
-        self.speeds_tot.append(self.speeds)
+        self.changes_tot.append(self.changes)
         self.rewards_tot.append(self.rewards)
 
         self.reset()
@@ -47,15 +48,15 @@ class AdaptRecorder(object):
     def save(self, file_name, adapt):
         # Make every rewards record same length
         tmp = [l.extend( (self.max_ep_lgth - len(l)) * [0.0]) for l in self.rewards_tot]
-        tmp2 = [l.extend( (self.max_ep_lgth - len(l)) * [0.0]) for l in self.speeds_tot]
+        tmp2 = [l.extend( (self.max_ep_lgth - len(l)) * [0.0]) for l in self.changes_tot]
         self.rewards_tot = np.array(self.rewards_tot).transpose()
-        self.speeds_tot = np.array(self.speeds_tot).transpose()
+        self.changes_tot = np.array(self.changes_tot).transpose()
         df_r = pd.DataFrame(self.rewards_tot, columns=[f'episode_{i}_reward' for i in range(self.rewards_tot.shape[1])])
-        df_s = pd.DataFrame(self.speeds_tot, columns=[f'episode_{i}_speed' for i in range(self.speeds_tot.shape[1])])
+        df_s = pd.DataFrame(self.changes_tot, columns=[f'episode_{i}_{self._type}' for i in range(self.changes_tot.shape[1])])
         df_tot = df_r.join(df_s)
         # Rename file and folders
         file_name += datetime.now().strftime("%H:%M:%S")
-        file_name += "_pad.csv" if adapt else "_eval.csv" # TODO : beware, cause will overwrite existing files
+        file_name += "_pad.csv" if adapt else "_eval.csv"
         df_tot.to_csv(os.path.join(self._save_dir, file_name))
 
 def moving_average_reward(rewards, current_ep=None, wind_lgth=5):
