@@ -9,8 +9,7 @@ import dmc2gym
 from dm_control.suite import common
 import cv2
 from collections import deque
-from utils import moving_average_reward, wrap
-
+from utils import moving_average_reward
 
 def make_pad_env(
 		domain_name,
