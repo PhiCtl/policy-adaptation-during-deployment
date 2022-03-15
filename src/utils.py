@@ -62,7 +62,7 @@ class AdaptRecorder(object):
 
 def moving_average_reward(rewards, current_ep=None, wind_lgth=5):
     # Causal convolutional filter
-    w = np.concatenate((np.zeros(wind_lgth -1), np.ones(wind_lgth))).astype(np.float64) / (2*wind_lgth - 1)
+    w = np.concatenate((np.zeros(wind_lgth -1), np.ones(wind_lgth))).astype(np.float64) / wind_lgth
     avg = convolve1d(rewards, w, mode='constant')
     if current_ep is None:
         return avg
