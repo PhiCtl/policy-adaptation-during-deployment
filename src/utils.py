@@ -3,6 +3,7 @@ import torch
 import numpy as np
 from scipy.ndimage import convolve1d
 import os
+from datetime import datetime
 import random
 
 
@@ -53,6 +54,7 @@ class AdaptRecorder(object):
         df_s = pd.DataFrame(self.speeds_tot, columns=[f'episode_{i}_speed' for i in range(self.speeds_tot.shape[1])])
         df_tot = df_r.join(df_s)
         # Rename file and folders
+        file_name += datetime.now().strftime("%H:%M:%S")
         file_name += "_pad.csv" if adapt else "_eval.csv" # TODO : beware, cause will overwrite existing files
         df_tot.to_csv(os.path.join(self._save_dir, file_name))
 
