@@ -84,7 +84,7 @@ class ColorWrapper(gym.Wrapper):
 			})
 		return self.env.reset()
 
-	def step(self, action, rewards):
+	def step(self, action, rewards = None):
 		self.time_step += 1
 		# Make a step
 		next_obs, reward, done, _, speed = self.env.step(action, rewards)
@@ -176,7 +176,7 @@ class FrameStack(gym.Wrapper):
 			self._frames.append(obs)
 		return self._get_obs()
 
-	def step(self, action, rewards):
+	def step(self, action, rewards=None):
 		# Make a step
 		obs, reward, done, info, speed = self.env.step(action, rewards)
 		self._frames.append(obs)
@@ -281,13 +281,14 @@ class GreenScreen(gym.Wrapper):
 		self._speed = 1
 		return self._greenscreen(self.env.reset())
 
-	def step(self, action, rewards):
+	def step(self, action, rewards = None):
 		obs, reward, done, info = self.env.step(action)
 		# Compute moving average
-		rewards.append(reward)
-		avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
+		if self._mode != 'train' :
+			rewards.append(reward)
+			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
 		# Increase video speed if reward above threshold
-		if self._dependent and avg_reward > self._threshold:
+		if self._dependent and avg_reward > self._threshold and 'video' in self._mode:
 			self._speed += 1
 		self._current_frame += self._speed
 		return self._greenscreen(obs), reward, done, info, self._speed
