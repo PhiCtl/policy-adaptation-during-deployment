@@ -292,6 +292,7 @@ class GreenScreen(gym.Wrapper):
 			# Increase video speed if reward above threshold
 			if self._dependent and avg_reward > self._threshold :
 				self._speed += 1
+				print(self._speed)
 		self._current_frame += self._speed
 		return self._greenscreen(obs), reward, done, info, self._speed
 	
