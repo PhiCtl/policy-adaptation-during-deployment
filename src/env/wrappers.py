@@ -9,7 +9,7 @@ import dmc2gym
 from dm_control.suite import common
 import cv2
 from collections import deque
-from utils import moving_average_reward
+from utils import moving_average_reward, wrap
 
 
 def make_pad_env(
@@ -67,6 +67,7 @@ class ColorWrapper(gym.Wrapper):
 		self._threshold = threshold
 		self._dependent = dependent
 		self._window = window
+		self._hue_shift = 0
 		self.time_step = 0
 		if 'color' in self._mode:
 			self._load_colors()
@@ -87,12 +88,14 @@ class ColorWrapper(gym.Wrapper):
 	def step(self, action, rewards = None):
 		self.time_step += 1
 		# Make a step
-		next_obs, reward, done, _, speed = self.env.step(action, rewards)
+		next_obs, reward, done, _, change = self.env.step(action, rewards) # rewards already augmented
 		if self._mode in {'color_easy', 'color_hard'} and self._dependent :
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth = self._window)
 			if avg_reward > self._threshold :
-				next_obs = shift_hue(next_obs)
-		return next_obs, reward, done, _, speed
+				self._hue_shift += 0.1
+				change = self._hue_shift
+				next_obs = shift_hue(next_obs, f=0.1)
+		return next_obs, reward, done, _, change
 
 	def randomize(self):
 		assert 'color' in self._mode, f'can only randomize in color mode, received {self._mode}'		
@@ -178,9 +181,9 @@ class FrameStack(gym.Wrapper):
 
 	def step(self, action, rewards=None):
 		# Make a step
-		obs, reward, done, info, speed = self.env.step(action, rewards)
+		obs, reward, done, info, change = self.env.step(action, rewards)
 		self._frames.append(obs)
-		return self._get_obs(), reward, done, info, speed
+		return self._get_obs(), reward, done, info, change
 
 	def _get_obs(self):
 		assert len(self._frames) == self._k
@@ -287,9 +290,9 @@ class GreenScreen(gym.Wrapper):
 		if self._mode != 'train' :
 			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
-		# Increase video speed if reward above threshold
-		if self._dependent and avg_reward > self._threshold and 'video' in self._mode:
-			self._speed += 1
+			# Increase video speed if reward above threshold
+			if self._dependent and avg_reward > self._threshold :
+				self._speed += 1
 		self._current_frame += self._speed
 		return self._greenscreen(obs), reward, done, info, self._speed
 	

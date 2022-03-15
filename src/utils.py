@@ -55,7 +55,8 @@ class AdaptRecorder(object):
         df_s = pd.DataFrame(self.changes_tot, columns=[f'episode_{i}_{self._type}' for i in range(self.changes_tot.shape[1])])
         df_tot = df_r.join(df_s)
         # Rename file and folders
-        file_name += datetime.now().strftime("%H:%M:%S")
+        file_name += datetime.now().strftime("%H-%M-%S")
+        file_name += self._type
         file_name += "_pad.csv" if adapt else "_eval.csv"
         df_tot.to_csv(os.path.join(self._save_dir, file_name))
 
