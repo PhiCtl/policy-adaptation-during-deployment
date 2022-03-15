@@ -92,8 +92,8 @@ class ColorWrapper(gym.Wrapper):
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth = self._window)
 			if avg_reward > self._threshold :
 				self._hue_shift += 0.1
-				change = self._hue_shift
 				next_obs = shift_hue(next_obs, f=0.1)
+			change = self._hue_shift
 		return next_obs, reward, done, _, change
 
 	def randomize(self):
