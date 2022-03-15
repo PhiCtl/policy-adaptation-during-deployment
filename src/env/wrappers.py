@@ -66,7 +66,6 @@ class ColorWrapper(gym.Wrapper):
 		self._threshold = threshold
 		self._dependent = dependent
 		self._window = window
-		self._hue_shift = 0
 		self.time_step = 0
 		if 'color' in self._mode:
 			self._load_colors()
@@ -88,12 +87,6 @@ class ColorWrapper(gym.Wrapper):
 		self.time_step += 1
 		# Make a step
 		next_obs, reward, done, _, change = self.env.step(action, rewards) # rewards already augmented
-		if self._mode in {'color_easy', 'color_hard'} and self._dependent :
-			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth = self._window)
-			if avg_reward > self._threshold :
-				self._hue_shift += 0.1
-				next_obs = shift_hue(next_obs, f=0.1)
-			change = self._hue_shift
 		return next_obs, reward, done, _, change
 
 	def randomize(self):
@@ -252,8 +245,12 @@ class GreenScreen(gym.Wrapper):
 		self._dependent = dependent
 		self._window = window
 		self._speed = 1
+		self._hue_shift = 0
+		self._change = 0
+
 		if 'video' in mode:
 			self._video = mode
+			self._change = 1
 			if not self._video.endswith('.mp4'):
 				self._video += '.mp4'
 			self._video = os.path.join('src/env/data', self._video)
@@ -286,12 +283,17 @@ class GreenScreen(gym.Wrapper):
 	def step(self, action, rewards = None):
 		obs, reward, done, info = self.env.step(action)
 		# Compute moving average
-		if self._mode != 'train' :
+		if self._mode != 'train' and self._dependent:
 			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
-			# Increase video speed if reward above threshold
-			if self._dependent and avg_reward > self._threshold :
+			if avg_reward > self._threshold and 'video' in self._mode:
 				self._speed += 1
+				self._change = self._speed
+			elif avg_reward > self._threshold and self._mode in {'color_easy', 'color_hard'} :
+				self._hue_shift += 0.1
+				obs = shift_hue(obs, f=0.1)
+				self._change = self._hue_shift
+
 		self._current_frame += self._speed
 		return self._greenscreen(obs), reward, done, info, self._speed
 	
