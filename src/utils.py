@@ -29,7 +29,6 @@ class AdaptRecorder(object):
         self._type = type
         self.changes_tot, self.changes = [], []
         self.rewards_tot, self.rewards = [], []
-        self.max_ep_lgth = 0
 
     def reset(self):
         self.changes, self.rewards = [], []
@@ -39,16 +38,12 @@ class AdaptRecorder(object):
         self.rewards.append(reward)
 
     def end_episode(self):
-        self.max_ep_lgth = max(self.max_ep_lgth, len(self.rewards))
         self.changes_tot.append(self.changes)
         self.rewards_tot.append(self.rewards)
 
         self.reset()
 
     def save(self, file_name, adapt):
-        # Make every rewards record same length
-        tmp = [l.extend( (self.max_ep_lgth - len(l)) * [0.0]) for l in self.rewards_tot]
-        tmp2 = [l.extend( (self.max_ep_lgth - len(l)) * [0.0]) for l in self.changes_tot]
         self.rewards_tot = np.array(self.rewards_tot).transpose()
         self.changes_tot = np.array(self.changes_tot).transpose()
         df_r = pd.DataFrame(self.rewards_tot, columns=[f'episode_{i}_reward' for i in range(self.rewards_tot.shape[1])])

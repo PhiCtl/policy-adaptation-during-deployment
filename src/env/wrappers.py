@@ -278,6 +278,8 @@ class GreenScreen(gym.Wrapper):
 	def reset(self):
 		self._current_frame = 0
 		self._speed = 1
+		self._hue_shift = 0
+		self._change = 0
 		return self._greenscreen(self.env.reset())
 
 	def step(self, action, rewards = None):
