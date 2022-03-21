@@ -17,7 +17,6 @@ def evaluate(env, agent, args, video, adapt=False):
 	"""Evaluate an agent, optionally adapt using PAD"""
 	episode_rewards = []
 	recorder = AdaptRecorder(args.work_dir, args.mode)
-	max_tsteps = args.episode_timesteps
 
 	for i in tqdm(range(args.pad_num_episodes)):
 		ep_agent = deepcopy(agent) # make a new copy
@@ -44,7 +43,6 @@ def evaluate(env, agent, args, video, adapt=False):
 			next_obs, reward, done, _, change = env.step(action, rewards)
 			episode_reward += reward
 			recorder.update(change, reward)
-			#done = step >= max_tsteps
 
 			# Make self-supervised update if flag is true
 			if adapt:
