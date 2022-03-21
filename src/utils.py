@@ -68,6 +68,11 @@ def moving_average_reward(rewards, current_ep=None, wind_lgth=3):
 def compute_speed(avg_reward, max_speed, coef = 0.5, max_reward=8):
     return (max_speed * np.exp( coef * (avg_reward  - max_reward))).astype(int)
 
+def wrap_speed(speed, max) :
+    sp = speed % max
+    if sp > max/2 :
+        sp -= max
+    return sp
 
 def soft_update_params(net, target_net, tau):
     for param, target_param in zip(net.parameters(), target_net.parameters()):
