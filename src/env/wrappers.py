@@ -288,9 +288,9 @@ class GreenScreen(gym.Wrapper):
 		if self._mode != 'train' and self._dependent:
 			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
-			if avg_reward > self._threshold and 'video' in self._mode :
-				self._speed  += 1  #compute_speed(avg_reward, max_speed=len(self._data))
-				self._change = wrap_speed(self._speed, self._data)
+			if 'video' in self._mode :
+				self._speed  = compute_speed(avg_reward, max_speed=len(self._data)*2/3)
+				self._change = wrap_speed(self._speed)
 			elif avg_reward > self._threshold and self._mode in {'color_easy', 'color_hard'} :
 				self._hue_shift += 0.1
 				obs = shift_hue(obs, f=0.1)

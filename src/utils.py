@@ -65,7 +65,7 @@ def moving_average_reward(rewards, current_ep=None, wind_lgth=3):
         assert current_ep >= 0
         return avg[current_ep]
 
-def compute_speed(avg_reward, max_speed, coef = 0.5, max_reward=8):
+def compute_speed(avg_reward, max_speed, coef = 0.1, max_reward=8):
     return (max_speed * np.exp( coef * (avg_reward  - max_reward))).astype(int)
 
 def wrap_speed(speed, max) :
