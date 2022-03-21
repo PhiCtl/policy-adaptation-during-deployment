@@ -65,6 +65,10 @@ def moving_average_reward(rewards, current_ep=None, wind_lgth=3):
         assert current_ep >= 0
         return avg[current_ep]
 
+def compute_speed(avg_reward, max_speed, max_reward=8):
+    return 0
+
+
 
 def soft_update_params(net, target_net, tau):
     for param, target_param in zip(net.parameters(), target_net.parameters()):

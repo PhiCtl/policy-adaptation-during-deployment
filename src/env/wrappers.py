@@ -9,7 +9,7 @@ import dmc2gym
 from dm_control.suite import common
 import cv2
 from collections import deque
-from utils import moving_average_reward
+from utils import moving_average_reward, compute_speed
 
 def make_pad_env(
 		domain_name,
@@ -21,7 +21,7 @@ def make_pad_env(
 		mode='train',
 		dependent=False,
 		threshold=0,
-		window=5
+		window=3
 	):
 	"""Make environment for PAD experiments"""
 	env = dmc2gym.make(
@@ -288,9 +288,9 @@ class GreenScreen(gym.Wrapper):
 		if self._mode != 'train' and self._dependent:
 			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
-			if avg_reward > self._threshold and 'video' in self._mode:
-				self._speed += 1
-				self._change = self._speed
+			if 'video' in self._mode:
+				self._speed += 2 #compute_speed(avg_reward, max_speed=len(self._data))
+				self._change = self._speed % len(self._data)
 			elif avg_reward > self._threshold and self._mode in {'color_easy', 'color_hard'} :
 				self._hue_shift += 0.1
 				obs = shift_hue(obs, f=0.1)
