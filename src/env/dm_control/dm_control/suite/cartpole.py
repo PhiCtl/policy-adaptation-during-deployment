@@ -32,7 +32,7 @@ import numpy as np
 from six.moves import range
 
 
-_DEFAULT_TIME_LIMIT = 10
+_DEFAULT_TIME_LIMIT = 80
 SUITE = containers.TaggedTasks()
 
 
