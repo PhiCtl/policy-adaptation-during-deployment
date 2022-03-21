@@ -66,7 +66,7 @@ def moving_average_reward(rewards, current_ep=None, wind_lgth=3):
         return avg[current_ep]
 
 def compute_speed(avg_reward, max_speed, max_reward=8):
-    return 0
+    return int(max_speed * np.exp(avg_reward / max_reward))
 
 
 
