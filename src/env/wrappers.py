@@ -305,7 +305,7 @@ class GreenScreen(gym.Wrapper):
 		obs, reward, done, info = self.env.step(action)
 		# TODO generalize to any task
 		cart_pos = info['physics']['cart_pos']
-		#self._change = 0
+		self._change = 0
 
 		# Compute change depending on the cart position along slider
 		if self._mode != 'train' and self._dependent:
@@ -314,15 +314,15 @@ class GreenScreen(gym.Wrapper):
 
 			if self._mode in {'color_easy', 'color_hard'} :
 
-				if avg_reward > self._threshold :
-					self._hue_shift = np.abs(self._hue_shift - 0.5)
-					self._change = np.abs(self._change - 1)
-				obs = shift_hue(obs, f=self._hue_shift)
+				# if avg_reward > self._threshold :
+				# 	self._hue_shift = np.abs(self._hue_shift - 0.5)
+				# 	self._change = np.abs(self._change - 1)
+				# obs = shift_hue(obs, f=self._hue_shift)
 
-				# if np.abs(cart_pos) > 0.5:
-				# 	self._hue_shift = 0.5
-				# 	self._change = 1
-				# 	obs = shift_hue(obs, f=self._hue_shift)
+				if np.abs(cart_pos) > 0.5:
+					self._hue_shift = 0.5
+					self._change = 1
+					obs = shift_hue(obs, f=self._hue_shift)
 
 		self._current_frame += 1
 		return self._greenscreen(obs), reward, done, info, self._change
