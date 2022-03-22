@@ -53,12 +53,12 @@ def shift_hue(x, f=0.5) :
 
 	im = Image.fromarray(x)
 	h, s, v = im.convert("HSV").split()
-	#np_h = np.array(h, dtype = np.uint8)
+	np_h = np.array(h, dtype = np.uint8)
 
-	#with np.errstate(over="ignore"):
-		#np_h += np.uint8(f * 255)
+	with np.errstate(over="ignore"):
+		np_h += np.uint8(f * 255)
 
-	#h = Image.fromarray(np_h, "L")
+	h = Image.fromarray(np_h, "L")
 	img = Image.merge("HSV", (h, s, v)).convert(im.mode)
 	out = np.moveaxis(np.array(img), -1, 0)[:3]
 
@@ -305,7 +305,7 @@ class GreenScreen(gym.Wrapper):
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
 			if avg_reward > self._threshold and self._mode in {'color_easy', 'color_hard'} :
 				self._hue_shift = np.abs(self._hue_shift - 0.5)
-				obs = shift_hue(obs, f=self._hue_shift) # complementary colors
+				#obs = shift_hue(obs, f=self._hue_shift) # complementary colors
 				#self._change += 1
 		self._current_frame += 1
 		return self._greenscreen(obs), reward, done, info, self._change
