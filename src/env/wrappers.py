@@ -58,6 +58,16 @@ def shift_hue(x, f=0.5) :
 
 	return out
 
+def to_grayscale(x) :
+	assert isinstance(x, np.ndarray), 'inputs must be numpy arrays'
+	assert x.dtype == np.uint8, 'inputs must be uint8 arrays'
+
+	im = TF.to_pil_image(torch.ByteTensor(x))
+	out = Grayscale(num_output_channels=3)(im)
+	out = np.moveaxis(np.array(out), -1, 0)[:3]
+
+	return out
+
 class ColorWrapper(gym.Wrapper):
 	"""Wrapper for the color experiments"""
 	def __init__(self, env, mode, threshold, dependent, window):
@@ -311,7 +321,7 @@ class GreenScreen(gym.Wrapper):
 
 				if np.abs(cart_pos) > 0.5:
 					self._change = 1
-					obs = Grayscale(num_output_channels = 3)(obs)
+					obs = to_grayscale(obs)
 
 		self._current_frame += 1
 		return self._greenscreen(obs), reward, done, info, self._change
