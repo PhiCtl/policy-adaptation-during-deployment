@@ -52,7 +52,7 @@ def shift_hue(x, f=0.5) :
 	assert x.dtype == np.uint8, 'inputs must be uint8 arrays'
 
 	im = TF.to_pil_image(torch.ByteTensor(x)).load()
-	img = TF.adjust_hue(im, f)
+	#img = TF.adjust_hue(im, f)
 	out = np.moveaxis(np.array(im), -1, 0)[:3]
 
 	return out
@@ -292,7 +292,7 @@ class GreenScreen(gym.Wrapper):
 
 	def step(self, action, rewards = None):
 		obs, reward, done, info = self.env.step(action)
-		print(info)
+		#print(info)
 		# Compute moving average
 		if self._mode != 'train' and self._dependent:
 			rewards.append(reward)
@@ -300,7 +300,7 @@ class GreenScreen(gym.Wrapper):
 			if avg_reward > self._threshold and self._mode in {'color_easy', 'color_hard'} :
 				self._hue_shift = np.abs(self._hue_shift - 0.5)
 				obs = shift_hue(obs, f=self._hue_shift) # complementary colors
-				self._change += 1
+				#self._change += 1
 		self._current_frame += 1
 		return self._greenscreen(obs), reward, done, info, self._change
 	
