@@ -311,7 +311,7 @@ class GreenScreen(gym.Wrapper):
 
 				if np.abs(cart_pos) > 0.5:
 					self._change = 1
-					obs = np.tile(Grayscale(obs), (3,1,1))
+					obs = Grayscale(num_output_channels = 3)(obs)
 
 		self._current_frame += 1
 		return self._greenscreen(obs), reward, done, info, self._change
@@ -324,6 +324,7 @@ class GreenScreen(gym.Wrapper):
 		return (bg*255).byte().squeeze(0).numpy()
 
 	def _greenscreen(self, obs):
+
 		"""Applies greenscreen if video is selected, otherwise does nothing"""
 		if self._video:
 			bg = self._data[self._current_frame % len(self._data)] # select frame
