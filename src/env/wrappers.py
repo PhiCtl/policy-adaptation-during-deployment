@@ -244,20 +244,18 @@ class GreenScreen(gym.Wrapper):
 		self._threshold = threshold
 		self._dependent = dependent
 		self._window = window
-		self._speed = 1
 		self._hue_shift = 0
 		self._change = 0
+		self._current_frame = 0
 
 		if 'video' in mode:
 			self._video = mode
-			self._change = 1
 			if not self._video.endswith('.mp4'):
 				self._video += '.mp4'
 			self._video = os.path.join('src/env/data', self._video)
 			self._data = self._load_video(self._video)
 		else:
 			self._video = None
-		self._max_episode_steps = env._max_episode_steps
 
 	def _load_video(self, video):
 		"""Load video from provided filepath and return as numpy array"""
@@ -277,7 +275,6 @@ class GreenScreen(gym.Wrapper):
 
 	def reset(self):
 		self._current_frame = 0
-		self._speed = 1
 		self._hue_shift = 0
 		self._change = 0
 		return self._greenscreen(self.env.reset())
@@ -288,15 +285,12 @@ class GreenScreen(gym.Wrapper):
 		if self._mode != 'train' and self._dependent:
 			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
-			if avg_reward > self._threshold and 'video' in self._mode:
-				self._speed  += 2 #compute_speed(avg_reward, max_speed=len(self._data)*2/3)
-				self._change = wrap_speed(self._speed, len(self._data))
-			elif avg_reward > self._threshold and self._mode in {'color_easy', 'color_hard'} :
+			if avg_reward > self._threshold and self._mode in {'color_easy', 'color_hard'} :
 				self._hue_shift += 0.1
 				obs = shift_hue(obs, f=0.1)
 				self._change = self._hue_shift
 		print(info.keys())
-		self._current_frame += self._speed
+		self._current_frame += 1
 		return self._greenscreen(obs), reward, done, info, self._change
 	
 	def _interpolate_bg(self, bg, size:tuple):
