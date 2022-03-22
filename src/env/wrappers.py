@@ -319,7 +319,7 @@ class GreenScreen(gym.Wrapper):
 				# 	self._change = np.abs(self._change - 1)
 				# obs = shift_hue(obs, f=self._hue_shift)
 
-				if np.abs(cart_pos) > 0.5:
+				if np.abs(cart_pos) < 0.2:
 					self._hue_shift = 0.5
 					self._change = 1
 					obs = shift_hue(obs, f=self._hue_shift)
