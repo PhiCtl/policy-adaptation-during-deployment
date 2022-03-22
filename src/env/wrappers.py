@@ -51,15 +51,8 @@ def shift_hue(x, f=0.5) :
 	assert isinstance(x, np.ndarray), 'inputs must be numpy arrays'
 	assert x.dtype == np.uint8, 'inputs must be uint8 arrays'
 
-	im = Image.fromarray(x)
-	h, s, v = im.convert("HSV").split()
-	np_h = np.array(h, dtype = np.uint8)
-
-	with np.errstate(over="ignore"):
-		np_h += np.uint8(f * 255)
-
-	h = Image.fromarray(np_h, "L")
-	img = Image.merge("HSV", (h, s, v)).convert(im.mode)
+	im = TF.to_pil_image(torch.ByteTensor(x)).load()
+	img = TF.adjust_hue(im, f)
 	out = np.moveaxis(np.array(img), -1, 0)[:3]
 
 	return out
@@ -81,7 +74,7 @@ class ColorWrapper(gym.Wrapper):
 	def reset(self):
 		self.time_step = 0
 		if 'color' in self._mode:
-			self.fix_color(4)
+			self.randomize() #self.fix_color(4)
 		if 'video' in self._mode:
 			# apply greenscreen
 			self.reload_physics(

@@ -204,6 +204,7 @@ class Balance(base.Task):
     obs = collections.OrderedDict()
     obs['position'] = physics.bounded_position()
     obs['velocity'] = physics.velocity()
+    obs['cart_pos'] = physics.cart_position()
     return obs
 
   def _get_reward(self, physics, sparse):
