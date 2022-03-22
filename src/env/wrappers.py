@@ -292,6 +292,7 @@ class GreenScreen(gym.Wrapper):
 
 	def step(self, action, rewards = None):
 		obs, reward, done, info = self.env.step(action)
+		print(info)
 		# Compute moving average
 		if self._mode != 'train' and self._dependent:
 			rewards.append(reward)
