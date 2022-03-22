@@ -320,8 +320,9 @@ class GreenScreen(gym.Wrapper):
 				# obs = shift_hue(obs, f=self._hue_shift)
 
 				if np.abs(cart_pos) > 0.5:
+					self._hue_shift = 0.5
 					self._change = 1
-					obs = to_grayscale(obs)
+					obs = shift_hue(obs, f=self._hue_shift)
 
 		self._current_frame += 1
 		return self._greenscreen(obs), reward, done, info, self._change
