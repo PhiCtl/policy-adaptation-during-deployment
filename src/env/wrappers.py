@@ -305,7 +305,7 @@ class GreenScreen(gym.Wrapper):
 		obs, reward, done, info = self.env.step(action)
 		# TODO generalize to any task
 		cart_pos = info['physics']['cart_pos']
-		self._change = 0
+		#self._change = 0
 
 		# Compute change depending on the cart position along slider
 		if self._mode != 'train' and self._dependent:
