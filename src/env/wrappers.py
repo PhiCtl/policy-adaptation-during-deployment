@@ -304,7 +304,8 @@ class GreenScreen(gym.Wrapper):
 			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
 			if avg_reward > self._threshold and self._mode in {'color_easy', 'color_hard'} :
-				obs = shift_hue(obs) # complementary colors
+				self._hue_shift = np.abs(self._hue_shift - 0.5)
+				obs = shift_hue(obs, f=self._hue_shift) # complementary colors
 				self._change += 1
 		self._current_frame += 1
 		return self._greenscreen(obs), reward, done, info, self._change
