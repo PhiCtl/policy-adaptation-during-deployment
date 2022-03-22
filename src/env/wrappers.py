@@ -5,6 +5,7 @@ import gym
 import torch
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
+from PIL import Image
 import dmc2gym
 from dm_control.suite import common
 import cv2
@@ -45,14 +46,21 @@ def make_pad_env(
 
 	return env
 
-def shift_hue(x, f=0.1) :
-	# Image should be still in HSV format here
+def shift_hue(x, f=0.5) :
+
 	assert isinstance(x, np.ndarray), 'inputs must be numpy arrays'
 	assert x.dtype == np.uint8, 'inputs must be uint8 arrays'
 
-	im = TF.to_pil_image(torch.ByteTensor(x))
-	im = TF.adjust_hue(im, f)
-	out = np.moveaxis(np.array(im).astype(np.uint8), -1, 0)[:3]
+	im = Image.fromarray(x)
+	h, s, v = im.convert("HSV").split()
+	np_h = np.array(h, dtype = np.uint8)
+
+	with np.errstate(over="ignore"):
+		np_h += np.uint8(f * 255)
+
+	h = Image.fromarray(np_h, "L")
+	img = Image.merge("HSV", (h, s, v)).convert(im.mode)
+	out = np.moveaxis(np.array(img), -1, 0)[:3]
 
 	return out
 
@@ -73,7 +81,7 @@ class ColorWrapper(gym.Wrapper):
 	def reset(self):
 		self.time_step = 0
 		if 'color' in self._mode:
-			self.randomize()
+			self.fix_color(4)
 		if 'video' in self._mode:
 			# apply greenscreen
 			self.reload_physics(
@@ -93,6 +101,10 @@ class ColorWrapper(gym.Wrapper):
 		assert 'color' in self._mode, f'can only randomize in color mode, received {self._mode}'		
 		self.reload_physics(self.get_random_color())
 
+	def fix_color(self, nb : int):
+		assert 'color' in self._mode, f'can only set color in color mode, received {self._mode}'
+		self.reload_physics(self.get_fixed_color(nb))
+
 	def _load_colors(self):
 		assert self._mode in {'color_easy', 'color_hard'}
 		self._colors = torch.load(f'src/env/data/{self._mode}.pt')
@@ -100,6 +112,10 @@ class ColorWrapper(gym.Wrapper):
 	def get_random_color(self):
 		assert len(self._colors) >= 100, 'env must include at least 100 colors'
 		return self._colors[randint(len(self._colors))]
+
+	def get_fixed_color(self, nb : int):
+		assert len(self._colors) >= 100, 'env must include at least 100 colors'
+		return self._colors[nb]
 
 	def reload_physics(self, setting_kwargs=None, state=None):
 		domain_name = self._get_dmc_wrapper()._domain_name
@@ -288,10 +304,8 @@ class GreenScreen(gym.Wrapper):
 			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
 			if avg_reward > self._threshold and self._mode in {'color_easy', 'color_hard'} :
-				self._hue_shift += 0.1
-				obs = shift_hue(obs, f=0.1)
-				self._change = self._hue_shift
-		print(info.keys())
+				obs = shift_hue(obs) # complementary colors
+				self._change += 1
 		self._current_frame += 1
 		return self._greenscreen(obs), reward, done, info, self._change
 	
