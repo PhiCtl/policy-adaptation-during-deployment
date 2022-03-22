@@ -257,6 +257,8 @@ class GreenScreen(gym.Wrapper):
 		else:
 			self._video = None
 
+		self._max_episode_steps = env._max_episode_steps
+
 	def _load_video(self, video):
 		"""Load video from provided filepath and return as numpy array"""
 		cap = cv2.VideoCapture(video)
