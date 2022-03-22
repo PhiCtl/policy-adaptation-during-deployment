@@ -189,7 +189,6 @@ class FrameStack(gym.Wrapper):
 
 	def _get_obs(self):
 		assert len(self._frames) == self._k
-		print(self._frames[0].shape)
 		return np.concatenate(list(self._frames), axis=0)
 
 
@@ -312,7 +311,7 @@ class GreenScreen(gym.Wrapper):
 
 				if np.abs(cart_pos) > 0.5:
 					self._change = 1
-					obs = Grayscale(obs)
+					obs = np.tile(Grayscale(obs), (3,1,1))
 
 		self._current_frame += 1
 		return self._greenscreen(obs), reward, done, info, self._change
