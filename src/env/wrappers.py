@@ -5,6 +5,7 @@ import gym
 import torch
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
+from torchvision.transforms import Grayscale
 from PIL import Image
 import dmc2gym
 from dm_control.suite import common
@@ -292,14 +293,19 @@ class GreenScreen(gym.Wrapper):
 
 	def step(self, action, rewards = None):
 		obs, reward, done, info = self.env.step(action)
-		# Compute moving average
+		# TODO generalize to any task
+		cart_pos = info['physics']['cart_pos']
+		self._change = 0
+
+		# Compute change depending on the cart position along slider
 		if self._mode != 'train' and self._dependent:
 			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
-			if avg_reward > self._threshold and self._mode in {'color_easy', 'color_hard'} :
-				self._hue_shift = np.abs(self._hue_shift - 0.5)
-				obs = shift_hue(obs, f=self._hue_shift) # complementary colors
-				self._change += 1
+			if self._mode in {'color_easy', 'color_hard'} :
+				if avg_reward > self._threshold : #cart_pos > 0.0 :
+					self._hue_shift = np.abs(self._hue_shift - 0.5)
+					obs = shift_hue(obs, f=self._hue_shift) # complementary colors #Grayscale(obs) #
+					self._change = 1
 		self._current_frame += 1
 		return self._greenscreen(obs), reward, done, info, self._change
 	
