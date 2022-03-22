@@ -189,6 +189,7 @@ class FrameStack(gym.Wrapper):
 
 	def _get_obs(self):
 		assert len(self._frames) == self._k
+		print(self._frames[0].shape)
 		return np.concatenate(list(self._frames), axis=0)
 
 
