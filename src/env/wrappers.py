@@ -104,12 +104,15 @@ class ColorWrapper(gym.Wrapper):
 		cart_pos = info['physics']['cart_pos']
 
 		# Compute change depending on the cart position along slider
-		if self._mode != 'train' and self._dependent:
+		if self._mode in {'color_easy', 'color_hard'} and self._dependent:
 			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=self._window)
 
-			if self._mode in {'color_easy', 'color_hard'} and avg_reward > self._threshold:
-				self._color = ((self._color + 25) % 100)
+			if np.abs(cart_pos) < 0.2:
+				self._color = 50 #((self._color + 25) % 100)
+				self.fix_color(self._color)
+			else :
+				self._color = 0
 				self.fix_color(self._color)
 			change = self._color
 
