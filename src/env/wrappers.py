@@ -108,10 +108,13 @@ class ColorWrapper(gym.Wrapper):
 			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=self._window)
 
-			if avg_reward > self._threshold :
-				self._color = ((self._color + 25) % 100)
+			if np.abs(cart_pos) < 0.2 and self._color != 50 : # avg_reward > self._threshold :
+				self._color = 50 #((self._color + 25) % 100)
 				self.fix_color(self._color)
-		
+			elif np.abs(cart_pos) > 0.2 and self._color != 0 :
+				self._color = 0
+				self.fix_color(self._color)
+			
 			change = self._color
 
 		return next_obs, reward, done, info, change
