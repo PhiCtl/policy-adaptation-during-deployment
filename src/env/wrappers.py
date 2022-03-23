@@ -78,6 +78,7 @@ class ColorWrapper(gym.Wrapper):
 		self._threshold = threshold
 		self._dependent = dependent
 		self._window = window
+		self._color = 0
 		self.time_step = 0
 		if 'color' in self._mode:
 			self._load_colors()
@@ -85,7 +86,7 @@ class ColorWrapper(gym.Wrapper):
 	def reset(self):
 		self.time_step = 0
 		if 'color' in self._mode:
-			self.randomize() #self.fix_color(4)
+			self.fix_color(0) #self.randomize()
 		if 'video' in self._mode:
 			# apply greenscreen
 			self.reload_physics(
@@ -98,15 +99,29 @@ class ColorWrapper(gym.Wrapper):
 	def step(self, action, rewards = None):
 		self.time_step += 1
 		# Make a step
-		next_obs, reward, done, _, change = self.env.step(action, rewards) # rewards already augmented
-		return next_obs, reward, done, _, change
+		next_obs, reward, done, info, change = self.env.step(action, rewards)  # # rewards already augmented
+		# TODO generalize to any task
+		cart_pos = info['physics']['cart_pos']
+
+		# Compute change depending on the cart position along slider
+		if self._mode != 'train' and self._dependent:
+			rewards.append(reward)
+			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=self._window)
+
+			if self._mode in {'color_easy', 'color_hard'} and avg_reward > self._threshold:
+				self._color = ((self._color + 20) % 100)
+				self.fix_color(self._color)
+			change = self._color
+
+		return next_obs, reward, done, info, change
 
 	def randomize(self):
-		assert 'color' in self._mode, f'can only randomize in color mode, received {self._mode}'		
+		assert 'color' in self._mode, f'can only randomize in color mode, received {self._mode}'
 		self.reload_physics(self.get_random_color())
 
 	def fix_color(self, nb : int):
 		assert 'color' in self._mode, f'can only set color in color mode, received {self._mode}'
+		assert (nb >= 0 and nb < 100)
 		self.reload_physics(self.get_fixed_color(nb))
 
 	def _load_colors(self):
@@ -115,7 +130,8 @@ class ColorWrapper(gym.Wrapper):
 
 	def get_random_color(self):
 		assert len(self._colors) >= 100, 'env must include at least 100 colors'
-		return self._colors[randint(len(self._colors))]
+		self._color = randint(len(self._colors))
+		return self._colors[self._color]
 
 	def get_fixed_color(self, nb : int):
 		assert len(self._colors) >= 100, 'env must include at least 100 colors'
@@ -303,26 +319,27 @@ class GreenScreen(gym.Wrapper):
 
 	def step(self, action, rewards = None):
 		obs, reward, done, info = self.env.step(action)
-		# TODO generalize to any task
-		cart_pos = info['physics']['cart_pos']
-		self._change = 0
-
-		# Compute change depending on the cart position along slider
-		if self._mode != 'train' and self._dependent:
-			rewards.append(reward)
-			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
-
-			if self._mode in {'color_easy', 'color_hard'} :
+		# # TODO generalize to any task
+		# cart_pos = info['physics']['cart_pos']
+		# #self._change = 0
+		#
+		# # Compute change depending on the cart position along slider
+		# if self._mode != 'train' and self._dependent:
+		# 	rewards.append(reward)
+		# 	avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
+		#
+		# 	if self._mode in {'color_easy', 'color_hard'} :
 
 				# if avg_reward > self._threshold :
 				# 	self._hue_shift = np.abs(self._hue_shift - 0.5)
 				# 	self._change = np.abs(self._change - 1)
 				# obs = shift_hue(obs, f=self._hue_shift)
 
-				if np.abs(cart_pos) < 0.2:
-					self._hue_shift = 0.5
-					self._change = 1
-					obs = shift_hue(obs, f=self._hue_shift)
+
+				# if np.abs(cart_pos) < 0.2:
+				# 	self._hue_shift = 0.5
+				# 	self._change = 1
+				# 	obs = shift_hue(obs, f=self._hue_shift)
 
 		self._current_frame += 1
 		return self._greenscreen(obs), reward, done, info, self._change
