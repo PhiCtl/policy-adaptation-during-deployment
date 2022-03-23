@@ -109,7 +109,7 @@ class ColorWrapper(gym.Wrapper):
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=self._window)
 
 			if self._mode in {'color_easy', 'color_hard'} and avg_reward > self._threshold:
-				self._color = ((self._color + 20) % 100)
+				self._color = ((self._color + 25) % 100)
 				self.fix_color(self._color)
 			change = self._color
 
