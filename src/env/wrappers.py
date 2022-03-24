@@ -86,7 +86,7 @@ class ColorWrapper(gym.Wrapper):
 	def reset(self):
 		self.time_step = 0
 		if 'color' in self._mode:
-			self.fix_color(0) #self.randomize()
+			self.randomize()
 		if 'video' in self._mode:
 			# apply greenscreen
 			self.reload_physics(
@@ -103,20 +103,20 @@ class ColorWrapper(gym.Wrapper):
 		# TODO generalize to any task
 		cart_pos = info['physics']['cart_pos']
 
-		# Compute change depending on the cart position along slider
-		if self._mode in {'color_easy', 'color_hard'} and self._dependent:
-			rewards.append(reward)
-			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=self._window)
-
-			if np.abs(cart_pos) < 0.35 : # avg_reward > self._threshold :
-				self._color = ((self._color + 25) % 100)
-				self.fix_color(self._color)
-
-			# if avg_reward > self._threshold :
-			# 	self._color = ((self._color + 25) % 100)
-			# 	self.fix_color(self._color)
-
-			change = self._color
+		# # Compute change depending on the cart position along slider
+		# if self._mode in {'color_easy', 'color_hard'} and self._dependent:
+		# 	rewards.append(reward)
+		# 	avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=self._window)
+		#
+		# 	if np.abs(cart_pos) < 0.35 : # avg_reward > self._threshold :
+		# 		self._color = ((self._color + 25) % 100)
+		# 		self.fix_color(self._color)
+		#
+		# 	# if avg_reward > self._threshold :
+		# 	# 	self._color = ((self._color + 25) % 100)
+		# 	# 	self.fix_color(self._color)
+		#
+		# 	change = self._color
 
 		return next_obs, reward, done, info, change
 
