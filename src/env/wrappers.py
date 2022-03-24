@@ -328,17 +328,19 @@ class GreenScreen(gym.Wrapper):
 		cart_pos = info['physics']['cart_pos']
 		#self._change = 0
 
-		# Compute change depending on the cart position along slider
-		# if self._mode != 'train' and self._dependent:
-		# 	rewards.append(reward)
-		# 	avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
-		#
-		# 	if self._mode in {'color_easy', 'color_hard'} :
-		#
-		# 		if avg_reward > self._threshold :
-		# 			self._hue_shift = np.abs(self._hue_shift - 0.5)
-		# 			self._change = np.abs(self._change - 1)
-		# 		obs = shift_hue(obs, f=self._hue_shift)
+		#Compute change depending on the cart position along slider
+		if self._mode != 'train' and self._dependent:
+			rewards.append(reward)
+			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
+
+			if self._mode in {'color_easy', 'color_hard'} :
+
+				if avg_reward > self._threshold :
+					self._hue_shift = np.abs(self._hue_shift - 0.5)
+					self._change = np.abs(self._change - 1)
+				obs = shift_hue(obs, f=self._hue_shift)
+				im = Image.fromarray(obs)
+				im.save(f'pic_{self._hue_shift}')
 
 
 				# if np.abs(cart_pos) < 0.2:
