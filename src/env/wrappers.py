@@ -85,9 +85,9 @@ class ColorWrapper(gym.Wrapper):
 	
 	def reset(self):
 		self.time_step = 0
-		if 'color' in self._mode:
+		if 'color' in self._mode :
 			self.randomize()
-		if 'video' in self._mode:
+		if 'video' or 'steady' in self._mode:
 			# apply greenscreen
 			self.reload_physics(
 				{'skybox_rgb': [.2, .8, .2],
@@ -294,7 +294,7 @@ class GreenScreen(gym.Wrapper):
 				self._video += '.mp4'
 			self._video = os.path.join('src/env/data', self._video)
 			self._data = self._load_video(self._video)
-		else:
+		elif 'steady' in mode:
 			self._video = None
 			self._data = np.ones((3, 100, 100), dtype=np.uint8) * 50
 			self._data[0,:,:] = 255
@@ -320,7 +320,7 @@ class GreenScreen(gym.Wrapper):
 	def reset(self):
 		self._current_frame = 0
 		self._hue_shift = 0
-		if self._mode in {'color_hard', 'color_easy'} :
+		if 'steady' in self._mode :
 			self._data = np.ones((3, 100, 100), dtype=np.uint8) * 50
 			self._data[0, :, :] = 255
 		return self._greenscreen(self.env.reset())
@@ -335,9 +335,9 @@ class GreenScreen(gym.Wrapper):
 			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
 
-			if self._mode in {'color_easy', 'color_hard'} :
+			if 'steady' in self._mode :
 
-				if cart_pos < 0 :
+				if avg_reward > self._threshold :
 					self._change_background()
 
 				# if avg_reward > self._threshold :
@@ -368,7 +368,7 @@ class GreenScreen(gym.Wrapper):
 			bg = self._data[self._current_frame % len(self._data)] # select frame
 			bg = self._interpolate_bg(bg, obs.shape[1:]) # scale bg to observation size
 			return do_green_screen(obs, bg) # apply greenscreen
-		if self._mode in {'color_hard', 'color_easy'} :
+		if 'steady' in self._mode :
 			bg = self._data
 			bg = self._interpolate_bg(bg, obs.shape[1:])
 			return do_green_screen(obs, bg)  # apply greenscreen
