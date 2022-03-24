@@ -297,6 +297,8 @@ class GreenScreen(gym.Wrapper):
 			self._data = self._load_video(self._video)
 		else:
 			self._video = None
+			self._data = self._data = np.ones((3, 100, 100), dtype=np.uint8) * 50
+			self._data[0,:,:] = 255
 
 		self._max_episode_steps = env._max_episode_steps
 
@@ -320,6 +322,9 @@ class GreenScreen(gym.Wrapper):
 		self._current_frame = 0
 		self._hue_shift = 0
 		self._change = 0
+		if self._mode in {'color_hard', 'color_easy'} :
+			self._data = np.ones((3, 100, 100), dtype=np.uint8) * 50
+			self._data[0, :, :] = 255
 		return self._greenscreen(self.env.reset())
 
 	def step(self, action, rewards = None):
@@ -335,12 +340,13 @@ class GreenScreen(gym.Wrapper):
 
 			if self._mode in {'color_easy', 'color_hard'} :
 
-				if avg_reward > self._threshold :
-					self._hue_shift = np.abs(self._hue_shift - 0.5)
-					self._change = np.abs(self._change - 1)
-				obs = shift_hue(obs, f=self._hue_shift)
-				im = Image.fromarray(obs)
-				im.save(f'pic_{self._hue_shift}')
+				if avg_reward > self.threshold :
+					self._change_background()
+
+				# if avg_reward > self._threshold :
+				# 	self._hue_shift = np.abs(self._hue_shift - 0.5)
+				# 	self._change = np.abs(self._change - 1)
+				# obs = shift_hue(obs, f=self._hue_shift)
 
 
 				# if np.abs(cart_pos) < 0.2:
@@ -360,12 +366,22 @@ class GreenScreen(gym.Wrapper):
 
 	def _greenscreen(self, obs):
 
-		"""Applies greenscreen if video is selected, otherwise does nothing"""
+		"""Applies greenscreen if video or envt dependent mode is selected, otherwise does nothing"""
 		if self._video:
 			bg = self._data[self._current_frame % len(self._data)] # select frame
 			bg = self._interpolate_bg(bg, obs.shape[1:]) # scale bg to observation size
 			return do_green_screen(obs, bg) # apply greenscreen
+		if self._mode in {'color_hard', 'color_easy'} and self._dependent:
+			bg = self._data
+			bg = self._interpolate_bg(bg, obs.shape[1:])
+			return do_green_screen(obs, bg)  # apply greenscreen
 		return obs
+
+	def _change_background(self):
+		self._hue_shift = (self._hue_shift + 1) % 3
+		self._data[:,:,:] = 50
+		self._data[self._hue_shift,:,:] = 255
+		self._change = self._hue_shift
 
 	def apply_to(self, obs):
 		"""Applies greenscreen mode of object to observation"""
