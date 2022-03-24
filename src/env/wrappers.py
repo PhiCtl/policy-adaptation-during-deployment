@@ -337,9 +337,8 @@ class GreenScreen(gym.Wrapper):
 
 			if 'steady' in self._mode :
 
-				if avg_reward > self._threshold:
-					#elf._change_background()
-					pass
+				if cart_pos > 0.2 : 
+					self._change_background()
 
 				# if avg_reward > self._threshold :
 				# 	self._hue_shift = np.abs(self._hue_shift - 0.5)
