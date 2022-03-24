@@ -286,7 +286,6 @@ class GreenScreen(gym.Wrapper):
 		self._dependent = dependent
 		self._window = window
 		self._hue_shift = 0
-		self._change = 0
 		self._current_frame = 0
 
 		if 'video' in mode:
@@ -297,7 +296,7 @@ class GreenScreen(gym.Wrapper):
 			self._data = self._load_video(self._video)
 		else:
 			self._video = None
-			self._data = self._data = np.ones((3, 100, 100), dtype=np.uint8) * 50
+			self._data = np.ones((3, 100, 100), dtype=np.uint8) * 50
 			self._data[0,:,:] = 255
 
 		self._max_episode_steps = env._max_episode_steps
@@ -321,7 +320,6 @@ class GreenScreen(gym.Wrapper):
 	def reset(self):
 		self._current_frame = 0
 		self._hue_shift = 0
-		self._change = 0
 		if self._mode in {'color_hard', 'color_easy'} :
 			self._data = np.ones((3, 100, 100), dtype=np.uint8) * 50
 			self._data[0, :, :] = 255
@@ -331,7 +329,6 @@ class GreenScreen(gym.Wrapper):
 		obs, reward, done, info = self.env.step(action)
 		# # TODO generalize to any task
 		cart_pos = info['physics']['cart_pos']
-		#self._change = 0
 
 		#Compute change depending on the cart position along slider
 		if self._mode != 'train' and self._dependent:
@@ -340,7 +337,7 @@ class GreenScreen(gym.Wrapper):
 
 			if self._mode in {'color_easy', 'color_hard'} :
 
-				if avg_reward > self._threshold :
+				if cart_pos < 0 :
 					self._change_background()
 
 				# if avg_reward > self._threshold :
@@ -355,7 +352,7 @@ class GreenScreen(gym.Wrapper):
 				# 	obs = shift_hue(obs, f=self._hue_shift)
 
 		self._current_frame += 1
-		return self._greenscreen(obs), reward, done, info, self._change
+		return self._greenscreen(obs), reward, done, info, self._hue_shift
 
 	
 	def _interpolate_bg(self, bg, size:tuple):
@@ -371,7 +368,7 @@ class GreenScreen(gym.Wrapper):
 			bg = self._data[self._current_frame % len(self._data)] # select frame
 			bg = self._interpolate_bg(bg, obs.shape[1:]) # scale bg to observation size
 			return do_green_screen(obs, bg) # apply greenscreen
-		if self._mode in {'color_hard', 'color_easy'} and self._dependent:
+		if self._mode in {'color_hard', 'color_easy'} :
 			bg = self._data
 			bg = self._interpolate_bg(bg, obs.shape[1:])
 			return do_green_screen(obs, bg)  # apply greenscreen
@@ -381,7 +378,6 @@ class GreenScreen(gym.Wrapper):
 		self._hue_shift = (self._hue_shift + 1) % 3
 		self._data[:,:,:] = 50
 		self._data[self._hue_shift,:,:] = 255
-		self._change = self._hue_shift
 
 	def apply_to(self, obs):
 		"""Applies greenscreen mode of object to observation"""
