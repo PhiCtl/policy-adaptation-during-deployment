@@ -340,7 +340,7 @@ class GreenScreen(gym.Wrapper):
 
 			if self._mode in {'color_easy', 'color_hard'} :
 
-				if avg_reward > self.threshold :
+				if avg_reward > self._threshold :
 					self._change_background()
 
 				# if avg_reward > self._threshold :
