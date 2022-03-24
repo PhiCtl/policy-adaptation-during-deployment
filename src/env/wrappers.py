@@ -337,8 +337,9 @@ class GreenScreen(gym.Wrapper):
 
 			if 'steady' in self._mode :
 
-				if np.abs(cart_pos) < 0.2 :
-					self._change_background()
+				if avg_reward > self._threshold:
+					#elf._change_background()
+					pass
 
 				# if avg_reward > self._threshold :
 				# 	self._hue_shift = np.abs(self._hue_shift - 0.5)
@@ -363,7 +364,7 @@ class GreenScreen(gym.Wrapper):
 
 	def _greenscreen(self, obs):
 
-		"""Applies greenscreen if video or envt dependent mode is selected, otherwise does nothing"""
+		"""Applies greenscreen if video or steady mode is selected, otherwise does nothing"""
 		if self._video:
 			bg = self._data[self._current_frame % len(self._data)] # select frame
 			bg = self._interpolate_bg(bg, obs.shape[1:]) # scale bg to observation size
