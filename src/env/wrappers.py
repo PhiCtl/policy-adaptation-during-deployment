@@ -82,11 +82,12 @@ class ColorWrapper(gym.Wrapper):
 		self._change = False
 		self.time_step = 0
 		if 'color' in self._mode:
-			self._load_colors()s
+			self._load_colors()
 	
 	def reset(self):
 		self.time_step = 0
 		self._change = False
+		self._color = 0
 		if 'color' in self._mode :
 			self.randomize()
 		if 'video' or 'steady' in self._mode:
@@ -110,16 +111,19 @@ class ColorWrapper(gym.Wrapper):
 			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=self._window)
 
-			# if np.abs(cart_pos) < 0.35 : # avg_reward > self._threshold :
-			# 	self._color = ((self._color + 25) % 100)
-			# 	self.fix_color(self._color)
-
-			if avg_reward > self._threshold and not self._change :
+			if np.abs(cart_pos) < 0.2 and not self._change : # avg_reward > self._threshold :
 				self._color = ((self._color + 25) % 100)
 				self.fix_color(self._color)
 				self._change = True
-			elif avg_reward < self._threshold :
+			elif np.abs(cart_pos) >= 0.2 :
 				self._change = False
+
+			# if avg_reward > self._threshold and not self._change :
+			# 	self._color = ((self._color + 25) % 100)
+			# 	self.fix_color(self._color)
+			# 	self._change = True
+			# elif avg_reward < self._threshold :
+			# 	self._change = False
 
 			change = self._color
 
