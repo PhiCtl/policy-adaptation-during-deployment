@@ -79,12 +79,14 @@ class ColorWrapper(gym.Wrapper):
 		self._dependent = dependent
 		self._window = window
 		self._color = 0
+		self._change = False
 		self.time_step = 0
 		if 'color' in self._mode:
-			self._load_colors()
+			self._load_colors()s
 	
 	def reset(self):
 		self.time_step = 0
+		self._change = False
 		if 'color' in self._mode :
 			self.randomize()
 		if 'video' or 'steady' in self._mode:
@@ -103,20 +105,23 @@ class ColorWrapper(gym.Wrapper):
 		# TODO generalize to any task
 		cart_pos = info['physics']['cart_pos']
 
-		# # Compute change depending on the cart position along slider
-		# if self._mode in {'color_easy', 'color_hard'} and self._dependent:
-		# 	rewards.append(reward)
-		# 	avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=self._window)
-		#
-		# 	if np.abs(cart_pos) < 0.35 : # avg_reward > self._threshold :
-		# 		self._color = ((self._color + 25) % 100)
-		# 		self.fix_color(self._color)
-		#
-		# 	# if avg_reward > self._threshold :
-		# 	# 	self._color = ((self._color + 25) % 100)
-		# 	# 	self.fix_color(self._color)
-		#
-		# 	change = self._color
+		# Compute change depending on the cart position along slider
+		if self._mode in {'color_easy', 'color_hard'} and self._dependent:
+			rewards.append(reward)
+			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=self._window)
+
+			# if np.abs(cart_pos) < 0.35 : # avg_reward > self._threshold :
+			# 	self._color = ((self._color + 25) % 100)
+			# 	self.fix_color(self._color)
+
+			if avg_reward > self._threshold and not self._change :
+				self._color = ((self._color + 25) % 100)
+				self.fix_color(self._color)
+				self._change = True
+			elif avg_reward < self._threshold :
+				self._change = False
+
+			change = self._color
 
 		return next_obs, reward, done, info, change
 
@@ -337,7 +342,7 @@ class GreenScreen(gym.Wrapper):
 
 			if 'steady' in self._mode :
 
-				if cart_pos > 0.2 : 
+				if cart_pos > 0.2 :
 					self._change_background()
 
 				# if avg_reward > self._threshold :
