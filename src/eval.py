@@ -100,7 +100,8 @@ def init_env(args):
 			mode=args.mode,
 			dependent=args.dependent,
 			threshold=args.threshold,
-			window=args.window
+			window=args.window,
+			speed=args.video_speed
 		)
 
 

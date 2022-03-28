@@ -23,7 +23,8 @@ def make_pad_env(
 		mode='train',
 		dependent=False,
 		threshold=0,
-		window=3
+		window=3,
+		speed=1
 	):
 	"""Make environment for PAD experiments"""
 	env = dmc2gym.make(
@@ -38,7 +39,7 @@ def make_pad_env(
 		frame_skip=action_repeat
 	)
 	env.seed(seed)
-	env = GreenScreen(env, mode, threshold, dependent, window)
+	env = GreenScreen(env, mode, threshold, dependent, window, speed)
 	env = FrameStack(env, frame_stack)
 	env = ColorWrapper(env, mode, threshold, dependent, window)
 
@@ -288,13 +289,14 @@ def do_green_screen(x, bg):
 
 class GreenScreen(gym.Wrapper):
 	"""Green screen for video experiments"""
-	def __init__(self, env, mode, threshold, dependent, window):
+	def __init__(self, env, mode, threshold, dependent, window, speed):
 		gym.Wrapper.__init__(self, env)
 		self._mode = mode
 		self._threshold = threshold
 		self._dependent = dependent
 		self._window = window
 		self._hue_shift = 0
+		self._speed = speed
 		self._current_frame = 0
 		self._video = None
 
@@ -361,7 +363,7 @@ class GreenScreen(gym.Wrapper):
 				# 	self._change = 1
 				# 	obs = shift_hue(obs, f=self._hue_shift)
 
-		self._current_frame += 1
+		self._current_frame += self._speed
 		return self._greenscreen(obs), reward, done, info, self._hue_shift
 
 	
