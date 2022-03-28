@@ -17,7 +17,8 @@ python3 src/eval.py \
 	--seed 0 \
 	--work_dir logs/cartpole_swingup/inv/0 \
 	--pad_checkpoint 500k \
-	--pad_num_episodes 10 \
-	--threshold 5.0 \
-	--dependent 1
+	--pad_num_episodes 1 \
+	--threshold 3.0 \
+	--dependent \
+	--save_video
 
