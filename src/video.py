@@ -1,5 +1,6 @@
 import imageio
 import os
+import datetime
 
 
 class VideoRecorder(object):
@@ -30,5 +31,6 @@ class VideoRecorder(object):
 
     def save(self, file_name):
         if self.enabled:
+            file_name = datetime.now().strftime("%H-%M-%S") + file_name
             path = os.path.join(self.dir_name, file_name)
             imageio.mimsave(path, self.frames, fps=self.fps)
