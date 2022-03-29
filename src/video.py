@@ -1,6 +1,6 @@
 import imageio
 import os
-import datetime
+from datetime import datetime
 
 
 class VideoRecorder(object):
