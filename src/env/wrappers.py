@@ -105,29 +105,6 @@ class ColorWrapper(gym.Wrapper):
 		self.time_step += 1
 		# Make a step
 		next_obs, reward, done, info, change = self.env.step(action, rewards)  # # rewards already augmented
-		# TODO generalize to any task
-		cart_pos = info['physics']['cart_pos']
-
-		# Compute change depending on the cart position along slider
-		if self._mode in {'color_easy', 'color_hard'} and self._dependent:
-			rewards.append(reward)
-			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=self._window)
-
-			if np.abs(cart_pos) < 0.2 and not self._change : # avg_reward > self._threshold :
-				self._color = ((self._color + 25) % 100)
-				self.fix_color(self._color)
-				self._change = True
-			elif np.abs(cart_pos) >= 0.2 :
-				self._change = False
-
-			# if avg_reward > self._threshold and not self._change :
-			# 	self._color = ((self._color + 25) % 100)
-			# 	self.fix_color(self._color)
-			# 	self._change = True
-			# elif avg_reward < self._threshold :
-			# 	self._change = False
-
-			change = self._color
 
 		return next_obs, reward, done, info, change
 
@@ -343,11 +320,11 @@ class GreenScreen(gym.Wrapper):
 		# # TODO generalize to any task
 		#cart_pos = info['physics']['cart_pos']
 
-		if self._mode != 'train' and self._dependent:
+		if self._mode != 'train':
 			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
 
-			if 'steady' in self._mode and self._current_frame % 10 == 0: # set the frequency of the background shift
+			if 'steady' in self._mode and self._current_frame % 10 == 0 and self._dependent: # set the frequency of the background shift
 				self._change_background()
 
 				# if avg_reward > self._threshold :
