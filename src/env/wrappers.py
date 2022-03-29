@@ -275,6 +275,7 @@ class GreenScreen(gym.Wrapper):
 		self._window = window
 		self._hue_shift = 0
 		self._speed = speed
+		self._change = 0
 		self._current_frame = 0 # When speed is left unchanged to 1, is equivalent to steps we take
 		self._video = None
 
@@ -315,6 +316,7 @@ class GreenScreen(gym.Wrapper):
 	def reset(self):
 		self._current_frame = 0
 		self._hue_shift = 0
+		self._change = 0
 		return self._greenscreen(self.env.reset())
 
 	def step(self, action, rewards = None):
@@ -341,7 +343,7 @@ class GreenScreen(gym.Wrapper):
 				# 	obs = shift_hue(obs, f=self._hue_shift)
 
 		self._current_frame += self._speed
-		return self._greenscreen(obs), reward, done, info, self._hue_shift
+		return self._greenscreen(obs), reward, done, info, self._change
 
 	
 	def _interpolate_bg(self, bg, size:tuple):
@@ -355,6 +357,10 @@ class GreenScreen(gym.Wrapper):
 		"""Applies greenscreen if video or steady mode is selected, otherwise does nothing"""
 		if self._video:
 			bg = self._data[self._current_frame % len(self._data)] # select frame
+			if self._current_frame % len(self._data) == 0 :
+				self._change = 1
+			else :
+				self._change = 0
 			bg = self._interpolate_bg(bg, obs.shape[1:]) # scale bg to observation size
 			return do_green_screen(obs, bg) # apply greenscreen
 		if 'steady' in self._mode :
