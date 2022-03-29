@@ -314,8 +314,7 @@ class GreenScreen(gym.Wrapper):
 			background = os.path.join('src/env/data', background)
 			img = cv2.imread(background)
 			assert img.shape[0] >= 100 and img.shape[1] >= 100
-			self._data = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
+			self._data = np.moveaxis(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), -1, 0) # is 240, 240, 3 -> should be 3, 240, 240
 		self._max_episode_steps = env._max_episode_steps
 
 	def _load_video(self, video):
