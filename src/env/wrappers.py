@@ -326,7 +326,7 @@ class GreenScreen(gym.Wrapper):
 			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
 
-			if 'steady' in self._mode and self._current_frame % 10 == 0 and self._dependent: # set the frequency of the background shift
+			if 'steady' in self._mode and self._current_frame % 5 == 0 and self._dependent: # set the frequency of the background shift
 				self._change_background()
 
 				# if avg_reward > self._threshold :
