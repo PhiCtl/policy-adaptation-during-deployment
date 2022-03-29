@@ -285,7 +285,9 @@ class GreenScreen(gym.Wrapper):
 			self._video = os.path.join('src/env/data', self._video)
 			self._data = self._load_video(self._video)
 		elif 'steady' in mode:
-			assert(background is not None), "A background file path should be specified"
+
+			if background is None :
+				background = "video" + str(randint(1,8)) + "_frame"
 			if not background.endswith('.jpeg') :
 				background += '.jpeg'
 			background = os.path.join('src/env/data', background)
@@ -361,7 +363,7 @@ class GreenScreen(gym.Wrapper):
 			return do_green_screen(obs, bg)  # apply greenscreen
 		return obs
 
-	def _change_background(self, f=0.5):
+	def _change_background(self, f=0.2):
 		"""Shifts background hue : applying this function 5 times with f=0.2 leads back to original picture"""
 		self._data = shift_hue(self._data, f=f)
 
