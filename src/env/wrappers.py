@@ -309,6 +309,9 @@ class GreenScreen(gym.Wrapper):
 			self._data = self._load_video(self._video)
 		elif 'steady' in mode:
 			assert(background is not None), "A background file path should be specified"
+			if not background.endswith('.jpeg') :
+				background += '.jpeg'
+			background = os.path.join('src/env/data', background)
 			img = cv2.imread(background)
 			assert img.shape[0] >= 100 and img.shape[1] >= 100
 			self._data = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
