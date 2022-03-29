@@ -361,7 +361,7 @@ class GreenScreen(gym.Wrapper):
 			return do_green_screen(obs, bg)  # apply greenscreen
 		return obs
 
-	def _change_background(self, f=0.2):
+	def _change_background(self, f=0.5):
 		"""Shifts background hue : applying this function 5 times with f=0.2 leads back to original picture"""
 		self._data = shift_hue(self._data, f=f)
 
