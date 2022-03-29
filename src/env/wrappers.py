@@ -24,7 +24,8 @@ def make_pad_env(
 		dependent=False,
 		threshold=0,
 		window=3,
-		speed=1
+		speed=1,
+		background=None
 	):
 	"""Make environment for PAD experiments"""
 	env = dmc2gym.make(
@@ -39,7 +40,7 @@ def make_pad_env(
 		frame_skip=action_repeat
 	)
 	env.seed(seed)
-	env = GreenScreen(env, mode, threshold, dependent, window, speed)
+	env = GreenScreen(env, mode, threshold, dependent, window, speed, background)
 	env = FrameStack(env, frame_stack)
 	env = ColorWrapper(env, mode, threshold, dependent, window)
 
@@ -289,7 +290,7 @@ def do_green_screen(x, bg):
 
 class GreenScreen(gym.Wrapper):
 	"""Green screen for video experiments"""
-	def __init__(self, env, mode, threshold, dependent, window, speed):
+	def __init__(self, env, mode, threshold, dependent, window, speed=1, background=None):
 		gym.Wrapper.__init__(self, env)
 		self._mode = mode
 		self._threshold = threshold
@@ -297,7 +298,7 @@ class GreenScreen(gym.Wrapper):
 		self._window = window
 		self._hue_shift = 0
 		self._speed = speed
-		self._current_frame = 0
+		self._current_frame = 0 # When speed is left unchanged to 1, is equivalent to steps we take
 		self._video = None
 
 		if 'video' in mode:
@@ -307,9 +308,10 @@ class GreenScreen(gym.Wrapper):
 			self._video = os.path.join('src/env/data', self._video)
 			self._data = self._load_video(self._video)
 		elif 'steady' in mode:
-			self._video = None
-			self._data = np.ones((3, 100, 100), dtype=np.uint8) * 50
-			self._data[0,:,:] = 255
+			assert(background is not None), "A background file path should be specified"
+			img = cv2.imread(background)
+			assert img.shape[0] >= 100 and img.shape[1] >= 100
+			self._data = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
 		self._max_episode_steps = env._max_episode_steps
 
@@ -332,25 +334,19 @@ class GreenScreen(gym.Wrapper):
 	def reset(self):
 		self._current_frame = 0
 		self._hue_shift = 0
-		if 'steady' in self._mode :
-			self._data = np.ones((3, 100, 100), dtype=np.uint8) * 50
-			self._data[0, :, :] = 255
 		return self._greenscreen(self.env.reset())
 
 	def step(self, action, rewards = None):
 		obs, reward, done, info = self.env.step(action)
 		# # TODO generalize to any task
-		cart_pos = info['physics']['cart_pos']
+		#cart_pos = info['physics']['cart_pos']
 
-		#Compute change depending on the cart position along slider
 		if self._mode != 'train' and self._dependent:
 			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
 
-			if 'steady' in self._mode :
-
-				if cart_pos > 0.2 :
-					self._change_background()
+			if 'steady' in self._mode and self._current_frame % 10 == 0: # set the frequency of the background shift
+				self._change_background()
 
 				# if avg_reward > self._threshold :
 				# 	self._hue_shift = np.abs(self._hue_shift - 0.5)
@@ -386,10 +382,9 @@ class GreenScreen(gym.Wrapper):
 			return do_green_screen(obs, bg)  # apply greenscreen
 		return obs
 
-	def _change_background(self):
-		self._hue_shift = (self._hue_shift + 1) % 3
-		self._data[:,:,:] = 50
-		self._data[self._hue_shift,:,:] = 255
+	def _change_background(self, f=0.2):
+		"""Shifts background hue : applying this function 5 times with f=0.2 leads back to original picture"""
+		self._data = shift_hue(self._data, f=f)
 
 	def apply_to(self, obs):
 		"""Applies greenscreen mode of object to observation"""
