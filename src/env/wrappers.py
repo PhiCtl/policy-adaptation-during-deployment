@@ -273,7 +273,7 @@ class GreenScreen(gym.Wrapper):
 		self._threshold = threshold
 		self._dependent = dependent
 		self._window = window
-		self._hue_shift = 0
+		self._hue_shifted = False
 		self._speed = speed
 		self._change = 0
 		self._current_frame = 0 # When speed is left unchanged to 1, is equivalent to steps we take
@@ -315,7 +315,7 @@ class GreenScreen(gym.Wrapper):
 
 	def reset(self):
 		self._current_frame = 0
-		self._hue_shift = 0
+		self._hue_shifted = False
 		self._change = 0
 		return self._greenscreen(self.env.reset())
 
@@ -328,8 +328,12 @@ class GreenScreen(gym.Wrapper):
 			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
 
-			if 'steady' in self._mode and self._current_frame % 10 == 0 and self._dependent: # set the frequency of the background shift
-				self._change_background()
+			if 'steady' in self._mode and self._dependent: # set the frequency of the background shift
+				if avg_reward > self._threshold and not self._hue_shifted:
+					self._change_background()
+					self._hue_shifted = True
+				elif avg_reward < self._threshold :
+					self._hue_shifted = True
 
 				# if avg_reward > self._threshold :
 				# 	self._hue_shift = np.abs(self._hue_shift - 0.5)
@@ -372,6 +376,7 @@ class GreenScreen(gym.Wrapper):
 	def _change_background(self, f=0.2):
 		"""Shifts background hue : applying this function 5 times with f=0.2 leads back to original picture"""
 		self._data = shift_hue(self._data, f=f)
+		self._change = (self._change + 1 ) % 5 # for 0.2 only
 
 	def apply_to(self, obs):
 		"""Applies greenscreen mode of object to observation"""
