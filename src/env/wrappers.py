@@ -333,7 +333,7 @@ class GreenScreen(gym.Wrapper):
 					self._change_background()
 					self._hue_shifted = True
 				elif avg_reward < self._threshold :
-					self._hue_shifted = True
+					self._hue_shifted = False
 
 				# if avg_reward > self._threshold :
 				# 	self._hue_shift = np.abs(self._hue_shift - 0.5)
