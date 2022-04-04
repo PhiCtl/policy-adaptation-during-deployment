@@ -49,13 +49,14 @@ def make_pad_env(
 
 	return env
 
-def color_jitter(x) :
+def color_jitter(x, h, b) :
 
 	assert isinstance(x, np.ndarray), 'inputs must be numpy arrays'
 	assert x.dtype == np.uint8, 'inputs must be uint8 arrays'
 	im = TF.to_pil_image(torch.ByteTensor(x))
 	# jitter
-	img = ColorJitter(brightness=0.25, hue=0.3)(im)
+	img = TF.adjust_brightness(im, b)
+	img = TF.adjust_hue(img, h)
 	out = np.moveaxis(np.array(img), -1, 0)[:3]
 
 	return out
@@ -286,11 +287,14 @@ class GreenScreen(gym.Wrapper):
 			self._data = self._load_video(self._video)
 
 		elif 'steady' in mode:
-			if background is None :
-				background = "video" + str(randint(1,8)) + "_frame"
-			if not background.endswith('.jpeg') :
-				background += '.jpeg'
-			self._background = os.path.join('src/env/data', background)
+			if background is not None :
+				self._background = background
+			else :
+				self._background = "video" + str(randint(1,8)) + "_frame"
+
+			if not self._background.endswith('.jpeg') :
+				self._background += '.jpeg'
+			self._background = os.path.join('src/env/data', self._background)
 			img = cv2.imread(self._background)
 			assert img.shape[0] >= 100 and img.shape[1] >= 100
 			self._data = np.moveaxis(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), -1, 0) # is 240, 240, 3 -> should be 3, 240, 240
@@ -365,7 +369,7 @@ class GreenScreen(gym.Wrapper):
 		self._change = np.abs(self._change -1)
 
 	def _reset_background(self):
-		background = "video" + str(randint(1, 8)) + "_frame"
+		background = "video" + str(randint(1, 8)) + "_frame.jpeg"
 		self._background = os.path.join('src/env/data', background)
 		img = cv2.imread(self._background)
 		assert img.shape[0] >= 100 and img.shape[1] >= 100
