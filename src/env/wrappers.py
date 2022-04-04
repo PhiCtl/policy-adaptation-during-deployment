@@ -277,7 +277,6 @@ class GreenScreen(gym.Wrapper):
 		self._change = 0
 		self._current_frame = 0 # When speed is left unchanged to 1, is equivalent to steps we take
 		self._video = None
-		self._background = background
 
 		if 'video' in mode:
 			self._video = mode
@@ -287,11 +286,11 @@ class GreenScreen(gym.Wrapper):
 			self._data = self._load_video(self._video)
 
 		elif 'steady' in mode:
-			if self._background is None :
-				self._background = "video" + str(randint(1,8)) + "_frame"
-			if not self._background.endswith('.jpeg') :
-				self._background += '.jpeg'
-			self._background = os.path.join('src/env/data', self._background)
+			if background is None :
+				background = "video" + str(randint(1,8)) + "_frame"
+			if not background.endswith('.jpeg') :
+				background += '.jpeg'
+			self._background = os.path.join('src/env/data', background)
 			img = cv2.imread(self._background)
 			assert img.shape[0] >= 100 and img.shape[1] >= 100
 			self._data = np.moveaxis(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), -1, 0) # is 240, 240, 3 -> should be 3, 240, 240
