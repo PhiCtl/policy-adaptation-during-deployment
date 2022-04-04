@@ -49,14 +49,15 @@ def make_pad_env(
 
 	return env
 
-def color_jitter(x, h, b) :
+def color_jitter(x, params) :
 
 	assert isinstance(x, np.ndarray), 'inputs must be numpy arrays'
 	assert x.dtype == np.uint8, 'inputs must be uint8 arrays'
 	im = TF.to_pil_image(torch.ByteTensor(x))
 	# jitter
-	img = TF.adjust_brightness(im, b)
-	img = TF.adjust_hue(img, h)
+	img = TF.adjust_brightness(im, params["b"])
+	img = TF.adjust_hue(img, params["h"])
+	img = TF.adjust_contrast(img, params["c"])
 	out = np.moveaxis(np.array(img), -1, 0)[:3]
 
 	return out
@@ -276,6 +277,7 @@ class GreenScreen(gym.Wrapper):
 		self._window = window
 		self._speed = speed
 		self._change = 0
+		self._params = {"b" : 0.3, "h" : 0.2, "c" : 0.1}
 		self._current_frame = 0 # When speed is left unchanged to 1, is equivalent to steps we take
 		self._video = None
 
@@ -365,7 +367,8 @@ class GreenScreen(gym.Wrapper):
 
 	def _change_background(self, f=0.2):
 		"""Shifts background hue : applying this function 5 times with f=0.2 leads back to original picture"""
-		self._data = color_jitter(self._data)
+		self._update_params()
+		self._data = color_jitter(self._data, self._params)
 		self._change = np.abs(self._change -1)
 
 	def _reset_background(self):
@@ -375,6 +378,14 @@ class GreenScreen(gym.Wrapper):
 		assert img.shape[0] >= 100 and img.shape[1] >= 100
 		self._data = np.moveaxis(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), -1, 0)  # is 240, 240, 3 -> should be 3, 240, 240
 		self._ref_img = self._data.copy()
+
+	def _update_params(self):
+
+		b = (self._params["b"]*10 + 1) % 4 / 10 # {0, 0.1, 0.2, 0.3}
+		h = (self._params["h"]*10 + 1) % 6 / 10 # {0, .., 0.5}
+		c = (self._params["c"]*10 + 1) % 4 / 10 # {0, 0.1, 0.2, 0.3}
+
+		self._params = {"b" : b, "h" : h, "c" : c}
 
 	def apply_to(self, obs):
 		"""Applies greenscreen mode of object to observation"""
