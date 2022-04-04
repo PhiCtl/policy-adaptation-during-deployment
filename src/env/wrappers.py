@@ -277,7 +277,7 @@ class GreenScreen(gym.Wrapper):
 		self._window = window
 		self._speed = speed
 		self._change = 0
-		self._params = {"b" : 0.3, "h" : 0.2}
+		self._params = {"b" : 0.3, "h" : 0.2, "c" : 1.0 }
 		self._current_frame = 0 # When speed is left unchanged to 1, is equivalent to steps we take
 		self._video = None
 
