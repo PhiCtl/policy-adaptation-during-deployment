@@ -277,6 +277,7 @@ class GreenScreen(gym.Wrapper):
 		self._change = 0
 		self._current_frame = 0 # When speed is left unchanged to 1, is equivalent to steps we take
 		self._video = None
+		self._background = background
 
 		if 'video' in mode:
 			self._video = mode
@@ -284,14 +285,14 @@ class GreenScreen(gym.Wrapper):
 				self._video += '.mp4'
 			self._video = os.path.join('src/env/data', self._video)
 			self._data = self._load_video(self._video)
-		elif 'steady' in mode:
 
-			if background is None :
-				background = "video" + str(randint(1,8)) + "_frame"
-			if not background.endswith('.jpeg') :
-				background += '.jpeg'
-			background = os.path.join('src/env/data', background)
-			img = cv2.imread(background)
+		elif 'steady' in mode:
+			if self._background is None :
+				self._background = "video" + str(randint(1,8)) + "_frame"
+			if not self._background.endswith('.jpeg') :
+				self._background += '.jpeg'
+			self._background = os.path.join('src/env/data', self._background)
+			img = cv2.imread(self._background)
 			assert img.shape[0] >= 100 and img.shape[1] >= 100
 			self._data = np.moveaxis(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), -1, 0) # is 240, 240, 3 -> should be 3, 240, 240
 			self._ref_img = self._data.copy()
@@ -363,6 +364,14 @@ class GreenScreen(gym.Wrapper):
 		"""Shifts background hue : applying this function 5 times with f=0.2 leads back to original picture"""
 		self._data = color_jitter(self._data)
 		self._change = np.abs(self._change -1)
+
+	def _reset_background(self):
+		background = "video" + str(randint(1, 8)) + "_frame"
+		self._background = os.path.join('src/env/data', background)
+		img = cv2.imread(self._background)
+		assert img.shape[0] >= 100 and img.shape[1] >= 100
+		self._data = np.moveaxis(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), -1, 0)  # is 240, 240, 3 -> should be 3, 240, 240
+		self._ref_img = self._data.copy()
 
 	def apply_to(self, obs):
 		"""Applies greenscreen mode of object to observation"""
