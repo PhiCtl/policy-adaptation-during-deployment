@@ -366,10 +366,10 @@ class GreenScreen(gym.Wrapper):
 			return do_green_screen(obs, bg)  # apply greenscreen
 		return obs
 
-	def _change_background(self, f=0.2):
-		"""Shifts background hue : applying this function 5 times with f=0.2 leads back to original picture"""
+	def _change_background(self):
+		"""Shifts background hue, brightness and contrast"""
 		self._update_params()
-		self._data = color_jitter(self._data, self._params)
+		self._data = color_jitter(self._ref_img, self._params)
 		self._change = np.abs(self._change -1)
 
 	def _reset_background(self):
@@ -382,9 +382,9 @@ class GreenScreen(gym.Wrapper):
 
 	def _update_params(self):
 
-		b = max((self._params["b"] + 0.1) % 2, 0.6)
+		b = max((self._params["b"] + 0.3) % 3, 0.5)
 		h = (self._params["h"] * 10 + 1) % 6 / 10  # {0, .., 0.5}
-		c = max((self._params["c"] + 0.1) % 2, 0.8)
+		c = max((self._params["c"] + 0.2) % 3, 0.5)
 
 		self._params = {"b": b, "h": h, "c": c}
 
