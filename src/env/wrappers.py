@@ -11,7 +11,7 @@ import dmc2gym
 from dm_control.suite import common
 import cv2
 from collections import deque
-from utils import moving_average_reward, compute_speed, wrap_speed
+from utils import moving_average_reward, compute_speed, wrap_speed, compute_similarity
 
 def make_pad_env(
 		domain_name,
@@ -55,7 +55,7 @@ def color_jitter(x) :
 	assert x.dtype == np.uint8, 'inputs must be uint8 arrays'
 	im = TF.to_pil_image(torch.ByteTensor(x))
 	# jitter
-	img = ColorJitter(brightness=0.5, hue=0.3)(im)
+	img = ColorJitter(brightness=0.25, hue=0.3)(im)
 	out = np.moveaxis(np.array(img), -1, 0)[:3]
 
 	return out
@@ -273,7 +273,6 @@ class GreenScreen(gym.Wrapper):
 		self._threshold = threshold
 		self._dependent = dependent
 		self._window = window
-		self._hue_shifted = False
 		self._speed = speed
 		self._change = 0
 		self._current_frame = 0 # When speed is left unchanged to 1, is equivalent to steps we take
@@ -295,6 +294,7 @@ class GreenScreen(gym.Wrapper):
 			img = cv2.imread(background)
 			assert img.shape[0] >= 100 and img.shape[1] >= 100
 			self._data = np.moveaxis(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), -1, 0) # is 240, 240, 3 -> should be 3, 240, 240
+			self._ref_img = self._data.copy()
 		self._max_episode_steps = env._max_episode_steps
 
 	def _load_video(self, video):
@@ -329,11 +329,11 @@ class GreenScreen(gym.Wrapper):
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
 
 			if 'steady' in self._mode and self._dependent: # set the frequency of the background shift
-				if self._current_frame % 10 == 0 and cart_pos > 0:
+				if self._current_frame % 10 == 0 and avg_reward > self._threshold:
 					self._change_background()
 
 		self._current_frame += self._speed
-		return self._greenscreen(obs), reward, done, info, self._change
+		return self._greenscreen(obs), reward, done, info, compute_similarity(self._ref_img, self._data)
 
 	
 	def _interpolate_bg(self, bg, size:tuple):
