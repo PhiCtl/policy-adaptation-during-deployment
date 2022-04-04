@@ -322,7 +322,7 @@ class GreenScreen(gym.Wrapper):
 	def reset(self):
 		self._current_frame = 0
 		self._reset_background()
-		self._params = {"b" : 0.3, "h" : 0.2, "c" : 1.0 }
+		self._params = {"b" : 1.0, "h" : 0.2, "c" : 1.0 }
 		self._change = 0
 		return self._greenscreen(self.env.reset())
 
@@ -382,9 +382,9 @@ class GreenScreen(gym.Wrapper):
 
 	def _update_params(self):
 
-		b = max((self._params["b"] + 0.1) % 2, 0.6)
+		b = min(max((self._params["b"] + 0.1) % 2, 0.6), 1.7)
 		h = (self._params["h"] * 10 + 1) % 6 / 10  # {0, .., 0.5}
-		c = max((self._params["c"] + 0.1) % 2, 0.6)
+		c = min(max((self._params["c"] + 0.1) % 2, 0.8), 1.6)
 
 		self._params = {"b": b, "h": h, "c": c}
 
