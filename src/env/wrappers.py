@@ -56,6 +56,7 @@ def color_jitter(x, params) :
 	im = TF.to_pil_image(torch.ByteTensor(x))
 	# jitter
 	img = TF.adjust_brightness(im, params["b"])
+	img = TF.adjust_contrast(img, params["c"])
 	img = TF.adjust_hue(img, params["h"])
 	out = np.moveaxis(np.array(img), -1, 0)[:3]
 
@@ -276,7 +277,7 @@ class GreenScreen(gym.Wrapper):
 		self._window = window
 		self._speed = speed
 		self._change = 0
-		self._params = {"b" : 0.3, "h" : 0.2, "c" : 0.1}
+		self._params = {"b" : 0.3, "h" : 0.2}
 		self._current_frame = 0 # When speed is left unchanged to 1, is equivalent to steps we take
 		self._video = None
 
@@ -321,6 +322,7 @@ class GreenScreen(gym.Wrapper):
 	def reset(self):
 		self._current_frame = 0
 		self._reset_background()
+		self._params = {"b": 0.0, "h": 0.0}
 		self._change = 0
 		return self._greenscreen(self.env.reset())
 
@@ -380,10 +382,11 @@ class GreenScreen(gym.Wrapper):
 
 	def _update_params(self):
 
-		b = (self._params["b"]*10 + 1) % 3 / 10 # {0, 0.1, 0.2}
-		h = (self._params["h"]*10 + 1) % 6 / 10 # {0, .., 0.5}
+		b = max((self._params["b"] + 0.1) % 2, 0.6)
+		h = (self._params["h"] * 10 + 1) % 6 / 10  # {0, .., 0.5}
+		c = max((self._params["c"] + 0.1) % 2, 0.6)
 
-		self._params = {"b" : b, "h" : h}
+		self._params = {"b": b, "h": h, "c": c}
 
 	def apply_to(self, obs):
 		"""Applies greenscreen mode of object to observation"""
