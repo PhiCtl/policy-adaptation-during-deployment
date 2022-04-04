@@ -322,7 +322,7 @@ class GreenScreen(gym.Wrapper):
 	def reset(self):
 		self._current_frame = 0
 		self._reset_background()
-		self._params = {"b": 0.0, "h": 0.0}
+		self._params = {"b" : 0.3, "h" : 0.2, "c" : 1.0 }
 		self._change = 0
 		return self._greenscreen(self.env.reset())
 
