@@ -5,7 +5,7 @@ import gym
 import torch
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
-from torchvision.transforms import Grayscale
+from torchvision.transforms import Grayscale, ColorJitter
 from PIL import Image
 import dmc2gym
 from dm_control.suite import common
@@ -49,13 +49,13 @@ def make_pad_env(
 
 	return env
 
-def shift_hue(x, f=0.5) :
+def color_jitter(x) :
 
 	assert isinstance(x, np.ndarray), 'inputs must be numpy arrays'
 	assert x.dtype == np.uint8, 'inputs must be uint8 arrays'
-
 	im = TF.to_pil_image(torch.ByteTensor(x))
-	img = TF.adjust_hue(im, f)
+	# jitter
+	img = ColorJitter(brightness=0.5, hue=0.3)(im)
 	out = np.moveaxis(np.array(img), -1, 0)[:3]
 
 	return out
@@ -322,29 +322,15 @@ class GreenScreen(gym.Wrapper):
 	def step(self, action, rewards = None):
 		obs, reward, done, info = self.env.step(action)
 		# # TODO generalize to any task
-		#cart_pos = info['physics']['cart_pos']
+		cart_pos = info['physics']['cart_pos']
 
 		if self._mode != 'train':
 			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
 
 			if 'steady' in self._mode and self._dependent: # set the frequency of the background shift
-				if avg_reward > self._threshold and not self._hue_shifted:
+				if self._current_frame % 10 == 0 and avg_reward > self._threshold:
 					self._change_background()
-					self._hue_shifted = True
-				elif avg_reward < self._threshold :
-					self._hue_shifted = False
-
-				# if avg_reward > self._threshold :
-				# 	self._hue_shift = np.abs(self._hue_shift - 0.5)
-				# 	self._change = np.abs(self._change - 1)
-				# obs = shift_hue(obs, f=self._hue_shift)
-
-
-				# if np.abs(cart_pos) < 0.2:
-				# 	self._hue_shift = 0.5
-				# 	self._change = 1
-				# 	obs = shift_hue(obs, f=self._hue_shift)
 
 		self._current_frame += self._speed
 		return self._greenscreen(obs), reward, done, info, self._change
@@ -375,8 +361,8 @@ class GreenScreen(gym.Wrapper):
 
 	def _change_background(self, f=0.2):
 		"""Shifts background hue : applying this function 5 times with f=0.2 leads back to original picture"""
-		self._data = shift_hue(self._data, f=f)
-		self._change = (self._change + 1 ) % 5 # for 0.2 only
+		self._data = color_jitter(self._data)
+		self._change = np.abs(self._change -1)
 
 	def apply_to(self, obs):
 		"""Applies greenscreen mode of object to observation"""
