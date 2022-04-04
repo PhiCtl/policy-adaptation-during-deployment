@@ -382,9 +382,9 @@ class GreenScreen(gym.Wrapper):
 
 	def _update_params(self):
 
-		b = min(max((self._params["b"] + 0.1) % 2, 0.6), 1.7)
+		b = max((self._params["b"] + 0.1) % 2, 0.6)
 		h = (self._params["h"] * 10 + 1) % 6 / 10  # {0, .., 0.5}
-		c = min(max((self._params["c"] + 0.1) % 2, 0.8), 1.6)
+		c = max((self._params["c"] + 0.1) % 2, 0.8)
 
 		self._params = {"b": b, "h": h, "c": c}
 
