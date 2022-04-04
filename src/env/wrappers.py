@@ -57,7 +57,6 @@ def color_jitter(x, params) :
 	# jitter
 	img = TF.adjust_brightness(im, params["b"])
 	img = TF.adjust_hue(img, params["h"])
-	img = TF.adjust_contrast(img, params["c"])
 	out = np.moveaxis(np.array(img), -1, 0)[:3]
 
 	return out
@@ -335,7 +334,7 @@ class GreenScreen(gym.Wrapper):
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
 
 			if 'steady' in self._mode and self._dependent: # set the frequency of the background shift
-				if self._current_frame % 10 == 0 and cart_pos > 0 : 
+				if self._current_frame % 10 == 0 and cart_pos > 0 :
 					self._change_background()
 
 		self._current_frame += self._speed
@@ -381,11 +380,10 @@ class GreenScreen(gym.Wrapper):
 
 	def _update_params(self):
 
-		b = (self._params["b"]*10 + 1) % 4 / 10 # {0, 0.1, 0.2, 0.3}
+		b = (self._params["b"]*10 + 1) % 3 / 10 # {0, 0.1, 0.2}
 		h = (self._params["h"]*10 + 1) % 6 / 10 # {0, .., 0.5}
-		c = (self._params["c"]*10 + 1) % 4 / 10 # {0, 0.1, 0.2, 0.3}
 
-		self._params = {"b" : b, "h" : h, "c" : c}
+		self._params = {"b" : b, "h" : h}
 
 	def apply_to(self, obs):
 		"""Applies greenscreen mode of object to observation"""
