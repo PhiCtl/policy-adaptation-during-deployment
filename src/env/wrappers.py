@@ -49,6 +49,35 @@ def make_pad_env(
 
 	return env
 
+# def make_gym_env(
+# 		domain_name,
+# 		task_name,
+# 		seed=0,
+# 		episode_length=1000,
+# 		frame_stack=3,
+# 		action_repeat=4,
+# 		mode='train',
+# 		dependent=False,
+# 		threshold=0,
+# 		window=3,
+# 		speed=1,
+# 		background=None
+# ) :
+# 	"""Makes a gym env and wraps it"""
+#
+# 	env = gym.make(domain_name)
+# 	env.seed(seed)
+# 	env = GreenScreen(env, mode, threshold, dependent, window, speed, background)
+# 	env = FrameStack(env, frame_stack)
+# 	env = ColorWrapper(env, mode, threshold, dependent, window)
+#
+# 	assert env.action_space.low.min() >= -1
+# 	assert env.action_space.high.max() <= 1
+#
+# 	return env
+
+
+
 def color_jitter(x, params) :
 
 	assert isinstance(x, np.ndarray), 'inputs must be numpy arrays'
@@ -277,7 +306,7 @@ class GreenScreen(gym.Wrapper):
 		self._window = window
 		self._speed = speed
 		self._change = 0
-		self._params = {"b" : 0.3, "h" : 0.2, "c" : 1.0 }
+		self._params = {"b" : 1.0, "h" : 0.2, "c" : 1.0 }
 		self._current_frame = 0 # When speed is left unchanged to 1, is equivalent to steps we take
 		self._video = None
 
@@ -329,14 +358,14 @@ class GreenScreen(gym.Wrapper):
 	def step(self, action, rewards = None):
 		obs, reward, done, info = self.env.step(action)
 		# # TODO generalize to any task
-		cart_pos = info['physics']['cart_pos']
+		#cart_pos = info['physics']['cart_pos']
 
 		if self._mode != 'train':
 			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth = self._window)
 
 			if 'steady' in self._mode and self._dependent: # set the frequency of the background shift
-				if self._current_frame % 10 == 0 and cart_pos > 0 :
+				if self._current_frame > 1 and self._current_frame % 15 == 0 and avg_reward > self._threshold :
 					self._change_background()
 
 		self._current_frame += self._speed
@@ -382,9 +411,9 @@ class GreenScreen(gym.Wrapper):
 
 	def _update_params(self):
 
-		b = max((self._params["b"] + 0.3) % 3, 0.5)
+		b = max((self._params["b"] + 0.2) % 3, 0.5)
 		h = (self._params["h"] * 10 + 1) % 6 / 10  # {0, .., 0.5}
-		c = max((self._params["c"] + 0.2) % 3, 0.5)
+		c = max((self._params["c"] + 0.1) % 3, 0.5)
 
 		self._params = {"b": b, "h": h, "c": c}
 
