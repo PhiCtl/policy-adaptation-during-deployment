@@ -321,7 +321,7 @@ class GreenScreen(gym.Wrapper):
 			if background is not None :
 				self._background = background
 			else :
-				self._background = "video" + str(randint(1,8)) + "_frame"
+				self._background = "video" + str(randint(0,9)) + "_frame"
 
 			if not self._background.endswith('.jpeg') :
 				self._background += '.jpeg'
@@ -402,7 +402,7 @@ class GreenScreen(gym.Wrapper):
 		self._change = np.abs(self._change -1)
 
 	def _reset_background(self):
-		background = "video" + str(randint(1, 8)) + "_frame.jpeg"
+		background = "video" + str(randint(0, 9)) + "_frame.jpeg"
 		self._background = os.path.join('src/env/data', background)
 		img = cv2.imread(self._background)
 		assert img.shape[0] >= 100 and img.shape[1] >= 100
