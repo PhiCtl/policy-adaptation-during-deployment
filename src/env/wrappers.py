@@ -49,34 +49,6 @@ def make_pad_env(
 
 	return env
 
-# def make_gym_env(
-# 		domain_name,
-# 		task_name,
-# 		seed=0,
-# 		episode_length=1000,
-# 		frame_stack=3,
-# 		action_repeat=4,
-# 		mode='train',
-# 		dependent=False,
-# 		threshold=0,
-# 		window=3,
-# 		speed=1,
-# 		background=None
-# ) :
-# 	"""Makes a gym env and wraps it"""
-#
-# 	env = gym.make(domain_name)
-# 	env.seed(seed)
-# 	env = GreenScreen(env, mode, threshold, dependent, window, speed, background)
-# 	env = FrameStack(env, frame_stack)
-# 	env = ColorWrapper(env, mode, threshold, dependent, window)
-#
-# 	assert env.action_space.low.min() >= -1
-# 	assert env.action_space.high.max() <= 1
-#
-# 	return env
-
-
 
 def color_jitter(x, params) :
 
@@ -321,7 +293,7 @@ class GreenScreen(gym.Wrapper):
 			if background is not None :
 				self._background = background
 			else :
-				self._background = "video" + str(randint(0,9)) + "_frame"
+				self._background = "video" + str(randint(0,4)) + "_frame"
 
 			if not self._background.endswith('.jpeg') :
 				self._background += '.jpeg'
@@ -350,7 +322,7 @@ class GreenScreen(gym.Wrapper):
 
 	def reset(self):
 		self._current_frame = 0
-		#self._reset_background()
+		self._reset_background()
 		self._params = {"b" : 1.0, "h" : 0.0, "c" : 1.0 }
 		self._change = 0
 		return self._greenscreen(self.env.reset())
@@ -402,7 +374,7 @@ class GreenScreen(gym.Wrapper):
 		self._change = np.abs(self._change -1)
 
 	def _reset_background(self):
-		background = "video" + str(randint(0, 9)) + "_frame.jpeg"
+		background = "video" + str(randint(0, 4)) + "_frame.jpeg"
 		self._background = os.path.join('src/env/data', background)
 		img = cv2.imread(self._background)
 		assert img.shape[0] >= 100 and img.shape[1] >= 100
