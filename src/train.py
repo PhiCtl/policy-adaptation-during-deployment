@@ -60,6 +60,7 @@ def main(args):
 		action_shape=env.action_space.shape,
 		args=args
 	)
+	agent.load(model_dir, args.pad_checkpoint) # To keep on training...
 
 	L = Logger(args.work_dir, use_tb=False)
 	episode, episode_reward, done = 0, 0, True
@@ -80,7 +81,7 @@ def main(args):
 			# Save agent periodically
 			if step % args.save_freq == 0 and step > 0:
 				if args.save_model:
-					agent.save(model_dir, step)
+					agent.save(model_dir, step + args.pad_checkpoint)
 
 			L.log('train/episode_reward', episode_reward, step)
 
