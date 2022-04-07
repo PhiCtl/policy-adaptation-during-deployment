@@ -323,7 +323,7 @@ class GreenScreen(gym.Wrapper):
 	def reset(self):
 		self._current_frame = 0
 		self._reset_background()
-		self._params = {"b" : 1.0, "h" : 0.35, "c" : 1.0 }
+		self._params = {"b" : 1.0, "h" : 0.0, "c" : 1.0 }
 		self._change = 0
 		return self._greenscreen(self.env.reset())
 
@@ -337,8 +337,8 @@ class GreenScreen(gym.Wrapper):
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth=self._window)
 
 			if 'steady' in self._mode and self._dependent: # set the frequency of the background shift
-				if self._current_frame > 1 and self._current_frame % self._window == 0 :
-					self._change_background(avg_reward > self._threshold)
+				if self._current_frame > 1 and self._current_frame % self._window == 0 and avg_reward > self._threshold:
+					self._change_background()
 
 		self._current_frame += self._speed
 		return self._greenscreen(obs), reward, done, info, self._change #compute_similarity(self._ref_img, self._data)
@@ -369,7 +369,7 @@ class GreenScreen(gym.Wrapper):
 
 	def _change_background(self, change=True):
 		"""Shifts background hue, brightness and contrast"""
-		#self._update_params()
+		if change : self._update_params()
 		self._data = color_jitter(self._ref_img, self._params) if change else self._ref_img
 		self._change = np.abs(self._change -1)
 
