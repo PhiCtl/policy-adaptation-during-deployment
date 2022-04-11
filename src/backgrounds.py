@@ -6,6 +6,7 @@ from agent.agent import make_agent
 from utils import make_dir, EnvtRecorder
 from eval import evaluate, init_env
 from video import VideoRecorder
+from arguments import parse_args
 
 
 def main(args):
@@ -50,3 +51,7 @@ def main(args):
 
     # Save on recorder
     recorder.close()
+
+if __name__ == '__main__':
+	args = parse_args()
+	main(args)
