@@ -311,7 +311,7 @@ class GreenScreen(gym.Wrapper):
 
 		changes_list = self._background[:-4] + "csv"
 		df = pd.read_csv(changes_list, index_col = 0, converters={"params" : literal_eval})
-		self.changes_list = df.values()
+		self.changes_list = df["params"].values
 
 	def _load_video(self, video):
 		"""Load video from provided filepath and return as numpy array"""
