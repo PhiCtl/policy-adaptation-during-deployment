@@ -63,16 +63,6 @@ def color_jitter(x, params) :
 
 	return out
 
-def to_grayscale(x) :
-	assert isinstance(x, np.ndarray), 'inputs must be numpy arrays'
-	assert x.dtype == np.uint8, 'inputs must be uint8 arrays'
-
-	im = TF.to_pil_image(torch.ByteTensor(x))
-	out = Grayscale(num_output_channels=3)(im)
-	out = np.moveaxis(np.array(out), -1, 0)[:3]
-
-	return out
-
 class ColorWrapper(gym.Wrapper):
 	"""Wrapper for the color experiments"""
 	def __init__(self, env, mode, threshold, dependent, window):
@@ -119,6 +109,12 @@ class ColorWrapper(gym.Wrapper):
 		assert 'color' in self._mode, f'can only set color in color mode, received {self._mode}'
 		assert (nb >= 0 and nb < 100)
 		self.reload_physics(self.get_fixed_color(nb))
+
+	def load_background(self, bg):
+		return self.env.load_background(bg)
+
+	def change_background(self, params):
+		return self.env.change_background(params)
 
 	def _load_colors(self):
 		assert self._mode in {'color_easy', 'color_hard'}
@@ -209,6 +205,12 @@ class FrameStack(gym.Wrapper):
 		self._frames.append(obs)
 		return self._get_obs(), reward, done, info, change
 
+	def load_background(self, bg):
+		return self.env.load_background(bg)
+
+	def change_background(self, params):
+		return self.env.change_background(params)
+
 	def _get_obs(self):
 		assert len(self._frames) == self._k
 		return np.concatenate(list(self._frames), axis=0)
@@ -290,19 +292,21 @@ class GreenScreen(gym.Wrapper):
 			self._data = self._load_video(self._video)
 
 		elif 'steady' in mode:
-			if background is not None :
-				self._background = background
-			else :
-				self._background = "video" + str(randint(0,4)) + "_frame"
+			if background is None :
+				background = "video" + str(randint(0,4)) + "_frame"
+			if not background.endswith('.jpeg') :
+				background += '.jpeg'
+			self._set_background(background)
 
-			if not self._background.endswith('.jpeg') :
-				self._background += '.jpeg'
-			self._background = os.path.join('src/env/data', self._background)
-			img = cv2.imread(self._background)
-			assert img.shape[0] >= 100 and img.shape[1] >= 100
-			self._data = np.moveaxis(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), -1, 0) # is 240, 240, 3 -> should be 3, 240, 240
-			self._ref_img = self._data.copy()
 		self._max_episode_steps = env._max_episode_steps
+
+	def _set_background(self, bg):
+		self._background = os.path.join('src/env/data', bg)
+		img = cv2.imread(self._background)
+		assert img.shape[0] >= 100 and img.shape[1] >= 100
+		self._data = np.moveaxis(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), -1, 0)  # is 240, 240, 3 -> should be 3, 240, 240
+		self._ref_img = self._data.copy()
+
 
 	def _load_video(self, video):
 		"""Load video from provided filepath and return as numpy array"""
@@ -322,27 +326,29 @@ class GreenScreen(gym.Wrapper):
 
 	def reset(self):
 		self._current_frame = 0
-		self._reset_background()
 		self._params = {"b" : 1.0, "h" : 0.0, "c" : 1.0 }
 		self._change = 0
 		return self._greenscreen(self.env.reset())
 
 	def step(self, action, rewards = None):
 		obs, reward, done, info = self.env.step(action)
-		# # TODO generalize to any task
-		#cart_pos = info['physics']['cart_pos']
 
 		if self._mode != 'train':
 			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth=self._window)
 
-			if 'steady' in self._mode and self._dependent: # set the frequency of the background shift
-				if self._current_frame > 1 and self._current_frame % self._window == 0 and avg_reward > self._threshold:
-					self._change_background()
+			# if 'steady' in self._mode and self._dependent: # set the frequency of the background shift
+			# 	if self._current_frame > 1 and self._current_frame % self._window == 0 and avg_reward > self._threshold:
+			# 		self._change_background()
 
 		self._current_frame += self._speed
 		return self._greenscreen(obs), reward, done, info, self._change #compute_similarity(self._ref_img, self._data)
 
+	def load_background(self, bg):
+		self._set_background(bg)
+
+	def change_background(self, params):
+		self._data = color_jitter(self._ref_img, params)
 	
 	def _interpolate_bg(self, bg, size:tuple):
 		"""Interpolate background to size of observation"""
@@ -367,27 +373,10 @@ class GreenScreen(gym.Wrapper):
 			return do_green_screen(obs, bg)  # apply greenscreen
 		return obs
 
-	def _change_background(self, change=True):
-		"""Shifts background hue, brightness and contrast"""
-		if change : self._update_params()
-		self._data = color_jitter(self._ref_img, self._params) if change else self._ref_img
-		self._change = np.abs(self._change -1)
 
 	def _reset_background(self):
 		background = "video" + str(randint(0, 4)) + "_frame.jpeg"
-		self._background = os.path.join('src/env/data', background)
-		img = cv2.imread(self._background)
-		assert img.shape[0] >= 100 and img.shape[1] >= 100
-		self._data = np.moveaxis(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), -1, 0)  # is 240, 240, 3 -> should be 3, 240, 240
-		self._ref_img = self._data.copy()
-
-	def _update_params(self):
-
-		b = max((self._params["b"] + 0.2) % 3, 0.5)
-		h = (self._params["h"] * 10 + 1) % 6 / 10  # {0, .., 0.5}
-		c = max((self._params["c"] + 0.1) % 3, 0.5)
-
-		self._params = {"b": b, "h": h, "c": c}
+		self._set_background(background)
 
 	def apply_to(self, obs):
 		"""Applies greenscreen mode of object to observation"""
