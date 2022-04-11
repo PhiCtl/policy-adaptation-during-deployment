@@ -22,11 +22,29 @@ class eval_mode(object):
             model.train(state)
         return False
 
-class AdaptRecorder(object):
+class Recorder(object) :
 
     def __init__(self, save_dir, type):
         self._save_dir = save_dir
         self._type = type
+
+    def reset(self):
+        raise NotImplementedError
+
+    def update(self, change, reward):
+        raise NotImplementedError
+
+    def end_episode(self):
+        self.reset()
+
+    def save(self, file_name, adapt):
+        raise NotImplementedError
+
+
+class AdaptRecorder(Recorder):
+
+    def __init__(self, save_dir, type):
+        super().__init__(save_dir, type)
         self.changes_tot, self.changes = [], []
         self.rewards_tot, self.rewards = [], []
 
@@ -54,8 +72,48 @@ class AdaptRecorder(object):
         file_name += self._type
         file_name += "_pad.csv" if adapt else "_eval.csv"
         df_tot.to_csv(os.path.join(self._save_dir, file_name))
+        self.changes_tot, self.rewards_tot = [], []
 
-def moving_average_reward(rewards, current_ep=None, wind_lgth=10):
+class EnvtRecorder(Recorder) :
+
+    def __init__(self, save_dir, type):
+        super().__init__(save_dir,type)
+        self.rewards_cumul, self.reward = [], 0
+        self.df = []
+        self.params, self.bg_name = None, None
+
+    def reset(self):
+        self.reward = 0
+
+    def update(self, change, reward):
+        self.reward += reward
+
+    def end_episode(self):
+        self.rewards_cumul.append(self.reward)
+        self.reset()
+
+    def save(self, file_name, adapt):
+        self.df.append({"background" : self.bg_name,
+                        "params" : list(self.params.values()),
+                        "mean cumulative" : np.mean(self.rewards_cumul),
+                        "std cumulative" : np.std(self.rewards_cumul)})
+        self.rewards_cumul = []
+
+    def load_background(self, bg):
+        self.bg_name = bg
+
+    def load_change(self, params):
+        self.params = params
+
+    def close(self):
+        self.df = pd.DataFrame(self.df)
+        file_name = datetime.now().strftime("%H-%M-%S") + "_change_"
+        file_name += self._type
+        file_name += "_eval.csv"
+        self.df.to_csv(os.path.join(self._save_dir, file_name))
+
+
+def moving_average_reward(rewards, current_ep=None, wind_lgth=15):
     # Causal convolutional filter
     w = np.concatenate((np.zeros(wind_lgth + 1), np.ones(wind_lgth))).astype(np.float64) / (wind_lgth)
     avg = convolve1d(rewards, w, mode='nearest')
