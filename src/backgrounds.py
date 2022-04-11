@@ -40,7 +40,7 @@ def main(args):
     for i in range(4) :
         bg = "video" + str(i) + "_frame.jpeg"
         env.load_background(bg)
-        recorder.update_background(bg)
+        recorder.load_background(bg)
         print(f'Evaluating {bg} for {args.pad_num_episodes} episodes (mode: {args.mode})')
 
         for h, c, b in combinations:
