@@ -15,6 +15,7 @@ def main(args):
     contrast = [0.5, 1, 1.5]
     brightness = [0.5, 1, 1.5]
     combinations = list(itertools.product(hue, contrast, brightness))
+    print("Generated combinations")
 
     # create env
     env = init_env(args)
