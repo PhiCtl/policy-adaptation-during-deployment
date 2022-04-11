@@ -18,8 +18,10 @@ python3 src/eval.py \
 	--work_dir logs/cartpole_swingup/inv/0 \
 	--pad_checkpoint 500k \
 	--pad_num_episodes 1 \
-	--episode_length 3000 \
+	--episode_length 2000 \
 	--dependent \
-	--threshold 3 \
-	--save_video
+	--threshold 6 \
+	--save_video \
+	--background video0_frame \
+	--window 10
 

@@ -13,10 +13,9 @@ from agent.agent import make_agent
 from utils import get_curl_pos_neg, AdaptRecorder
 
 
-def evaluate(env, agent, args, video, adapt=False):
+def evaluate(env, agent, args, video, recorder, adapt=False):
 	"""Evaluate an agent, optionally adapt using PAD"""
 	episode_rewards = []
-	recorder = AdaptRecorder(args.work_dir, args.mode)
 
 	for i in tqdm(range(args.pad_num_episodes)):
 		ep_agent = deepcopy(agent) # make a new copy
@@ -123,9 +122,12 @@ def main(args):
 	)
 	agent.load(model_dir, args.pad_checkpoint)
 
+	# Recorder
+	recorder = AdaptRecorder(args.work_dir, args.mode)
+
 	# Evaluate agent without PAD
 	print(f'Evaluating {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-	eval_reward, std = evaluate(env, agent, args, video)
+	eval_reward, std = evaluate(env, agent, args, video, recorder)
 	print('eval reward:', int(eval_reward), ' +/- ', int(std))
 
 	# Evaluate agent with PAD (if applicable)
@@ -133,7 +135,7 @@ def main(args):
 	if args.use_inv or args.use_curl or args.use_rot:
 		env = init_env(args)
 		print(f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-		pad_reward, std = evaluate(env, agent, args, video, adapt=True)
+		pad_reward, std = evaluate(env, agent, args, video, recorder, adapt=True)
 		print('pad reward:', int(pad_reward), ' +/- ', int(std))
 
 	# Save results

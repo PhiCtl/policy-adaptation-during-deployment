@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.random import randint
-import os
+import os, pickle
 import gym
 import torch
 import torch.nn.functional as F
@@ -280,7 +280,7 @@ class GreenScreen(gym.Wrapper):
 		self._window = window
 		self._speed = speed
 		self._change = 0
-		self._params = {"b" : 1.0, "h" : 0.2, "c" : 1.0 }
+		self._params = {"b" : 1.0, "h" : 0.0, "c" : 1.0 }
 		self._current_frame = 0 # When speed is left unchanged to 1, is equivalent to steps we take
 		self._video = None
 
@@ -307,6 +307,9 @@ class GreenScreen(gym.Wrapper):
 		self._data = np.moveaxis(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), -1, 0)  # is 240, 240, 3 -> should be 3, 240, 240
 		self._ref_img = self._data.copy()
 
+		changes_list = self._background[:-4] + "pickle"
+		with open(changes_list, 'rb') as handle :
+			self.changes_list = pickle.load(handle)
 
 	def _load_video(self, video):
 		"""Load video from provided filepath and return as numpy array"""
@@ -337,9 +340,9 @@ class GreenScreen(gym.Wrapper):
 			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth=self._window)
 
-			# if 'steady' in self._mode and self._dependent: # set the frequency of the background shift
-			# 	if self._current_frame > 1 and self._current_frame % self._window == 0 and avg_reward > self._threshold:
-			# 		self._change_background()
+			if 'steady' in self._mode and self._dependent: # set the frequency of the background shift
+				if self._current_frame > 1 and avg_reward > self._threshold:
+					self._change_background()
 
 		self._current_frame += self._speed
 		return self._greenscreen(obs), reward, done, info, self._change #compute_similarity(self._ref_img, self._data)
@@ -349,6 +352,10 @@ class GreenScreen(gym.Wrapper):
 
 	def change_background(self, params):
 		self._data = color_jitter(self._ref_img, params)
+		self._change = (self._change + 1) % len(self.changes_list)
+
+	def _change_background(self):
+		self.change_background(self.changes_list[self._change])
 	
 	def _interpolate_bg(self, bg, size:tuple):
 		"""Interpolate background to size of observation"""
