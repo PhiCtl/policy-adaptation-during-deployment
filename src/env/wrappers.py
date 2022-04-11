@@ -336,6 +336,7 @@ class GreenScreen(gym.Wrapper):
 		self._current_frame = 0
 		self._params = {"b" : 1.0, "h" : 0.0, "c" : 1.0 }
 		self._change = 0
+		self._has_changed = False
 		return self._greenscreen(self.env.reset())
 
 	def step(self, action, rewards = None):
@@ -356,7 +357,7 @@ class GreenScreen(gym.Wrapper):
 			if 'steady' in self._mode and self._time_dependent :
 				info["stop_training"] = avg_reward > self._threshold
 				if self._current_frame > 1 and self._current_frame % self._window == 0 :
-					self.change_background()
+					self._change_background()
 
 
 		self._current_frame += self._speed
