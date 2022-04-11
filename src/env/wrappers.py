@@ -113,8 +113,8 @@ class ColorWrapper(gym.Wrapper):
 		assert (nb >= 0 and nb < 100)
 		self.reload_physics(self.get_fixed_color(nb))
 
-	def load_background(self, bg):
-		return self.env.load_background(bg)
+	def load_background(self, bg, evaluate=False):
+		return self.env.load_background(bg, evaluate)
 
 	def change_background(self, params):
 		return self.env.change_background(params)
@@ -208,8 +208,8 @@ class FrameStack(gym.Wrapper):
 		self._frames.append(obs)
 		return self._get_obs(), reward, done, info, change
 
-	def load_background(self, bg):
-		return self.env.load_background(bg)
+	def load_background(self, bg, evaluate=False):
+		return self.env.load_background(bg, evaluate)
 
 	def change_background(self, params):
 		return self.env.change_background(params)
