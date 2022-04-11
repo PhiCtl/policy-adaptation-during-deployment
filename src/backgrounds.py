@@ -39,11 +39,13 @@ def main(args):
     for i in [1] :
         bg = "video" + str(i) + "_frame_hard.jpeg"
         env.load_background(bg, evaluate=True)
+        recorder.load_background(bg)
         print(f'Evaluating {bg} for {args.pad_num_episodes} episodes (mode: {args.mode})')
 
         for h, c, b in combinations:
 
             env.change_background({"b" : b, "h": h, "c" : c})
+            recorder.load_change({"b" : b, "h": h, "c" : c})
             eval_reward, std = evaluate(env, agent, args, video, recorder) # TODO : modify None
             print("Params h {} b {} c {} mean {} std {}".format(h,b,c,eval_reward, std))
 
