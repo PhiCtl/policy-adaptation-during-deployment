@@ -13,8 +13,8 @@ def main(args):
 
     # Generate lists of modifs
     hue = [0.1, 0.2, 0.3, 0.4, 0.5]
-    contrast = [0.5, 1, 1.5]
-    brightness = [0.5, 1, 1.5]
+    contrast = [0.5, 1.5]
+    brightness = [0.5, 1.5]
     combinations = list(itertools.product(hue, contrast, brightness))
     print("Generated combinations")
 
