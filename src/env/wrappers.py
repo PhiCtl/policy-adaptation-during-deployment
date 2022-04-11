@@ -24,6 +24,7 @@ def make_pad_env(
 		action_repeat=4,
 		mode='train',
 		dependent=False,
+		time_dependent=False,
 		threshold=0,
 		window=3,
 		speed=1,
@@ -42,7 +43,7 @@ def make_pad_env(
 		frame_skip=action_repeat
 	)
 	env.seed(seed)
-	env = GreenScreen(env, mode, threshold, dependent, window, speed, background)
+	env = GreenScreen(env, mode, threshold, dependent, time_dependent, window, speed, background)
 	env = FrameStack(env, frame_stack)
 	env = ColorWrapper(env, mode, threshold, dependent, window)
 
@@ -274,14 +275,16 @@ def do_green_screen(x, bg):
 
 class GreenScreen(gym.Wrapper):
 	"""Green screen for video experiments"""
-	def __init__(self, env, mode, threshold, dependent, window, speed=1, background=None):
+	def __init__(self, env, mode, threshold, dependent, time_dependent, window, speed=1, background=None):
 		gym.Wrapper.__init__(self, env)
 		self._mode = mode
 		self._threshold = threshold
 		self._dependent = dependent
+		self._time_dependent = time_dependent
 		self._window = window
 		self._speed = speed
 		self._change = 0
+		self._has_changed = False
 		self._params = {"b" : 1.0, "h" : 0.0, "c" : 1.0 }
 		self._current_frame = 0 # When speed is left unchanged to 1, is equivalent to steps we take
 		self._video = None
@@ -343,8 +346,18 @@ class GreenScreen(gym.Wrapper):
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth=self._window)
 
 			if 'steady' in self._mode and self._dependent: # set the frequency of the background shift
-				if self._current_frame > 1 and avg_reward > self._threshold:
+				if avg_reward > self._threshold and not self._has_changed:
 					self._change_background()
+					self._has_changed = True
+				if avg_reward < self._threshold :
+					self._has_changed = False
+
+			if 'steady' in self._mode and self._time_dependent :
+				info["stop_training"] = False
+				if self._current_frame > 1 and self._current_frame % self._window == 0 :
+					self.change_background()
+					#info["stop_tr"]
+
 
 		self._current_frame += self._speed
 		return self._greenscreen(obs), reward, done, info, self._change #compute_similarity(self._ref_img, self._data)
