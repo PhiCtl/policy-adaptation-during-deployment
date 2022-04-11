@@ -36,21 +36,17 @@ def main(args):
     recorder = EnvtRecorder(args.work_dir, args.mode)
 
     # Apply to background and evaluate on non PAD
-    for i in range(4) :
-        bg = "video" + str(i) + "_frame.jpeg"
-        env.load_background(bg)
-        recorder.load_background(bg)
+    for i in [1] :
+        bg = "video" + str(i) + "_frame_hard.jpeg"
+        env.load_background(bg, evaluate=True)
         print(f'Evaluating {bg} for {args.pad_num_episodes} episodes (mode: {args.mode})')
 
         for h, c, b in combinations:
 
             env.change_background({"b" : b, "h": h, "c" : c})
-            recorder.load_change({"b" : b, "h": h, "c" : c})
-            eval_reward, std = evaluate(env, agent, args, video, recorder)
+            eval_reward, std = evaluate(env, agent, args, video, recorder) # TODO : modify None
             print("Params h {} b {} c {} mean {} std {}".format(h,b,c,eval_reward, std))
 
-    # Save on recorder
-    recorder.close()
 
 if __name__ == '__main__':
 	args = parse_args()

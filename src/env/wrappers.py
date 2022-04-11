@@ -305,16 +305,17 @@ class GreenScreen(gym.Wrapper):
 
 		self._max_episode_steps = env._max_episode_steps
 
-	def _set_background(self, bg):
+	def _set_background(self, bg, evaluate=False):
 		self._background = os.path.join('src/env/data', bg)
 		img = cv2.imread(self._background)
 		assert img.shape[0] >= 100 and img.shape[1] >= 100
 		self._data = np.moveaxis(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), -1, 0)  # is 240, 240, 3 -> should be 3, 240, 240
 		self._ref_img = self._data.copy()
 
-		changes_list = self._background[:-4] + "csv"
-		df = pd.read_csv(changes_list, index_col = 0, converters={"params" : literal_eval})
-		self.changes_list = df["params"].values
+		if not evaluate :
+			changes_list = self._background[:-4] + "csv"
+			df = pd.read_csv(changes_list, index_col = 0, converters={"params" : literal_eval})
+			self.changes_list = df["params"].values
 
 	def _load_video(self, video):
 		"""Load video from provided filepath and return as numpy array"""
@@ -363,8 +364,8 @@ class GreenScreen(gym.Wrapper):
 		self._current_frame += self._speed
 		return self._greenscreen(obs), reward, done, info, self._change #compute_similarity(self._ref_img, self._data)
 
-	def load_background(self, bg):
-		self._set_background(bg)
+	def load_background(self, bg, evaluate=False):
+		self._set_background(bg, evaluate)
 
 	def change_background(self, params):
 		self._data = color_jitter(self._ref_img, params)
