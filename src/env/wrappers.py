@@ -1,6 +1,8 @@
 import numpy as np
+import pandas as pd
 from numpy.random import randint
-import os, pickle
+from ast import literal_eval
+import os
 import gym
 import torch
 import torch.nn.functional as F
@@ -307,9 +309,8 @@ class GreenScreen(gym.Wrapper):
 		self._data = np.moveaxis(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), -1, 0)  # is 240, 240, 3 -> should be 3, 240, 240
 		self._ref_img = self._data.copy()
 
-		changes_list = self._background[:-4] + "pickle"
-		with open(changes_list, 'rb') as handle :
-			self.changes_list = pickle.load(handle)
+		changes_list = self._background[:-4] + "csv"
+		df = pd.read_csv(changes_list, index_col = 0, converters={"params" : literal_eval})
 
 	def _load_video(self, video):
 		"""Load video from provided filepath and return as numpy array"""
