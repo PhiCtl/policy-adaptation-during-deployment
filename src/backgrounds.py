@@ -16,7 +16,6 @@ def main(args):
     contrast = [0.5, 1.5]
     brightness = [0.5, 1.5]
     combinations = list(itertools.product(hue, contrast, brightness))
-    print("Generated combinations")
 
     # create env
     env = init_env(args)
@@ -48,6 +47,7 @@ def main(args):
             env.change_background({"b" : b, "h": h, "c" : c})
             recorder.load_change({"b" : b, "h": h, "c" : c})
             eval_reward, std = evaluate(env, agent, args, video, recorder)
+            print("Params h {} b {} c {} mean {} std {}".format(h,b,c,eval_reward, std))
 
     # Save on recorder
     recorder.close()
