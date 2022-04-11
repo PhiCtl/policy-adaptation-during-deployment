@@ -342,6 +342,7 @@ class GreenScreen(gym.Wrapper):
 		obs, reward, done, info = self.env.step(action)
 
 		if self._mode != 'train':
+			info["stop_training"] = False
 			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth=self._window)
 
@@ -353,10 +354,9 @@ class GreenScreen(gym.Wrapper):
 					self._has_changed = False
 
 			if 'steady' in self._mode and self._time_dependent :
-				info["stop_training"] = False
+				info["stop_training"] = avg_reward > self._threshold
 				if self._current_frame > 1 and self._current_frame % self._window == 0 :
 					self.change_background()
-					#info["stop_tr"]
 
 
 		self._current_frame += self._speed

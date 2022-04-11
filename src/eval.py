@@ -39,12 +39,12 @@ def evaluate(env, agent, args, video, recorder, adapt=False):
 			# Take step
 			with utils.eval_mode(ep_agent):
 				action = ep_agent.select_action(obs)
-			next_obs, reward, done, _, change = env.step(action, rewards)
+			next_obs, reward, done, info, change = env.step(action, rewards)
 			episode_reward += reward
 			recorder.update(change, reward)
 
 			# Make self-supervised update if flag is true
-			if adapt:
+			if adapt and not info["stop_training"]:
 				if args.use_rot: # rotation prediction
 
 					# Prepare batch of cropped observations
@@ -98,6 +98,7 @@ def init_env(args):
 			action_repeat=args.action_repeat,
 			mode=args.mode,
 			dependent=args.dependent,
+			time_dependent=args.time_dependent,
 			threshold=args.threshold,
 			window=args.window,
 			speed=args.video_speed,
