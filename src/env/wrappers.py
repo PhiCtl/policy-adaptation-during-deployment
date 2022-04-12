@@ -344,9 +344,9 @@ class GreenScreen(gym.Wrapper):
 		obs, reward, done, info = self.env.step(action)
 
 		if self._mode != 'train':
+			rewards.append(reward)
 			avg_small_rew = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth=5)
 			info["continue_training"] = avg_small_rew < self._threshold
-			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth=self._window)
 
 			if 'steady' in self._mode and self._dependent: # set the frequency of the background shift
