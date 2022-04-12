@@ -362,7 +362,7 @@ class GreenScreen(gym.Wrapper):
 
 
 		self._current_frame += self._speed
-		return self._greenscreen(obs), reward, done, info, compute_distance(self._ref_img, self._data)
+		return self._greenscreen(obs), reward, done, info, self._change
 
 	def load_background(self, bg, evaluate=False):
 		self._set_background(bg, evaluate)

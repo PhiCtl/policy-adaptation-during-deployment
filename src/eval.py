@@ -44,7 +44,7 @@ def evaluate(env, agent, args, video, recorder, adapt=False):
 			recorder.update(change, reward)
 
 			# Make self-supervised update if flag is true
-			if adapt and not info["stop_training"]:
+			if adapt and info["continue_training"]:
 				if args.use_rot: # rotation prediction
 
 					# Prepare batch of cropped observations

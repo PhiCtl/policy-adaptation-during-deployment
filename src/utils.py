@@ -2,6 +2,7 @@ import pandas as pd
 import torch
 import numpy as np
 from scipy.ndimage import convolve1d
+import cv2
 import os
 from datetime import datetime
 import random
@@ -22,7 +23,8 @@ class eval_mode(object):
             model.train(state)
         return False
 
-class Recorder(object) :
+
+class Recorder(object):
 
     def __init__(self, save_dir, type):
         self._save_dir = save_dir
@@ -65,7 +67,8 @@ class AdaptRecorder(Recorder):
         self.rewards_tot = np.array(self.rewards_tot).transpose()
         self.changes_tot = np.array(self.changes_tot).transpose()
         df_r = pd.DataFrame(self.rewards_tot, columns=[f'episode_{i}_reward' for i in range(self.rewards_tot.shape[1])])
-        df_s = pd.DataFrame(self.changes_tot, columns=[f'episode_{i}_{self._type}' for i in range(self.changes_tot.shape[1])])
+        df_s = pd.DataFrame(self.changes_tot,
+                            columns=[f'episode_{i}_{self._type}' for i in range(self.changes_tot.shape[1])])
         df_tot = df_r.join(df_s)
         # Rename file and folders
         file_name += datetime.now().strftime("%H-%M-%S")
@@ -74,10 +77,11 @@ class AdaptRecorder(Recorder):
         df_tot.to_csv(os.path.join(self._save_dir, file_name))
         self.changes_tot, self.rewards_tot = [], []
 
-class EnvtRecorder(Recorder) :
+
+class EnvtRecorder(Recorder):
 
     def __init__(self, save_dir, type):
-        super().__init__(save_dir,type)
+        super().__init__(save_dir, type)
         self.rewards_cumul, self.reward = [], 0
         self.df = []
         self.params, self.bg_name = None, None
@@ -93,10 +97,10 @@ class EnvtRecorder(Recorder) :
         self.reset()
 
     def save(self, file_name, adapt):
-        self.df.append({"background" : self.bg_name,
-                        "params" : list(self.params.values()),
-                        "mean cumulative" : np.mean(self.rewards_cumul),
-                        "std cumulative" : np.std(self.rewards_cumul)})
+        self.df.append({"background": self.bg_name,
+                        "params": list(self.params.values()),
+                        "mean cumulative": np.mean(self.rewards_cumul),
+                        "std cumulative": np.std(self.rewards_cumul)})
         self.rewards_cumul = []
 
     def load_background(self, bg):
@@ -123,17 +127,32 @@ def moving_average_reward(rewards, current_ep=None, wind_lgth=15):
         assert current_ep >= 0
         return avg[current_ep]
 
-def compute_similarity(img_1, img_2) :
-    return np.sqrt(((img_1 - img_2)**2).sum())
 
-def compute_speed(avg_reward, max_speed, coef = 0.1, max_reward=8):
-    return (max_speed * np.exp( coef * (avg_reward  - max_reward))).astype(int)
+def compute_distance(img1, img2):
+    img1_hsv = cv2.cvtColor(img1, cv2.COLOR_BGR2HSV)[20:40, 20:40, :]
+    img2_hsv = cv2.cvtColor(img2, cv2.COLOR_BGR2HSV)[20:40, 20:40, :]
 
-def wrap_speed(speed, max) :
+    x1 = np.cos(img1[:, :, 0] * np.pi / 180) * img1[:, :, 1]
+    y1 = np.sin(img1[:, :, 0] * np.pi / 180) * img1[:, :, 1]
+    z1 = img1[:, :, 2]
+
+    x2 = np.cos(img2[:, :, 0] * np.pi / 180) * img2[:, :, 1]
+    y2 = np.sin(img2[:, :, 0] * np.pi / 180) * img2[:, :, 1]
+    z2 = img2[:, :, 2]
+
+    return np.sqrt(((x1 - x2) ** 2 + (y1 - y2) ** 2 + (z1 - z2) ** 2).sum())
+
+
+def compute_speed(avg_reward, max_speed, coef=0.1, max_reward=8):
+    return (max_speed * np.exp(coef * (avg_reward - max_reward))).astype(int)
+
+
+def wrap_speed(speed, max):
     sp = speed % max
-    if sp > max/2 :
+    if sp > max / 2:
         sp -= max
     return sp
+
 
 def soft_update_params(net, target_net, tau):
     for param, target_param in zip(net.parameters(), target_net.parameters()):
@@ -156,6 +175,7 @@ def make_dir(dir_path):
     except OSError:
         pass
     return dir_path
+
 
 class ReplayBuffer(object):
     """Buffer to store environment transitions"""
