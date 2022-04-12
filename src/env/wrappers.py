@@ -13,7 +13,7 @@ import dmc2gym
 from dm_control.suite import common
 import cv2
 from collections import deque
-from utils import moving_average_reward, compute_speed, wrap_speed, compute_similarity
+from utils import moving_average_reward, compute_distance
 
 def make_pad_env(
 		domain_name,
@@ -283,7 +283,7 @@ class GreenScreen(gym.Wrapper):
 		self._time_dependent = time_dependent
 		self._window = window
 		self._speed = speed
-		self._change = 0
+		self._change = 10
 		self._has_changed = 0
 		self._params = {"b" : 1.0, "h" : 0.0, "c" : 1.0 }
 		self._current_frame = 0 # When speed is left unchanged to 1, is equivalent to steps we take
@@ -336,7 +336,7 @@ class GreenScreen(gym.Wrapper):
 	def reset(self):
 		self._current_frame = 0
 		self._params = {"b" : 1.0, "h" : 0.0, "c" : 1.0 }
-		self._change = 0
+		self._change = 10
 		self._has_changed = 0
 		return self._greenscreen(self.env.reset())
 
@@ -344,7 +344,8 @@ class GreenScreen(gym.Wrapper):
 		obs, reward, done, info = self.env.step(action)
 
 		if self._mode != 'train':
-			info["stop_training"] = False
+			avg_small_rew = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth=5)
+			info["continue_training"] = avg_small_rew < self._threshold
 			rewards.append(reward)
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth=self._window)
 
@@ -356,13 +357,12 @@ class GreenScreen(gym.Wrapper):
 					self._has_changed += 1
 
 			if 'steady' in self._mode and self._time_dependent :
-				info["stop_training"] = avg_reward > self._threshold
 				if self._current_frame > 1 and self._current_frame % self._window == 0 :
 					self._change_background()
 
 
 		self._current_frame += self._speed
-		return self._greenscreen(obs), reward, done, info, self._change #compute_similarity(self._ref_img, self._data)
+		return self._greenscreen(obs), reward, done, info, compute_distance(self._ref_img, self._data)
 
 	def load_background(self, bg, evaluate=False):
 		self._set_background(bg, evaluate)
