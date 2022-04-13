@@ -347,8 +347,7 @@ class GreenScreen(gym.Wrapper):
 
 		if self._mode != 'train':
 			rewards.append(reward)
-			avg_small_rew = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth=3)
-			#info["continue_training"] = avg_small_rew < self._threshold
+			info["continue_training"] = True
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth=self._window)
 
 			if 'steady' in self._mode and self._dependent: # set the frequency of the background shift
@@ -360,21 +359,31 @@ class GreenScreen(gym.Wrapper):
 
 			if 'steady' in self._mode and self._time_dependent :
 				if self._current_frame > 1 and self._current_frame % self._window == 0 :
-					self._change_background()
+					self.update_params()
+					self.change_background(self._params)
+					avg_small_rew = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=self._window)
+					#info["continue_training"] = avg_small_rew < self._threshold
 
 
 		self._current_frame += self._speed
-		return self._greenscreen(obs), reward, done, info, self.changes_diff[(self._change -1) % len(self.changes_diff)]
+		return self._greenscreen(obs), reward, done, info, compute_distance(self._ref_img, self._data)
 
 	def load_background(self, bg, evaluate=False):
 		self._set_background(bg, evaluate)
 
 	def change_background(self, params):
 		self._data = color_jitter(self._ref_img, params)
-		self._change = (self._change + 1) % len(self.changes_list)
 
 	def _change_background(self):
 		self.change_background(self.changes_list[self._change])
+		self._change = (self._change + 1) % len(self.changes_list)
+
+	def update_params(self):
+		b = max((self._params["b"] + 0.1) % 2, 0.6)
+		h = (self._params["h"] * 10 + 1) % 6 / 10  # {0, .., 0.5}
+		c = max((self._params["c"] + 0.1) % 2, 0.6)
+
+		self._params = {"b": b, "h": h, "c": c}
 	
 	def _interpolate_bg(self, bg, size:tuple):
 		"""Interpolate background to size of observation"""
