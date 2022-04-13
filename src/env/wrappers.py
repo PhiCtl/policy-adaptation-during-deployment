@@ -283,7 +283,7 @@ class GreenScreen(gym.Wrapper):
 		self._time_dependent = time_dependent
 		self._window = window
 		self._speed = speed
-		self._change = 10
+		self._change = 6
 		self._has_changed = 0
 		self._params = {"b" : 1.0, "h" : 0.0, "c" : 1.0 }
 		self._current_frame = 0 # When speed is left unchanged to 1, is equivalent to steps we take
@@ -338,7 +338,7 @@ class GreenScreen(gym.Wrapper):
 	def reset(self):
 		self._current_frame = 0
 		self._params = {"b" : 1.0, "h" : 0.0, "c" : 1.0 }
-		self._change = 10
+		self._change = 6
 		self._has_changed = 0
 		if self._mode == "steady" : self._set_background(self._background)
 		return self._greenscreen(self.env.reset())
