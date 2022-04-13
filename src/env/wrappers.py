@@ -340,9 +340,8 @@ class GreenScreen(gym.Wrapper):
 		self._params = {"b" : 1.0, "h" : 0.0, "c" : 1.0 }
 		self._change = 10
 		self._has_changed = 0
-		self._set_background(self._background)
+		if self._mode == "steady" : self._set_background(self._background)
 		return self._greenscreen(self.env.reset())
-
 	def step(self, action, rewards = None):
 		obs, reward, done, info = self.env.step(action)
 
@@ -363,7 +362,7 @@ class GreenScreen(gym.Wrapper):
 					self.update_params()
 					self.change_background(self._params)
 					avg_small_rew = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=10)
-					#info["continue_training"] = avg_small_rew < self._threshold
+					info["continue_training"] = avg_small_rew < self._threshold
 
 
 		self._current_frame += self._speed
