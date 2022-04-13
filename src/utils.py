@@ -129,16 +129,16 @@ def moving_average_reward(rewards, current_ep=None, wind_lgth=15):
 
 
 def compute_distance(img1, img2):
-    img1_hsv = cv2.cvtColor(img1, cv2.COLOR_BGR2HSV)[20:40, 20:40, :]
-    img2_hsv = cv2.cvtColor(img2, cv2.COLOR_BGR2HSV)[20:40, 20:40, :]
+    img1_hsv = np.moveaxis(cv2.cvtColor(img1, cv2.COLOR_BGR2HSV), -1, 0)
+    img2_hsv = np.moveaxis(cv2.cvtColor(img2, cv2.COLOR_BGR2HSV), -1, 0)
 
-    x1 = np.cos(img1[:, :, 0] * np.pi / 180) * img1[:, :, 1]
-    y1 = np.sin(img1[:, :, 0] * np.pi / 180) * img1[:, :, 1]
-    z1 = img1[:, :, 2]
+    x1 = np.cos(img1_hsv[:, :, 0] * np.pi / 180) * img1_hsv[:, :, 1]
+    y1 = np.sin(img1_hsv[:, :, 0] * np.pi / 180) * img1_hsv[:, :, 1]
+    z1 = img1_hsv[:, :, 2]
 
-    x2 = np.cos(img2[:, :, 0] * np.pi / 180) * img2[:, :, 1]
-    y2 = np.sin(img2[:, :, 0] * np.pi / 180) * img2[:, :, 1]
-    z2 = img2[:, :, 2]
+    x2 = np.cos(img2_hsv[:, :, 0] * np.pi / 180) * img2_hsv[:, :, 1]
+    y2 = np.sin(img2_hsv[:, :, 0] * np.pi / 180) * img2_hsv[:, :, 1]
+    z2 = img2_hsv[:, :, 2]
 
     return np.sqrt(((x1 - x2) ** 2 + (y1 - y2) ** 2 + (z1 - z2) ** 2).sum())
 
