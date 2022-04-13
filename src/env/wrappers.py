@@ -313,7 +313,7 @@ class GreenScreen(gym.Wrapper):
 		self._data = np.moveaxis(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), -1, 0)  # is 240, 240, 3 -> should be 3, 240, 240
 		self._ref_img = self._data.copy()
 
-		if not evaluate :
+		if not evaluate and (self._dependent or self._time_dependent):
 			changes_list = self._background[:-5] + "_eval.csv"
 			df = pd.read_csv(changes_list, index_col = 0, converters={"params" : literal_eval})#.sort_values("distance", ascending=False)
 			self.changes_list = df["params"].values
