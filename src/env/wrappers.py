@@ -358,7 +358,7 @@ class GreenScreen(gym.Wrapper):
 					self._has_changed = 0
 				else :
 					self._has_changed += 1
-				change = self.changes_diff[(self._change - 1) % len(self._changes_diff)]
+				change = self.changes_diff[(self._change - 1) % len(self.changes_diff)]
 
 			if 'steady' in self._mode and self._time_dependent :
 				if self._current_frame > 1 and self._current_frame % self._window == 0 :
