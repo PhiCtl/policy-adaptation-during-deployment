@@ -314,7 +314,7 @@ class GreenScreen(gym.Wrapper):
 		self._ref_img = self._data.copy()
 
 		if not evaluate :
-			changes_list = self._background[:-5] + "_eval.csv"
+			changes_list = self._background[:-5] + ".csv"
 			df = pd.read_csv(changes_list, index_col = 0, converters={"params" : literal_eval}).sort_values("distance", ascending=False)
 			self.changes_list = df["params"].values
 			self.changes_diff = df["distance"].values
@@ -342,7 +342,7 @@ class GreenScreen(gym.Wrapper):
 		self._has_changed = 0
 		if self._mode == "steady" : self._set_background(self._background)
 		return self._greenscreen(self.env.reset())
-	
+
 	def step(self, action, rewards = None):
 		obs, reward, done, info = self.env.step(action)
 		change = None
