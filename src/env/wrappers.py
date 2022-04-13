@@ -339,6 +339,7 @@ class GreenScreen(gym.Wrapper):
 		self._params = {"b" : 1.0, "h" : 0.0, "c" : 1.0 }
 		self._change = 10
 		self._has_changed = 0
+		self._data = self._ref_img
 		return self._greenscreen(self.env.reset())
 
 	def step(self, action, rewards = None):
