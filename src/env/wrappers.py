@@ -301,12 +301,13 @@ class GreenScreen(gym.Wrapper):
 				background = "video" + str(randint(0,4)) + "_frame"
 			if not background.endswith('.jpeg') :
 				background += '.jpeg'
+			background = os.path.join('src/env/data', background)
 			self._set_background(background)
 
 		self._max_episode_steps = env._max_episode_steps
 
 	def _set_background(self, bg, evaluate=False):
-		self._background = os.path.join('src/env/data', bg)
+		self._background = bg
 		img = cv2.imread(self._background)
 		assert img.shape[0] >= 100 and img.shape[1] >= 100
 		self._data = np.moveaxis(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), -1, 0)  # is 240, 240, 3 -> should be 3, 240, 240
