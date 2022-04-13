@@ -283,7 +283,7 @@ class GreenScreen(gym.Wrapper):
 		self._time_dependent = time_dependent
 		self._window = window
 		self._speed = speed
-		self._change = 10
+		self._change = 0 # TODO
 		self._has_changed = 0
 		self._params = {"b" : 1.0, "h" : 0.0, "c" : 1.0 }
 		self._current_frame = 0 # When speed is left unchanged to 1, is equivalent to steps we take
@@ -302,7 +302,7 @@ class GreenScreen(gym.Wrapper):
 			if not background.endswith('.jpeg') :
 				background += '.jpeg'
 			background = os.path.join('src/env/data', background)
-			self._set_background(background)
+			#self._set_background(background) # TODO
 
 		self._max_episode_steps = env._max_episode_steps
 
@@ -314,10 +314,14 @@ class GreenScreen(gym.Wrapper):
 		self._ref_img = self._data.copy()
 
 		if not evaluate and (self._dependent or self._time_dependent):
-			changes_list = self._background[:-5] + "_eval.csv"
+			# TODO
+			bg = self._background.replace("_hard", "")
+			changes_list = bg + ".csv"
+			# TODO
 			df = pd.read_csv(changes_list, index_col = 0, converters={"params" : literal_eval})#.sort_values("distance", ascending=False)
 			self.changes_list = df["params"].values
-			self.changes_diff = df["mean"].values
+			# TODO
+			self.changes_diff = df["distance"].values
 
 	def _load_video(self, video):
 		"""Load video from provided filepath and return as numpy array"""
@@ -338,9 +342,9 @@ class GreenScreen(gym.Wrapper):
 	def reset(self):
 		self._current_frame = 0
 		self._params = {"b" : 1.0, "h" : 0.0, "c" : 1.0 }
-		self._change = 10
+		self._change = 0 # TODO
 		self._has_changed = 0
-		if self._mode == "steady" : self._set_background(self._background)
+		if self._mode == "steady" : self._set_background(self._background) # TODO
 		return self._greenscreen(self.env.reset())
 
 	def step(self, action, rewards = None):
@@ -358,14 +362,14 @@ class GreenScreen(gym.Wrapper):
 					self._has_changed = 0
 				else :
 					self._has_changed += 1
-					change = self.changes_diff[self._change]
+					change = self.changes_diff[self._change] # TODO
 
 			if 'steady' in self._mode and self._time_dependent :
 				if self._current_frame > 1 and self._current_frame % self._window == 0 :
 					self.update_params()
 					self.change_background(self._params)
-					avg_small_rew = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=10)
-					info["continue_training"] = avg_small_rew < self._threshold
+					avg_small_rew = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=10) # TODO
+					info["continue_training"] = avg_small_rew < self._threshold # TODO
 
 
 		self._current_frame += self._speed
