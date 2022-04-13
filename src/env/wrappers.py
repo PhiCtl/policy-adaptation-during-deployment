@@ -316,6 +316,7 @@ class GreenScreen(gym.Wrapper):
 			changes_list = self._background[:-4] + "csv"
 			df = pd.read_csv(changes_list, index_col = 0, converters={"params" : literal_eval})
 			self.changes_list = df["params"].values
+			self.changes_diff = df["mean"].values
 
 	def _load_video(self, video):
 		"""Load video from provided filepath and return as numpy array"""
@@ -345,8 +346,8 @@ class GreenScreen(gym.Wrapper):
 
 		if self._mode != 'train':
 			rewards.append(reward)
-			avg_small_rew = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth=5)
-			info["continue_training"] = avg_small_rew < self._threshold
+			avg_small_rew = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth=3)
+			#info["continue_training"] = avg_small_rew < self._threshold
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth=self._window)
 
 			if 'steady' in self._mode and self._dependent: # set the frequency of the background shift
@@ -362,7 +363,7 @@ class GreenScreen(gym.Wrapper):
 
 
 		self._current_frame += self._speed
-		return self._greenscreen(obs), reward, done, info, self._change
+		return self._greenscreen(obs), reward, done, info, self.changes_diff[(self._change -1) % len(self.changes_diff)]
 
 	def load_background(self, bg, evaluate=False):
 		self._set_background(bg, evaluate)
