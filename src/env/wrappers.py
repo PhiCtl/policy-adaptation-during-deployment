@@ -283,7 +283,7 @@ class GreenScreen(gym.Wrapper):
 		self._time_dependent = time_dependent
 		self._window = window
 		self._speed = speed
-		self._change = 0 # TODO
+		self._change = 10 # TODO
 		self._has_changed = 0
 		self._params = {"b" : 1.0, "h" : 0.0, "c" : 1.0 }
 		self._current_frame = 0 # When speed is left unchanged to 1, is equivalent to steps we take
@@ -302,7 +302,7 @@ class GreenScreen(gym.Wrapper):
 			if not background.endswith('.jpeg') :
 				background += '.jpeg'
 			background = os.path.join('src/env/data', background)
-			#self._set_background(background) # TODO
+			self._set_background(background) # TODO
 
 		self._max_episode_steps = env._max_episode_steps
 
@@ -316,12 +316,12 @@ class GreenScreen(gym.Wrapper):
 		if not evaluate and (self._dependent or self._time_dependent):
 			# TODO
 			bg = self._background.replace("_hard", "")
-			changes_list = bg + ".csv"
+			changes_list = bg + "_eval.csv"
 			# TODO
 			df = pd.read_csv(changes_list, index_col = 0, converters={"params" : literal_eval})#.sort_values("distance", ascending=False)
 			self.changes_list = df["params"].values
 			# TODO
-			self.changes_diff = df["distance"].values
+			self.changes_diff = df["mean"].values
 
 	def _load_video(self, video):
 		"""Load video from provided filepath and return as numpy array"""
@@ -342,7 +342,7 @@ class GreenScreen(gym.Wrapper):
 	def reset(self):
 		self._current_frame = 0
 		self._params = {"b" : 1.0, "h" : 0.0, "c" : 1.0 }
-		self._change = 0 # TODO
+		self._change = 10 # TODO
 		self._has_changed = 0
 		if self._mode == "steady" : self._set_background(self._background) # TODO
 		return self._greenscreen(self.env.reset())
