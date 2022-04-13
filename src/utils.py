@@ -129,9 +129,9 @@ def moving_average_reward(rewards, current_ep=None, wind_lgth=15):
 
 
 def compute_distance(img1, img2):
-    print(img1.shape)
-    img1_hsv = cv2.cvtColor(np.moveaxis(img1, -1, 0), cv2.COLOR_BGR2HSV)
-    img2_hsv = cv2.cvtColor(np.moveaxis(img2, -1, 0), cv2.COLOR_BGR2HSV)
+    
+    img1_hsv = cv2.cvtColor(np.moveaxis(img1, 0, -1), cv2.COLOR_BGR2HSV)
+    img2_hsv = cv2.cvtColor(np.moveaxis(img2, 0, -1), cv2.COLOR_BGR2HSV)
 
     x1 = np.cos(img1_hsv[:, :, 0] * np.pi / 180) * img1_hsv[:, :, 1]
     y1 = np.sin(img1_hsv[:, :, 0] * np.pi / 180) * img1_hsv[:, :, 1]
