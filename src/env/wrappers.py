@@ -363,7 +363,7 @@ class GreenScreen(gym.Wrapper):
 					self.update_params()
 					self.change_background(self._params)
 					avg_small_rew = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=10)
-					#info["continue_training"] = avg_small_rew < self._threshold
+					info["continue_training"] = avg_small_rew < self._threshold
 
 
 		self._current_frame += self._speed
