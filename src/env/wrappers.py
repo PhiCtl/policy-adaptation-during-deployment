@@ -61,6 +61,7 @@ class ColorWrapper(gym.Wrapper):
 		self._dependent = dependent
 		self._window = window
 		self._color = None
+		self._change = 0
 		self.time_step = 0
 		if 'color' in self._mode:
 			self._load_colors()
@@ -76,14 +77,22 @@ class ColorWrapper(gym.Wrapper):
 				'skybox_rgb2': [.2, .8, .2],
 				'skybox_markrgb': [.2, .8, .2]
 			})
+		self._change = 0
 		return self.env.reset()
 
 	def step(self, action, rewards = None):
 		self.time_step += 1
 		# Make a step
-		next_obs, reward, done, info = self.env.step(action, rewards)  # # rewards already augmented
+		next_obs, reward, done, info = self.env.step(action)
 
-		return next_obs, reward, done, info
+		if self._mode != 'train':
+			rewards.append(reward)
+			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth=self._window)
+
+			if avg_reward > self._threshold :
+				self.modify_physics_model()
+
+		return next_obs, reward, done, info, self._change
 
 	def randomize(self):
 		assert 'color' in self._mode, f'can only randomize in color mode, received {self._mode}'
@@ -110,9 +119,10 @@ class ColorWrapper(gym.Wrapper):
 		)
 		self._set_state(state)
 
-	def modify_physics_model(self, opt):
+	def modify_physics_model(self):
 		_env = self._get_dmc_wrapper()
 		_env.physics.model.opt.viscosity += 0.3
+		self._change = _env.physics.model.opt.viscosity
 
 	def get_state(self):
 		return self._get_state()
@@ -279,9 +289,6 @@ class GreenScreen(gym.Wrapper):
 
 	def step(self, action, rewards = None):
 		obs, reward, done, info = self.env.step(action)
-		if self._mode != 'train':
-			rewards.append(reward)
-			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth=self._window)
 		self._current_frame += 1
 		return self._greenscreen(obs), reward, done, info
 
