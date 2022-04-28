@@ -13,11 +13,8 @@ def parse_args():
 	parser.add_argument('--episode_length', default=1000, type=int)
 	parser.add_argument('--mode', default='train', type=str)
 	parser.add_argument('--dependent', default=False, action='store_true')
-	parser.add_argument('--time_dependent', default=False, action='store_true')
 	parser.add_argument('--threshold', default=0.0, type=float)
 	parser.add_argument('--window', default=5, type=int)
-	parser.add_argument('--video_speed', default=1, type=int)
-	parser.add_argument('--background', default=None, type=str)
 	
 	# agent
 	parser.add_argument('--init_steps', default=1000, type=int)
@@ -78,7 +75,7 @@ def parse_args():
 
 	args = parser.parse_args()
 
-	assert args.mode in {'train', 'color_easy', 'color_hard', 'steady'} or 'video' in args.mode, f'unrecognized mode "{args.mode}"'
+	assert args.mode in {'train', 'color_easy', 'color_hard'} or 'video' in args.mode, f'unrecognized mode "{args.mode}"'
 	assert args.seed is not None, 'must provide seed for experiment'
 	assert args.work_dir is not None, 'must provide a working directory for experiment'
 

@@ -24,11 +24,8 @@ def make_pad_env(
 		action_repeat=4,
 		mode='train',
 		dependent=False,
-		time_dependent=False,
 		threshold=0,
 		window=3,
-		speed=1,
-		background=None
 	):
 	"""Make environment for PAD experiments"""
 	env = dmc2gym.make(
@@ -43,7 +40,7 @@ def make_pad_env(
 		frame_skip=action_repeat
 	)
 	env.seed(seed)
-	env = GreenScreen(env, mode, threshold, dependent, time_dependent, window, speed, background)
+	env = GreenScreen(env, mode, threshold, dependent, window)
 	env = FrameStack(env, frame_stack)
 	env = ColorWrapper(env, mode, threshold, dependent, window)
 
@@ -52,19 +49,6 @@ def make_pad_env(
 
 	return env
 
-
-def color_jitter(x, params) :
-
-	assert isinstance(x, np.ndarray), 'inputs must be numpy arrays'
-	assert x.dtype == np.uint8, 'inputs must be uint8 arrays'
-	im = TF.to_pil_image(torch.ByteTensor(x))
-	# jitter
-	img = TF.adjust_brightness(im, params["b"])
-	img = TF.adjust_contrast(img, params["c"])
-	img = TF.adjust_hue(img, params["h"])
-	out = np.moveaxis(np.array(img), -1, 0)[:3]
-
-	return out
 
 class ColorWrapper(gym.Wrapper):
 	"""Wrapper for the color experiments"""
@@ -76,16 +60,13 @@ class ColorWrapper(gym.Wrapper):
 		self._threshold = threshold
 		self._dependent = dependent
 		self._window = window
-		self._color = 0
-		self._change = False
+		self._color = None
 		self.time_step = 0
 		if 'color' in self._mode:
 			self._load_colors()
 	
 	def reset(self):
 		self.time_step = 0
-		self._change = False
-		self._color = 0
 		if 'color' in self._mode :
 			self.randomize()
 		if 'video' or 'steady' in self._mode:
@@ -100,24 +81,13 @@ class ColorWrapper(gym.Wrapper):
 	def step(self, action, rewards = None):
 		self.time_step += 1
 		# Make a step
-		next_obs, reward, done, info, change = self.env.step(action, rewards)  # # rewards already augmented
+		next_obs, reward, done, info = self.env.step(action, rewards)  # # rewards already augmented
 
-		return next_obs, reward, done, info, change
+		return next_obs, reward, done, info
 
 	def randomize(self):
 		assert 'color' in self._mode, f'can only randomize in color mode, received {self._mode}'
 		self.reload_physics(self.get_random_color())
-
-	def fix_color(self, nb : int):
-		assert 'color' in self._mode, f'can only set color in color mode, received {self._mode}'
-		assert (nb >= 0 and nb < 100)
-		self.reload_physics(self.get_fixed_color(nb))
-
-	def load_background(self, bg, evaluate=False):
-		return self.env.load_background(bg, evaluate)
-
-	def change_background(self, params):
-		return self.env.change_background(params)
 
 	def _load_colors(self):
 		assert self._mode in {'color_easy', 'color_hard'}
@@ -127,10 +97,6 @@ class ColorWrapper(gym.Wrapper):
 		assert len(self._colors) >= 100, 'env must include at least 100 colors'
 		self._color = randint(len(self._colors))
 		return self._colors[self._color]
-
-	def get_fixed_color(self, nb : int):
-		assert len(self._colors) >= 100, 'env must include at least 100 colors'
-		return self._colors[nb]
 
 	def reload_physics(self, setting_kwargs=None, state=None):
 		domain_name = self._get_dmc_wrapper()._domain_name
@@ -204,15 +170,9 @@ class FrameStack(gym.Wrapper):
 
 	def step(self, action, rewards=None):
 		# Make a step
-		obs, reward, done, info, change = self.env.step(action, rewards)
+		obs, reward, done, info = self.env.step(action, rewards)
 		self._frames.append(obs)
-		return self._get_obs(), reward, done, info, change
-
-	def load_background(self, bg, evaluate=False):
-		return self.env.load_background(bg, evaluate)
-
-	def change_background(self, params):
-		return self.env.change_background(params)
+		return self._get_obs(), reward, done, info
 
 	def _get_obs(self):
 		assert len(self._frames) == self._k
@@ -275,17 +235,12 @@ def do_green_screen(x, bg):
 
 class GreenScreen(gym.Wrapper):
 	"""Green screen for video experiments"""
-	def __init__(self, env, mode, threshold, dependent, time_dependent, window, speed=1, background=None):
+	def __init__(self, env, mode, threshold, dependent, window):
 		gym.Wrapper.__init__(self, env)
 		self._mode = mode
 		self._threshold = threshold
 		self._dependent = dependent
-		self._time_dependent = time_dependent
 		self._window = window
-		self._speed = speed
-		self._change = 10 # TODO
-		self._has_changed = 0
-		self._params = {"b" : 1.0, "h" : 0.0, "c" : 1.0 }
 		self._current_frame = 0 # When speed is left unchanged to 1, is equivalent to steps we take
 		self._video = None
 
@@ -296,32 +251,8 @@ class GreenScreen(gym.Wrapper):
 			self._video = os.path.join('src/env/data', self._video)
 			self._data = self._load_video(self._video)
 
-		elif 'steady' in mode:
-			if background is None :
-				background = "video" + str(randint(0,4)) + "_frame"
-			if not background.endswith('.jpeg') :
-				background += '.jpeg'
-			background = os.path.join('src/env/data', background)
-			self._set_background(background) # TODO
-
 		self._max_episode_steps = env._max_episode_steps
 
-	def _set_background(self, bg, evaluate=False):
-		self._background = bg
-		img = cv2.imread(self._background)
-		assert img.shape[0] >= 100 and img.shape[1] >= 100
-		self._data = np.moveaxis(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), -1, 0)  # is 240, 240, 3 -> should be 3, 240, 240
-		self._ref_img = self._data.copy()
-
-		if not evaluate and (self._dependent or self._time_dependent):
-			# TODO
-			bg = self._background.replace("_hard", "")
-			changes_list = bg + "_eval.csv"
-			# TODO
-			df = pd.read_csv(changes_list, index_col = 0, converters={"params" : literal_eval})#.sort_values("distance", ascending=False)
-			self.changes_list = df["params"].values
-			# TODO
-			self.changes_diff = df["mean"].values
 
 	def _load_video(self, video):
 		"""Load video from provided filepath and return as numpy array"""
@@ -341,58 +272,16 @@ class GreenScreen(gym.Wrapper):
 
 	def reset(self):
 		self._current_frame = 0
-		self._params = {"b" : 1.0, "h" : 0.0, "c" : 1.0 }
-		self._change = 10 # TODO
-		self._has_changed = 0
-		if self._mode == "steady" : self._set_background(self._background) # TODO
 		return self._greenscreen(self.env.reset())
 
 	def step(self, action, rewards = None):
 		obs, reward, done, info = self.env.step(action)
-		change = None
 		if self._mode != 'train':
-
 			rewards.append(reward)
-			info["continue_training"] = True
 			avg_reward = moving_average_reward(rewards, current_ep=len(rewards) -1, wind_lgth=self._window)
+		self._current_frame += 1
+		return self._greenscreen(obs), reward, done, info
 
-			if 'steady' in self._mode and self._dependent: # set the frequency of the background shift
-				if avg_reward > self._threshold and self._has_changed >= self._window:
-					change = self._change_background()
-					self._has_changed = 0
-				else :
-					self._has_changed += 1
-					change = self.changes_diff[self._change] # TODO
-
-			if 'steady' in self._mode and self._time_dependent :
-				if self._current_frame > 1 and self._current_frame % self._window == 0 :
-					self.update_params()
-					self.change_background(self._params)
-					avg_small_rew = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=10) # TODO
-					info["continue_training"] = avg_small_rew < self._threshold # TODO
-
-
-		self._current_frame += self._speed
-		return self._greenscreen(obs), reward, done, info, change  #compute_distance(self._ref_img, self._data)
-
-	def load_background(self, bg, evaluate=False):
-		self._set_background(bg, evaluate)
-
-	def change_background(self, params):
-		self._data = color_jitter(self._ref_img, params)
-
-	def _change_background(self):
-		self.change_background(self.changes_list[self._change])
-		change = self.changes_diff[self._change]
-		self._change = (self._change + 1) % len(self.changes_list)
-		return change
-
-	def update_params(self):
-		b = max((self._params["b"] + 0.1) % 2, 0.6)
-		h = (self._params["h"] * 10 + 1) % 6 / 10  # {0, .., 0.5}
-		c = max((self._params["c"] + 0.1) % 2, 0.6)
-
-		self._params = {"b": b, "h": h, "c": c}
 	
 	def _interpolate_bg(self, bg, size:tuple):
 		"""Interpolate background to size of observation"""
@@ -401,26 +290,13 @@ class GreenScreen(gym.Wrapper):
 		return (bg*255).byte().squeeze(0).numpy()
 
 	def _greenscreen(self, obs):
-
 		"""Applies greenscreen if video or steady mode is selected, otherwise does nothing"""
 		if self._video:
 			bg = self._data[self._current_frame % len(self._data)] # select frame
-			if self._current_frame % len(self._data) == 0 :
-				self._change = 1
-			else :
-				self._change = 0
 			bg = self._interpolate_bg(bg, obs.shape[1:]) # scale bg to observation size
 			return do_green_screen(obs, bg) # apply greenscreen
-		if 'steady' in self._mode :
-			bg = self._data
-			bg = self._interpolate_bg(bg, obs.shape[1:])
-			return do_green_screen(obs, bg)  # apply greenscreen
 		return obs
 
-
-	def _reset_background(self):
-		background = "video" + str(randint(0, 4)) + "_frame.jpeg"
-		self._set_background(background)
 
 	def apply_to(self, obs):
 		"""Applies greenscreen mode of object to observation"""

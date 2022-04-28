@@ -129,7 +129,6 @@ def moving_average_reward(rewards, current_ep=None, wind_lgth=15):
 
 
 def compute_distance(img1, img2):
-    
     img1_hsv = cv2.cvtColor(np.moveaxis(img1, 0, -1), cv2.COLOR_BGR2HSV)
     img2_hsv = cv2.cvtColor(np.moveaxis(img2, 0, -1), cv2.COLOR_BGR2HSV)
 
@@ -142,17 +141,6 @@ def compute_distance(img1, img2):
     z2 = img2_hsv[:, :, 2]
 
     return np.sqrt(((x1 - x2) ** 2 + (y1 - y2) ** 2 + (z1 - z2) ** 2).sum())
-
-
-def compute_speed(avg_reward, max_speed, coef=0.1, max_reward=8):
-    return (max_speed * np.exp(coef * (avg_reward - max_reward))).astype(int)
-
-
-def wrap_speed(speed, max):
-    sp = speed % max
-    if sp > max / 2:
-        sp -= max
-    return sp
 
 
 def soft_update_params(net, target_net, tau):
