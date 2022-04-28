@@ -69,7 +69,7 @@ class ColorWrapper(gym.Wrapper):
 		self.time_step = 0
 		if 'color' in self._mode :
 			self.randomize()
-		if 'video' or 'steady' in self._mode:
+		if 'video' in self._mode:
 			# apply greenscreen
 			self.reload_physics(
 				{'skybox_rgb': [.2, .8, .2],
@@ -95,8 +95,7 @@ class ColorWrapper(gym.Wrapper):
 
 	def get_random_color(self):
 		assert len(self._colors) >= 100, 'env must include at least 100 colors'
-		self._color = randint(len(self._colors))
-		return self._colors[self._color]
+		return self._colors[randint(len(self._colors))]
 
 	def reload_physics(self, setting_kwargs=None, state=None):
 		domain_name = self._get_dmc_wrapper()._domain_name
@@ -110,7 +109,11 @@ class ColorWrapper(gym.Wrapper):
 			)
 		)
 		self._set_state(state)
-	
+
+	def modify_physics_model(self, opt):
+		_env = self._get_dmc_wrapper()
+		_env.physics.model.opt.viscosity += 0.3
+
 	def get_state(self):
 		return self._get_state()
 	
@@ -242,7 +245,6 @@ class GreenScreen(gym.Wrapper):
 		self._dependent = dependent
 		self._window = window
 		self._current_frame = 0 # When speed is left unchanged to 1, is equivalent to steps we take
-		self._video = None
 
 		if 'video' in mode:
 			self._video = mode
@@ -250,7 +252,8 @@ class GreenScreen(gym.Wrapper):
 				self._video += '.mp4'
 			self._video = os.path.join('src/env/data', self._video)
 			self._data = self._load_video(self._video)
-
+		else :
+			self._video = None
 		self._max_episode_steps = env._max_episode_steps
 
 
