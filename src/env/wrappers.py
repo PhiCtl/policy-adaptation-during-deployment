@@ -61,7 +61,7 @@ class ColorWrapper(gym.Wrapper):
 		self._dependent = dependent
 		self._window = window
 		self._color = None
-		self._change = 0
+		self._change = 1.8
 		self.time_step = 0
 		if 'color' in self._mode:
 			self._load_colors()
@@ -77,7 +77,7 @@ class ColorWrapper(gym.Wrapper):
 				'skybox_rgb2': [.2, .8, .2],
 				'skybox_markrgb': [.2, .8, .2]
 			})
-		self._change = 0
+		self._change = 1.8
 		return self.env.reset()
 
 	def step(self, action, rewards = None):
@@ -121,7 +121,7 @@ class ColorWrapper(gym.Wrapper):
 
 	def modify_physics_model(self):
 		_env = self._get_dmc_wrapper()
-		self._change = (self._change + 0.5) % 3
+		self._change *= -1
 		_env.physics.model.opt.gravity[0:2] = self._change
 
 	def get_state(self):
