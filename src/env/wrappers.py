@@ -122,7 +122,7 @@ class ColorWrapper(gym.Wrapper):
 	def modify_physics_model(self):
 		_env = self._get_dmc_wrapper()
 		self._change = (self._change + 0.1) % 3
-		_env.physics.model.opt.gravity[1] = self._change
+		_env.physics.model.opt.gravity[0:2] = self._change
 
 	def get_state(self):
 		return self._get_state()
