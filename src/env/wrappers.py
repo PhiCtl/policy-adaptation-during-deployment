@@ -91,7 +91,7 @@ class ColorWrapper(gym.Wrapper):
             rewards.append(reward)
             avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=self._window)
 
-            if avg_reward > self._threshold and self.time_step % self._window == 0 and self.time_step > 1:
+            if elf.time_step % self._window == 0 and self.time_step > 1:
                 self.modify_physics_model()
 
         return next_obs, reward, done, info, self._change
