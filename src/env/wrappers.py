@@ -123,9 +123,9 @@ class ColorWrapper(gym.Wrapper):
 
     def modify_physics_model(self):
         _env = self._get_dmc_wrapper()
-        inertia_t0 = np.array([0.00942459, 0.00942459, 0.0001001 ])
-        inertia = _env.physics.model.body_inertia[2] + [0.0001, - 0.0001, 0]
-        self._change = inertia[0]
+        mass = _env.physics.model.body_mass[1] - 0.1
+        _env.physics.model.body_mass[1] = mass if mass >= 0.1 else 1
+        self._change = mass
 
     def get_state(self):
         return self._get_state()
