@@ -123,8 +123,8 @@ class ColorWrapper(gym.Wrapper):
 
     def modify_physics_model(self):
         _env = self._get_dmc_wrapper()
-        mass = _env.physics.model.body_mass[1] - 0.1
-        _env.physics.model.body_mass[1] = mass if mass >= 0.1 else 1
+        mass = _env.physics.model.body_mass[1]
+        _env.physics.model.body_mass[1] = 0.1 if mass == 1 else 1
         self._change = mass
 
     def get_state(self):
