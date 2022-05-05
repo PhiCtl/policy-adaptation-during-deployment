@@ -87,14 +87,16 @@ class ColorWrapper(gym.Wrapper):
         # Make a step
         next_obs, reward, done, info = self.env.step(action)
         rewards.append(reward)
+        has_changed = False
 
         if self._mode != 'train' and self._dependent:
             avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=self._window)
 
             if self.time_step % self._window == 0 and self.time_step > 1:
                 self.modify_physics_model()
+                has_changed = True
 
-        return next_obs, reward, done, info, self._change
+        return next_obs, reward, done, info, self._change, has_changed
 
     def randomize(self):
         if 'color' in self._mode :
@@ -123,10 +125,12 @@ class ColorWrapper(gym.Wrapper):
 
     def modify_physics_model(self):
         _env = self._get_dmc_wrapper()
-        self._change = 0.1
+        self._change *= -1
+        #self._change = 0.1
         # self._change = self._change*10 if self._change < 1 else self._change / 10
         # self._change = self._change - 0.05 if self._change > 0.1 else 1
-        _env.physics.model.body_mass[1] = self._change
+        _env.physics.model.gravity[:2] = self._change
+        #_env.physics.model.body_mass[1] = self._change
 
     def get_state(self):
         return self._get_state()
