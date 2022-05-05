@@ -96,7 +96,8 @@ def evaluate_seq(envs, agent, args, video, recorder, exp_type, adapt=False, relo
         video.save(f'{args.mode}_pad_{i}.mp4' if adapt else f'{args.mode}_eval_{i}.mp4')
 
     recorder.save("performance_"+ exp_type, adapt)
-    return np.mean(episode_rewards), np.std(episode_rewards)
+    mean, std = np.mean(episode_rewards), np.std(episode_rewards)
+    print('pad reward:', int(mean), ' +/- ', int(std))
 
 
 def main(args):
@@ -122,26 +123,24 @@ def main(args):
     recorder = AdaptRecorder(args.work_dir, args.mode)
 
     # How does agent behave in test mode in the training environment
-    compare_agents(args, agent, [env], recorder, video, exp_type="train")
+    compare_agents(args, agent, env, recorder, video, exp_type="train", eval_fct=evaluate)
 
-   #  # How does agent behave when deployed successively in different environment and then back in the training environment
-   #  args.mode = 'color_easy'
-   #  env_color_easy = init_env(args)
-   # [env_color_easy, env]
-   #  pad_reward = None
-   #  if args.use_inv or args.use_curl or args.use_rot:
-   #      print(
-   #          f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-   #      pad_reward, std = eval_fct(envs, agent, args, video, recorder, adapt=True, reload=reload, exp_type=exp_type)
-   #      print('pad reward:', int(pad_reward), ' +/- ', int(std))
-   #
-   #  # Save results
-   #  results_fp = os.path.join(args.work_dir, f'pad_{args.mode}_{exp_type}.pt')
-   #  torch.save({
-   #      'args': args,
-   #      'eval_reward': eval_reward,
-   #      'pad_reward': pad_reward
-   #  }, results_fp)
+    # How does agent behave when deployed successively in different environment and then back in the training environment
+    # args.mode = 'color_easy'
+    # env_color_easy = init_env(args)
+    # envs = [env_color_easy, env]
+    #
+    # print(f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
+    # pad_reward, std = eval_fct(envs, agent, args, video, recorder, adapt=True, reload=reload, exp_type=exp_type)
+    # print('pad reward:', int(pad_reward), ' +/- ', int(std))
+    #
+    # # Save results
+    # results_fp = os.path.join(args.work_dir, f'pad_{args.mode}_{exp_type}.pt')
+    # torch.save({
+    #     'args': args,
+    #     'eval_reward': eval_reward,
+    #     'pad_reward': pad_reward
+    # }, results_fp)
 
 
 
