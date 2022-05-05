@@ -78,45 +78,6 @@ class AdaptRecorder(Recorder):
         self.changes_tot, self.rewards_tot = [], []
 
 
-class EnvtRecorder(Recorder):
-
-    def __init__(self, save_dir, type):
-        super().__init__(save_dir, type)
-        self.rewards_cumul, self.reward = [], 0
-        self.df = []
-        self.params, self.bg_name = None, None
-
-    def reset(self):
-        self.reward = 0
-
-    def update(self, change, reward):
-        self.reward += reward
-
-    def end_episode(self):
-        self.rewards_cumul.append(self.reward)
-        self.reset()
-
-    def save(self, file_name, adapt):
-        self.df.append({"background": self.bg_name,
-                        "params": list(self.params.values()),
-                        "mean cumulative": np.mean(self.rewards_cumul),
-                        "std cumulative": np.std(self.rewards_cumul)})
-        self.rewards_cumul = []
-
-    def load_background(self, bg):
-        self.bg_name = bg
-
-    def load_change(self, params):
-        self.params = params
-
-    def close(self):
-        self.df = pd.DataFrame(self.df)
-        file_name = datetime.now().strftime("%H-%M-%S") + "_change_"
-        file_name += self._type
-        file_name += "_eval.csv"
-        self.df.to_csv(os.path.join(self._save_dir, file_name))
-
-
 def moving_average_reward(rewards, current_ep=None, wind_lgth=15):
     # Causal convolutional filter
     w = np.concatenate((np.zeros(wind_lgth + 1), np.ones(wind_lgth))).astype(np.float64) / (wind_lgth)
@@ -178,6 +139,7 @@ class ReplayBuffer(object):
 
         self.obses = np.empty((capacity, *obs_shape), dtype=obs_dtype)
         self.next_obses = np.empty((capacity, *obs_shape), dtype=obs_dtype)
+        #self.latents = np.empty((capacity, latent_dim), dtype = np.float32)
         self.actions = np.empty((capacity, *action_shape), dtype=np.float32)
         self.rewards = np.empty((capacity, 1), dtype=np.float32)
         self.not_dones = np.empty((capacity, 1), dtype=np.float32)
@@ -187,6 +149,7 @@ class ReplayBuffer(object):
 
     def add(self, obs, action, reward, next_obs, done):
         np.copyto(self.obses[self.idx], obs)
+        #np.copyto(self.latents[self.idx], latent)
         np.copyto(self.actions[self.idx], action)
         np.copyto(self.rewards[self.idx], reward)
         np.copyto(self.next_obses[self.idx], next_obs)
@@ -201,6 +164,7 @@ class ReplayBuffer(object):
         )
 
         obses = torch.as_tensor(self.obses[idxs]).float().cuda()
+        #latents = torch.as_tensor(self.latents[idxs]).float().cuda()
         actions = torch.as_tensor(self.actions[idxs]).cuda()
         rewards = torch.as_tensor(self.rewards[idxs]).cuda()
         next_obses = torch.as_tensor(self.next_obses[idxs]).float().cuda()
@@ -212,6 +176,7 @@ class ReplayBuffer(object):
         return obses, actions, rewards, next_obses, not_dones
 
     def sample_curl(self):
+        # TODO : latent not handled
         idxs = np.random.randint(
             0, self.capacity if self.full else self.idx, size=self.batch_size
         )
