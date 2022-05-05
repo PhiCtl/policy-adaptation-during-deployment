@@ -86,9 +86,9 @@ class ColorWrapper(gym.Wrapper):
         self.time_step += 1
         # Make a step
         next_obs, reward, done, info = self.env.step(action)
-
+        rewards.append(reward)
+        
         if self._mode != 'train':
-            rewards.append(reward)
             avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=self._window)
 
             if avg_reward > self._threshold and self.time_step % self._window == 0 and self.time_step > 1:
