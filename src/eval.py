@@ -131,12 +131,13 @@ def main(args):
 
     # Recorder
     recorder = AdaptRecorder(args.work_dir, args.mode)
-
+    
     # Evaluate agent without PAD
     # print(f'Evaluating {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
     # eval_reward, std = evaluate(env, agent, args, video, recorder)
     # print('eval reward:', int(eval_reward), ' +/- ', int(std))
 
+    #
     # Evaluate agent with PAD (if applicable)
     pad_reward = None
     if args.use_inv or args.use_curl or args.use_rot:
