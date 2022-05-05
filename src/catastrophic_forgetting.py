@@ -120,26 +120,26 @@ def main(args):
     #compare_agents(args, agent, env, recorder, video, exp_type="train", eval_fct=evaluate)
 
     # How does agent behave when deployed successively in different environment and then back in the training environment
-    # args.mode = 'color_easy'
-    # env_color_easy = init_env(args)
-    # envs = [env_color_easy, env]
-    # evaluate_seq(envs, agent, args, video, recorder, adapt=True, reload=True, exp_type="reloaded")
-    #
-    #
-    # env_color_easy = init_env(args)
-    # envs = [env_color_easy, env]
-    # evaluate_seq(envs, agent, args, video, recorder, adapt=True, reload=False, exp_type="not_reloaded")
+    args.mode = 'color_easy'
+    env_color_easy = init_env(args)
+    envs = [env_color_easy, env]
+    evaluate_seq(envs, agent, args, video, recorder, adapt=True, reload=True, exp_type="reloaded")
+
+
+    env_color_easy = init_env(args)
+    envs = [env_color_easy, env]
+    evaluate_seq(envs, agent, args, video, recorder, adapt=True, reload=False, exp_type="not_reloaded")
 
     # How does it behave if deployed successively in different envt with and without weight reloading ?
     # Evaluate agent with weight reloading
-    print(f'Evaluating {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) with reloading')
-    eval_reward, std = evaluate(env, agent, args, video, recorder, adapt = True, reload=True, exp_type="reloaded")
-    print('Reloaded reward:', int(eval_reward), ' +/- ', int(std))
-
-    # Evaluate agent with PAD (if applicable)
-    print(f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) without reloading')
-    pad_reward, std = evaluate(env, agent, args, video, recorder, adapt=True, reload=False, exp_type="not_reloaded")
-    print('pad reward:', int(pad_reward), ' +/- ', int(std))
+    # print(f'Evaluating {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) with reloading')
+    # eval_reward, std = evaluate(env, agent, args, video, recorder, adapt = True, reload=True, exp_type="reloaded")
+    # print('Reloaded reward:', int(eval_reward), ' +/- ', int(std))
+    #
+    # # Evaluate agent with PAD (if applicable)
+    # print(f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) without reloading')
+    # pad_reward, std = evaluate(env, agent, args, video, recorder, adapt=True, reload=False, exp_type="not_reloaded")
+    # print('pad reward:', int(pad_reward), ' +/- ', int(std))
 
 if __name__ == '__main__':
     args = parse_args()
