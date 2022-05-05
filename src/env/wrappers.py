@@ -97,8 +97,8 @@ class ColorWrapper(gym.Wrapper):
         return next_obs, reward, done, info, self._change
 
     def randomize(self):
-        assert 'color' in self._mode, f'can only randomize in color mode, received {self._mode}'
-        self.reload_physics(self.get_random_color())
+        if 'color' in self._mode :
+            self.reload_physics(self.get_random_color())
 
     def _load_colors(self):
         assert self._mode in {'color_easy', 'color_hard'}
