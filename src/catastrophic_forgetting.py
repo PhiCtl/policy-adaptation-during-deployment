@@ -124,8 +124,10 @@ def main(args):
     args.mode = 'color_easy'
     env_color_easy = init_env(args)
     envs = [env_color_easy, env]
-
     evaluate_seq(envs, agent, args, video, recorder, adapt=True, reload=True, exp_type="reloaded")
+    
+    env_color_easy = init_env(args)
+    envs = [env_color_easy, env]
     evaluate_seq(envs, agent, args, video, recorder, adapt=True, reload=False, exp_type="not_reloaded")
 
 
