@@ -27,22 +27,23 @@ def compare_agents(args, agent, envs, recorder, video, exp_type, eval_fct = eval
         pad_reward, std = eval_fct(envs, agent, args, video, recorder, adapt=True, reload=reload, exp_type=exp_type)
         print('pad reward:', int(pad_reward), ' +/- ', int(std))
 
-    # Save results
-    results_fp = os.path.join(args.work_dir, f'pad_{args.mode}_{exp_type}.pt')
-    torch.save({
-        'args': args,
-        'eval_reward': eval_reward,
-        'pad_reward': pad_reward
-    }, results_fp)
-
 def evaluate_seq(envs, agent, args, video, recorder, exp_type, adapt=False, reload = True) :
 
-    print(f'----Evaluating a sequence of environments----')
+    print(f'----Evaluating a sequence of environments : {[env._mode for env in envs]}----')
+    if adapt :
+        print(f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes)')
+    else :
+        print(f'Non-adapting agent deployment of {args.work_dir} for {args.pad_num_episodes} episodes)')
+    print(f'With pre-trained reload' if reload else f'Without pre-trained reload')
+    print("-"*60)
+
     episode_rewards = []
 
-    def run_episode(env, ep_agent):
+    def run_episode(env):
         if reload :
-            ep_agent = deepcopy(agent)
+            ep_agent = deepcopy(episode_agent)
+        else :
+            ep_agent = episode_agent
         ep_rew = 0
         obs = env.reset()
         done = False
@@ -59,20 +60,14 @@ def evaluate_seq(envs, agent, args, video, recorder, exp_type, adapt=False, relo
             ep_rew += reward
             recorder.update(change, reward)
 
-            # Make self-supervised update if flag is true
-            if args.use_inv:  # inverse dynamics model
+            # Prepare batch of observations
+            batch_obs = utils.batch_from_obs(torch.Tensor(obs).cuda(), batch_size=args.pad_batch_size)
+            batch_next_obs = utils.batch_from_obs(torch.Tensor(next_obs).cuda(), batch_size=args.pad_batch_size)
+            batch_action = torch.Tensor(action).cuda().unsqueeze(0).repeat(args.pad_batch_size, 1)
 
-                # Prepare batch of observations
-                batch_obs = utils.batch_from_obs(torch.Tensor(obs).cuda(), batch_size=args.pad_batch_size)
-                batch_next_obs = utils.batch_from_obs(torch.Tensor(next_obs).cuda(), batch_size=args.pad_batch_size)
-                batch_action = torch.Tensor(action).cuda().unsqueeze(0).repeat(args.pad_batch_size, 1)
-
-                # Adapt using inverse dynamics prediction
-                losses.append(ep_agent.update_inv(utils.random_crop(batch_obs), utils.random_crop(batch_next_obs),
-                                                  batch_action))
-
-            else :
-                raise NotImplementedError(f'Cannot handle other type of SS')
+            # Adapt using inverse dynamics prediction
+            losses.append(ep_agent.update_inv(utils.random_crop(batch_obs), utils.random_crop(batch_next_obs),
+                                              batch_action))
 
             video.record(env, losses)
             obs = next_obs
@@ -83,12 +78,12 @@ def evaluate_seq(envs, agent, args, video, recorder, exp_type, adapt=False, relo
 
     for i in tqdm(range(args.pad_num_episodes)):
 
-        ep_agent = deepcopy(agent)
+        episode_agent = deepcopy(agent)
         video.init(enabled=True)
         episode_reward = 0
 
         for env in envs :
-            episode_reward += run_episode(env, ep_agent)
+            episode_reward += run_episode(env)
 
         episode_rewards.append(episode_reward)
 
@@ -123,25 +118,15 @@ def main(args):
     recorder = AdaptRecorder(args.work_dir, args.mode)
 
     # How does agent behave in test mode in the training environment
-    compare_agents(args, agent, env, recorder, video, exp_type="train", eval_fct=evaluate)
+    #compare_agents(args, agent, env, recorder, video, exp_type="train", eval_fct=evaluate)
 
     # How does agent behave when deployed successively in different environment and then back in the training environment
-    # args.mode = 'color_easy'
-    # env_color_easy = init_env(args)
-    # envs = [env_color_easy, env]
-    #
-    # print(f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-    # pad_reward, std = eval_fct(envs, agent, args, video, recorder, adapt=True, reload=reload, exp_type=exp_type)
-    # print('pad reward:', int(pad_reward), ' +/- ', int(std))
-    #
-    # # Save results
-    # results_fp = os.path.join(args.work_dir, f'pad_{args.mode}_{exp_type}.pt')
-    # torch.save({
-    #     'args': args,
-    #     'eval_reward': eval_reward,
-    #     'pad_reward': pad_reward
-    # }, results_fp)
+    args.mode = 'color_easy'
+    env_color_easy = init_env(args)
+    envs = [env_color_easy, env]
 
+    evaluate_seq(envs, agent, args, video, recorder, adapt=True, reload=True, exp_type="reloaded")
+    evaluate_seq(envs, agent, args, video, recorder, adapt=True, reload=False, exp_type="not_reloaded")
 
 
 if __name__ == '__main__':
