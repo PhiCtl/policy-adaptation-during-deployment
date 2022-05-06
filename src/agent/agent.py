@@ -435,13 +435,30 @@ class SacSSAgent(object):
         self.critic_optimizer.step()
 
 
-    def update_actor_and_alpha(self, obs, L=None, step=None, update_alpha=True):
+    def update_actor_and_alpha(self, obs, L=None, step=None, update_alpha=True, bca_loss = False, buffer=None, clone=None):
         # detach encoder, so we don't update it with the actor loss
-        _, pi, log_pi, log_std = self.actor(obs, detach_encoder=True)
-        actor_Q1, actor_Q2 = self.critic(obs, pi, detach_encoder=True)
 
-        actor_Q = torch.min(actor_Q1, actor_Q2)
-        actor_loss = (self.alpha.detach() * log_pi - actor_Q).mean()
+        if bca_loss : # If we're in the test phase and want to adapt
+
+            assert buffer is not None, "Need a buffer to use behavioural cloning adaptation"
+            assert clone is not None, "Need  clone to use behavioural cloning adaptation"
+
+            # Sample from source buffer
+            obses_src, _, _, _, _ = buffer.sample()
+
+            # Evaluate clone agent
+            with utils.eval_mode(clone):
+                pi_target = clone.sample_action(obses_src)
+
+            # Compute KL divergence loss
+            _, pi, log_pi, _  = self.actor(obses_src, detach_encoder=True)
+            actor_loss = nn.KLDivLoss(log_pi, pi_target, reduction='batchmean')
+
+        else : # We're in the training phase
+            _, pi, log_pi, log_std = self.actor(obs, detach_encoder=True)
+            actor_Q1, actor_Q2 = self.critic(obs, pi, detach_encoder=True)
+            actor_Q = torch.min(actor_Q1, actor_Q2)
+            actor_loss = (self.alpha.detach() * log_pi - actor_Q).mean()
 
         if L is not None:
             L.log('train_actor/loss', actor_loss, step)
