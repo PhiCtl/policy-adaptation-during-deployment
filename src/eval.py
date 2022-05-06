@@ -86,8 +86,8 @@ def evaluate(env, agent, args, video, recorder, adapt=False, reload=True, exp_ty
             obs = next_obs
             step += 1
 
-            if has_changed and reload:
-                ep_agent = deepcopy(agent)
+            # if has_changed and reload:
+            #     ep_agent = deepcopy(agent)
 
         video.save(f'{args.mode}_pad_{i}.mp4' if adapt else f'{args.mode}_eval_{i}.mp4')
         episode_rewards.append(episode_reward)
@@ -133,11 +133,10 @@ def main(args):
     recorder = AdaptRecorder(args.work_dir, args.mode)
 
     # Evaluate agent without PAD
-    # print(f'Evaluating {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-    # eval_reward, std = evaluate(env, agent, args, video, recorder)
-    # print('eval reward:', int(eval_reward), ' +/- ', int(std))
+    print(f'Evaluating {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
+    eval_reward, std = evaluate(env, agent, args, video, recorder)
+    print('eval reward:', int(eval_reward), ' +/- ', int(std))
 
-    #
     # Evaluate agent with PAD (if applicable)
     pad_reward = None
     if args.use_inv or args.use_curl or args.use_rot:
@@ -150,7 +149,7 @@ def main(args):
     results_fp = os.path.join(args.work_dir, f'pad_{args.mode}.pt')
     torch.save({
         'args': args,
-        #'eval_reward': eval_reward,
+        'eval_reward': eval_reward,
         'pad_reward': pad_reward
     }, results_fp)
     print(f' Threshold {args.threshold} Window size {args.window}')
