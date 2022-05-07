@@ -90,7 +90,7 @@ def evaluate(env, agent, clone, buffer, args, video, recorder, adapt=False, bca=
 
                 if bca:
                     # Adapt using KL divergence loss and train Actor-Critic network
-                    agent.update_actor_and_alpha(obs, bca_loss=bca, buffer=buffer, clone=clone)
+                    agent.update_actor_and_alpha(obs, bca_loss=bca, buffer=buffer, clone=clone, update_alpha=False)
 
             # TODO remove losses as they're not updated with actor loss and not printed either
             video.record(env, losses)
