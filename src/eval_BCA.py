@@ -108,9 +108,15 @@ def main(args):
     # Initialize environments : source and target
     env = init_env(args) # target
     training_env = make_pad_env(
-        args.domain_name, args.task_name, args.seed,
-        args.episode_length, args.action_repeat,
-        'train') # source
+        domain_name=args.domain_name,
+        task_name=args.task_name,
+        seed=args.seed,
+        episode_length=args.episode_length,
+        action_repeat=args.action_repeat,
+        mode='train',
+        dependent=args.dependent,
+        threshold=args.threshold,
+        window=args.window) # source
 
     model_dir = utils.make_dir(os.path.join(args.work_dir, 'model'))
     video_dir = utils.make_dir(os.path.join(args.work_dir, 'video'))
