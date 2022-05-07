@@ -118,9 +118,7 @@ def main(args):
         episode_length=args.episode_length,
         action_repeat=args.action_repeat,
         mode='train',
-        dependent=args.dependent,
-        threshold=args.threshold,
-        window=args.window) # source
+        dependent=False) # source
 
     model_dir = utils.make_dir(os.path.join(args.work_dir, 'model'))
     video_dir = utils.make_dir(os.path.join(args.work_dir, 'video'))
