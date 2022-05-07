@@ -35,13 +35,14 @@ def prepare_BCA(env, agent, buffer, num_episodes) :
         obs = env.reset()
         done = False
         step = 0
+        rewards = []
 
         while not done:
 
             with utils.eval_mode(agent):
                 action = agent.select_action(obs)
 
-            next_obs, reward, done, _, _ = env.step(action)
+            next_obs, reward, done, _, _ = env.step(action, rewards)
             done_bool = 0 if step + 1 == env._max_episode_steps else float(done)
             buffer.add(obs, action, reward, next_obs, done_bool)
             step += 1
