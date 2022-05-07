@@ -28,8 +28,10 @@ def init_env(args):
 
 def prepare_BCA(env, agent, buffer, num_episodes) :
     """Evaluate an agent without adaptation in training environment"""
+    print("Fill in source buffer")
+    print("-"*60)
 
-    for i in range(num_episodes):
+    for i in tqdm(range(num_episodes)):
         obs = env.reset()
         done = False
         step = 0
@@ -43,6 +45,9 @@ def prepare_BCA(env, agent, buffer, num_episodes) :
             done_bool = 0 if step + 1 == env._max_episode_steps else float(done)
             buffer.add(obs, action, reward, next_obs, done_bool)
             step += 1
+
+    print("Source buffer filled in !")
+    print("-" * 60)
 
 def evaluate(env, agent, clone, buffer, args, video, recorder, adapt=False, bca=False):
     episode_rewards = []
@@ -91,14 +96,11 @@ def evaluate(env, agent, clone, buffer, args, video, recorder, adapt=False, bca=
             obs = next_obs
             step += 1
 
-            # if has_changed and reload:
-            #     ep_agent = deepcopy(agent)
-
         video.save(f'{args.mode}_pad_{i}.mp4' if adapt else f'{args.mode}_eval_{i}.mp4')
         episode_rewards.append(episode_reward)
         recorder.end_episode()
 
-    recorder.save("performance_" + exp_type, adapt)
+    recorder.save("performance_bca", adapt)
     return np.mean(episode_rewards), np.std(episode_rewards)
 
 def main(args):
@@ -139,23 +141,14 @@ def main(args):
 
     # Evaluate agent without PAD
     print(f'Evaluating {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-    eval_reward, std = evaluate(env, agent, args, video, recorder)
+    eval_reward, std = evaluate(env, agent, clone_agent, replay_buffer, args, video, recorder, adapt=False, bca=False)
     print('eval reward:', int(eval_reward), ' +/- ', int(std))
 
     # Evaluate agent with PAD (if applicable)
-    pad_reward = None
     if args.use_inv or args.use_curl or args.use_rot:
         env = init_env(args)
-        print( f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-        pad_reward, std = evaluate(env, agent, args, video, recorder, adapt=True, exp_type="reloaded_pad")
+        print( f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) with BCA')
+        pad_reward, std = evaluate(env, agent, clone_agent, replay_buffer, args, video, recorder, adapt=True, bca=True)
         print('pad reward:', int(pad_reward), ' +/- ', int(std))
 
-    # Save results
-    results_fp = os.path.join(args.work_dir, f'pad_{args.mode}.pt')
-    torch.save({
-        'args': args,
-        #'eval_reward': eval_reward,
-        'pad_reward': pad_reward
-    }, results_fp)
     print(f' Threshold {args.threshold} Window size {args.window}')
-    print('Saved results to', results_fp)
