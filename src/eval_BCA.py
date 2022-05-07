@@ -152,3 +152,6 @@ def main(args):
         print('pad reward:', int(pad_reward), ' +/- ', int(std))
 
     print(f' Threshold {args.threshold} Window size {args.window}')
+
+if __name__ == "__main__" :
+    main()
