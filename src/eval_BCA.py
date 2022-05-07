@@ -90,7 +90,7 @@ def evaluate(env, agent, clone, buffer, args, video, recorder, adapt=False, bca=
 
                 if bca:
                     # Adapt using KL divergence loss and train Actor-Critic network
-                    agent.update_actor_and_alpha(obs, bca_loss=bca, buffer=buffer, clone=clone, update_alpha=False)
+                    agent.update_actor_and_alpha(obs, bca_loss=bca, buffer=buffer, clone=clone)
 
             # TODO remove losses as they're not updated with actor loss and not printed either
             video.record(env, losses)
@@ -157,6 +157,13 @@ def main(args):
         print( f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) with BCA')
         pad_reward, std = evaluate(env, agent, clone_agent, replay_buffer, args, video, recorder, adapt=True, bca=True)
         print('pad reward:', int(pad_reward), ' +/- ', int(std))
+
+        env = init_env(args)
+        print( f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) without BCA')
+        pad_reward, std = evaluate(env, agent, clone_agent, replay_buffer, args, video, recorder, adapt=True, bca=False)
+        print('pad reward:', int(pad_reward), ' +/- ', int(std))
+
+
 
     print(f' Threshold {args.threshold} Window size {args.window}')
 
