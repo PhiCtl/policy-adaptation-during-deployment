@@ -448,7 +448,7 @@ class SacSSAgent(object):
 
             # Evaluate clone agent
             with utils.eval_mode(clone):
-                pi_target = clone.sample_action(obses_src)
+                pi_target = clone.sample_action(obses_src.cpu())
 
             # Compute KL divergence loss
             _, pi, log_pi, _  = self.actor(obses_src, detach_encoder=True)
