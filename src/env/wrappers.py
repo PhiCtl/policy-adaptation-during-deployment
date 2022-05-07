@@ -92,7 +92,7 @@ class ColorWrapper(gym.Wrapper):
         if self._mode != 'train' and self._dependent:
             avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=self._window)
 
-            if avg_reward > self._threshold and self.time_step % self._window == 0 and self.time_step > 1:
+            if self.time_step % self._window == 0 and self.time_step > 1:
                 self.modify_physics_model()
                 has_changed = True
 
