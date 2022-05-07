@@ -154,4 +154,6 @@ def main(args):
     print(f' Threshold {args.threshold} Window size {args.window}')
 
 if __name__ == "__main__" :
-    main()
+    args = parse_args()
+    main(args)
+
