@@ -445,6 +445,7 @@ class SacSSAgent(object):
 
             # Sample from source buffer
             obses_src, _, _, _, _ = buffer.sample()
+            print("Obs size", obses_src.shape)
 
             # Evaluate clone agent
             with utils.eval_mode(clone):
