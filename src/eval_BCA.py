@@ -50,7 +50,7 @@ def prepare_BCA(env, agent, buffer, num_episodes) :
     print("Source buffer filled in !")
     print("-" * 60)
 
-def evaluate(env, agent, clone, buffer, args, video, recorder, adapt=False, bca=False):
+def evaluate(env, agent, clone, buffer, args, video, recorder, exp_type="", adapt=False, bca=False, reload=False):
     episode_rewards = []
 
     for i in tqdm(range(args.pad_num_episodes)):
@@ -97,11 +97,14 @@ def evaluate(env, agent, clone, buffer, args, video, recorder, adapt=False, bca=
             obs = next_obs
             step += 1
 
+            if has_changed and reload :
+                ep_agent = deepcopy(agent)
+
         video.save(f'{args.mode}_pad_{i}.mp4' if adapt else f'{args.mode}_eval_{i}.mp4')
         episode_rewards.append(episode_reward)
         recorder.end_episode()
 
-    recorder.save("performance_bca", adapt)
+    recorder.save("performance_"+exp_type, adapt)
     return np.mean(episode_rewards), np.std(episode_rewards)
 
 def main(args):
@@ -155,12 +158,17 @@ def main(args):
     if args.use_inv or args.use_curl or args.use_rot:
         env = init_env(args)
         print( f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) with BCA')
-        pad_reward, std = evaluate(env, agent, clone_agent, replay_buffer, args, video, recorder, adapt=True, bca=True)
+        pad_reward, std = evaluate(env, agent, clone_agent, replay_buffer, args, video, recorder, adapt=True, bca=True, exp_type="bca")
         print('pad reward:', int(pad_reward), ' +/- ', int(std))
 
         env = init_env(args)
         print( f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) without BCA')
-        pad_reward, std = evaluate(env, agent, clone_agent, replay_buffer, args, video, recorder, adapt=True, bca=False)
+        pad_reward, std = evaluate(env, agent, clone_agent, replay_buffer, args, video, recorder, adapt=True, bca=False, exp_type="normal")
+        print('pad reward:', int(pad_reward), ' +/- ', int(std))
+
+        env = init_env(args)
+        print(f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) with reload')
+        pad_reward, std = evaluate(env, agent, clone_agent, replay_buffer, args, video, recorder, adapt=True, bca=False, exp_type="reloaded")
         print('pad reward:', int(pad_reward), ' +/- ', int(std))
 
 
