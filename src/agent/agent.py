@@ -447,7 +447,7 @@ class SacSSAgent(object):
             obses_src, _, _, _, _ = buffer.sample()
 
             # Evaluate clone agent
-            with utils.eval_mode(clone):
+            with utils.eval_mode(clone) and torch.no_grad():
                 _, pi_target, _, _ = clone.actor(obses_src, compute_log_pi=False)
 
             # Compute KL divergence loss
