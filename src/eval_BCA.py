@@ -40,7 +40,6 @@ def prepare_BCA(env, agent, buffer, num_episodes) :
         while not done:
 
             with utils.eval_mode(agent):
-                print(obs.shape)
                 action = agent.select_action(obs)
 
             next_obs, reward, done, _, _,_ = env.step(action, rewards)

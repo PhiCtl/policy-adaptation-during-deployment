@@ -445,15 +445,14 @@ class SacSSAgent(object):
 
             # Sample from source buffer
             obses_src, _, _, _, _ = buffer.sample()
-            print("Obs size", obses_src.shape)
 
             # Evaluate clone agent
             with utils.eval_mode(clone):
-                pi_target = clone.sample_action(obses_src.cpu())
+                _, pi_target, _, _ = clone.actor(obses_src, compute_log_pi=False)
 
             # Compute KL divergence loss
             _, pi, log_pi, _  = self.actor(obses_src, detach_encoder=True)
-            actor_loss = nn.KLDivLoss(log_pi, pi_target, reduction='batchmean')
+            actor_loss = nn.KLDivLoss(log_pi, pi_target.cpu(), reduction='batchmean')
 
         else : # We're in the training phase
             _, pi, log_pi, log_std = self.actor(obs, detach_encoder=True)
