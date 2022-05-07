@@ -1,0 +1,16 @@
+CUDA_VISIBLE_DEVICES=0 python3 src/eval_BCA.py \
+                      --domain_name cartpole \
+                      --task_name swingup \
+                      --action_repeat 8 \
+                      --mode color_easy \
+                      --use_inv \
+                      --num_shared_layers 8 \
+                      --seed 0 \
+                      --work_dir logs/cartpole_swingup/inv/0 \
+                      --pad_checkpoint 500k \
+                      --pad_num_episodes 1 \
+                      --threshold 6.0 \
+                      --dependent \
+                      --window 100 \
+                      --save_video \
+                      --episode_length 10000
