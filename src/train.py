@@ -17,10 +17,11 @@ def evaluate(env, agent, video, num_episodes, L, step):
 		video.init(enabled=(i == 0))
 		done = False
 		episode_reward = 0
+		rewards = []
 		while not done:
 			with utils.eval_mode(agent):
 				action = agent.select_action(obs)
-			obs, reward, done, _, _ = env.step(action)
+			obs, reward, done, _, _, _ = env.step(action, rewards)
 			video.record(env)
 			episode_reward += reward
 
