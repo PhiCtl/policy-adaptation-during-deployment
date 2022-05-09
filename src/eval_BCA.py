@@ -136,13 +136,13 @@ def main(args):
     clone_agent = deepcopy(agent)
 
     # Collect observations from source environment
-    replay_buffer = utils.ReplayBuffer(
-        obs_shape=training_env.observation_space.shape,
-        action_shape=training_env.action_space.shape,
-        capacity=args.train_steps,
-        batch_size=args.pad_batch_size
-    )
-    prepare_BCA(training_env, clone_agent, replay_buffer, args.pad_num_episodes)
+    # replay_buffer = utils.ReplayBuffer(
+    #     obs_shape=training_env.observation_space.shape,
+    #     action_shape=training_env.action_space.shape,
+    #     capacity=args.train_steps,
+    #     batch_size=args.pad_batch_size
+    # )
+    # prepare_BCA(training_env, clone_agent, replay_buffer, args.pad_num_episodes)
 
     # Recorder
     recorder = AdaptRecorder(args.work_dir, args.mode)
