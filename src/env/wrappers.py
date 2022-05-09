@@ -89,7 +89,7 @@ class ColorWrapper(gym.Wrapper):
         rewards.append(reward)
         has_changed = False
 
-        if self._mode != 'train' and self._dependent:
+        if self._dependent:
             avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=self._window)
 
             if self.time_step % self._window == 0 and self.time_step > 1:
