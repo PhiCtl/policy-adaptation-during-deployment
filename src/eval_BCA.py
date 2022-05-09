@@ -142,7 +142,7 @@ def main(args):
         capacity=args.train_steps,
         batch_size=args.pad_batch_size
     )
-    #prepare_BCA(training_env, clone_agent, replay_buffer, args.pad_num_episodes)
+    prepare_BCA(training_env, clone_agent, replay_buffer, args.pad_num_episodes)
 
     # Recorder
     recorder = AdaptRecorder(args.work_dir, args.mode)
@@ -154,10 +154,10 @@ def main(args):
 
     # Evaluate agent with PAD (if applicable)
     if args.use_inv or args.use_curl or args.use_rot:
-        # env = init_env(args)
-        # print( f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) with BCA')
-        # pad_reward, std = evaluate(env, agent, clone_agent, replay_buffer, args, video, recorder, adapt=True, bca=True, exp_type="bca")
-        # print('pad reward:', int(pad_reward), ' +/- ', int(std))
+        env = init_env(args)
+        print( f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) with BCA')
+        pad_reward, std = evaluate(env, agent, clone_agent, replay_buffer, args, video, recorder, adapt=True, bca=True, exp_type="bca")
+        print('pad reward:', int(pad_reward), ' +/- ', int(std))
 
         env = init_env(args)
         print( f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) without BCA')
