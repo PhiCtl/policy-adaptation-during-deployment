@@ -67,6 +67,7 @@ def main(args):
 
 	L = Logger(args.work_dir, use_tb=False)
 	episode, episode_reward, done = 0, 0, True
+	rewards = []
 	start_time = time.time()
 	for step in range(args.train_steps+1):
 		if done:
@@ -91,6 +92,7 @@ def main(args):
 			obs = env.reset()
 			done = False
 			episode_reward = 0
+			rewards = []
 			episode_step = 0
 			episode += 1
 
@@ -110,7 +112,7 @@ def main(args):
 				agent.update(replay_buffer, L, step)
 
 		# Take step
-		next_obs, reward, done, _, _ = env.step(action)
+		next_obs, reward, done, _, _, _ = env.step(action, rewards)
 		done_bool = 0 if episode_step + 1 == env._max_episode_steps else float(done)
 		replay_buffer.add(obs, action, reward, next_obs, done_bool)
 		episode_reward += reward
