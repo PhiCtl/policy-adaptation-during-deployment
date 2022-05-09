@@ -347,6 +347,7 @@ class SacSSAgent(object):
 
         # sac optimizers
         self.actor_optimizer = torch.optim.Adam(
+            #self.actor.parameters(), lr=actor_lr, weight_decay=1e-3, betas=(actor_beta, 0.999)
             self.actor.parameters(), lr=actor_lr, betas=(actor_beta, 0.999)
         )
 

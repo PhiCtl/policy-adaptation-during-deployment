@@ -17,10 +17,11 @@ def evaluate(env, agent, video, num_episodes, L, step):
 		video.init(enabled=(i == 0))
 		done = False
 		episode_reward = 0
+		rewards = []
 		while not done:
 			with utils.eval_mode(agent):
 				action = agent.select_action(obs)
-			obs, reward, done, _, _ = env.step(action)
+			obs, reward, done, _, _, _ = env.step(action, rewards)
 			video.record(env)
 			episode_reward += reward
 
@@ -60,10 +61,13 @@ def main(args):
 		action_shape=env.action_space.shape,
 		args=args
 	)
-	agent.load(model_dir, args.pad_checkpoint) # To keep on training...
+
+	if args.pad_checkpoint is not None :
+		agent.load(model_dir, args.pad_checkpoint) # To keep on training...
 
 	L = Logger(args.work_dir, use_tb=False)
 	episode, episode_reward, done = 0, 0, True
+	rewards = []
 	start_time = time.time()
 	for step in range(args.train_steps+1):
 		if done:
@@ -81,13 +85,14 @@ def main(args):
 			# Save agent periodically
 			if step % args.save_freq == 0 and step > 0:
 				if args.save_model:
-					agent.save(model_dir, step + args.pad_checkpoint)
+					agent.save(model_dir, step + args.pad_checkpoint if args.pad_checkpoint is not None else step)
 
 			L.log('train/episode_reward', episode_reward, step)
 
 			obs = env.reset()
 			done = False
 			episode_reward = 0
+			rewards = []
 			episode_step = 0
 			episode += 1
 
@@ -107,7 +112,7 @@ def main(args):
 				agent.update(replay_buffer, L, step)
 
 		# Take step
-		next_obs, reward, done, _, _ = env.step(action)
+		next_obs, reward, done, _, _, _ = env.step(action, rewards)
 		done_bool = 0 if episode_step + 1 == env._max_episode_steps else float(done)
 		replay_buffer.add(obs, action, reward, next_obs, done_bool)
 		episode_reward += reward
