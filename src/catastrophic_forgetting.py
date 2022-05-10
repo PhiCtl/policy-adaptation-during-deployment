@@ -42,7 +42,7 @@ def evaluate_seq(envs, agent, args, video, recorder, exp_type, clone=None, buffe
     assert(not (bca and reload)), "Either reload or bca mode is allowed"
     episode_rewards = []
 
-    def run_episode(env):
+    def run_episode(env, episode_agent):
         if reload:
             ep_agent = deepcopy(episode_agent)
         else :
@@ -90,7 +90,7 @@ def evaluate_seq(envs, agent, args, video, recorder, exp_type, clone=None, buffe
         episode_reward = 0
 
         for env in envs :
-            episode_reward += run_episode(env)
+            episode_reward += run_episode(env, episode_agent)
 
         episode_rewards.append(episode_reward)
 
