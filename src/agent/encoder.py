@@ -89,21 +89,31 @@ class PixelEncoder(nn.Module):
 class LatentEncoder(nn.Module):
 	"""1D Convolutional encoder for time series feature extraction"""
 	#TODO: check num_layers and num_filters (maybe 50)
-	def __init__(self, latent_shape, latent_dim, feature_dim, num_filters=32):
+	def __init__(self, dynamics_shape, latent_dim, num_filters=32):
 		super().__init__()
-
-		self.feature_dim = feature_dim
 
 		#TODO: think about an process part 
 		#self.process = 
 
-		self.conv1 = nn.Conv1d(latent_shape, num_filters, kernel_size=3, stride=1)
+		self.conv1 = nn.Conv1d(dynamics_shape, num_filters, kernel_size=3, stride=1)
 		self.pool1 = nn.MaxPool1d(2)
 		self.conv2 = nn.Conv1d(num_filters, num_filters, kernel_size=3, stride =1)
 
 		self.fc = nn.Linear(num_filters, latent_dim)
-  
-	def forward(self, time_serie):
+
+	def forward(self, dynamics, detach=False):
+
+		conv = torch.relu(self.conv1(dynamics)).detach() if detach else torch.relu(self.conv1(dynamics))
+		pooled = self.pool1(conv).detach() if detach else self.pool1(conv)
+		conv = torch.relu(self.conv2(pooled)).detach() if detach else torch.relu(self.conv2(pooled))
+		
+		h = conv.view(conv.size(0), -1)
+		output = self.fc(h)
+		return output
+
+	def copy_conv_weights_from(self, source):
+		tie_weights(src=source.conv1, trg=self.conv1)
+		tie_weights(src=source.conv2, trg=self.conv2)
     
 	
 
@@ -118,3 +128,8 @@ def make_encoder(
 	return PixelEncoder(
 		obs_shape, feature_dim, num_layers, num_filters, num_shared_layers
 	)
+
+def make_latent_encoder(
+		dynamics_shape, latent_dim
+):
+	return LatentEncoder(dynamics_shape, latent_dim)
