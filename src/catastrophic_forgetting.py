@@ -147,16 +147,16 @@ def main(args):
     # How does agent behave when deployed successively in different environment and then back in the training environment
     args.mode = 'color_easy'
     env_color_easy = init_env(args)
-    envs = [env_color_easy, training_env]
+    envs = [env_color_easy, env_color_easy, training_env]
     evaluate_seq(envs, agent, args, video, recorder, adapt=True, reload=True, exp_type="reloaded")
 
 
     env_color_easy = init_env(args)
-    envs = [env_color_easy, training_env]
+    envs = [env_color_easy, env_color_easy, training_env]
     evaluate_seq(envs, agent, args, video, recorder, buffer=replay_buffer, clone=clone, adapt=True, reload=False, exp_type="bca", bca=True)
 
     env_color_easy = init_env(args)
-    envs = [env_color_easy, training_env]
+    envs = [env_color_easy, env_color_easy, training_env]
     evaluate_seq(envs, agent, args, video, recorder, buffer=replay_buffer, clone=clone, adapt=True, reload=False, exp_type="normal", bca=False)
 
     # How does it behave if deployed successively in different envt with and without weight reloading ?
