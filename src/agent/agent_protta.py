@@ -330,6 +330,7 @@ class SacSSAgent(object):
         self.actor.encoder.copy_conv_weights_from(self.critic.encoder)
 
         # TODO tie latent encoders between actor critic and SS
+        self.actor.latent_encoder.copy_conv_weights_from(self.critic.latent_encoder)
 
         self.log_alpha = torch.tensor(np.log(init_temperature)).cuda()
         self.log_alpha.requires_grad = True
@@ -351,7 +352,9 @@ class SacSSAgent(object):
                 dynamics_shape, latent_dim)
 
             self.ss_encoder.copy_conv_weights_from(self.critic.encoder, num_shared_layers)
-            # TODO tie weights of latent encoder
+            
+            # -> TODO implement: copy_conv_weights_from
+            self.ss_latent_encoder.copy_conv_weights_from(self.critic.latent_encoder)
             
             # rotation
             if use_rot:
@@ -412,6 +415,10 @@ class SacSSAgent(object):
             self.curl_optimizer =  torch.optim.Adam(
                 self.curl.parameters(), lr=ss_lr
             )
+        if self.ss_latent_encoder is not None:
+            self.latent_encoder_optimizer =  torch.optim.Adam(
+            self.ss_latent_encoder.parameters(), lr=encoder_lr
+        )
     
     def train(self, training=True):
         self.training = training
@@ -522,21 +529,24 @@ class SacSSAgent(object):
 
         return rot_loss.item()
 
-    def update_inv(self, obs, next_obs, latent, action, L=None, step=None):
+    def update_inv(self, obs, next_obs, dynamics, action, L=None, step=None):
         assert obs.shape[-1] == 84 and next_obs.shape[-1] == 84
 
         h = self.ss_encoder(obs)
         h_next = self.ss_encoder(next_obs)
 
+        latent = self.ss_latent_encoder(dynamics)
         pred_action = self.inv(h, h_next, latent)
         inv_loss = F.mse_loss(pred_action, action)
 
         self.encoder_optimizer.zero_grad()
         self.inv_optimizer.zero_grad()
+        self.latent_encoder_optimizer.zero_grad()
         inv_loss.backward()
 
         self.encoder_optimizer.step()
         self.inv_optimizer.step()
+        self.latent_encoder_optimizer.step()
 
         if L is not None:
             L.log('train_inv/inv_loss', inv_loss, step)
@@ -574,14 +584,14 @@ class SacSSAgent(object):
         if self.use_curl:
             obs, action, reward, next_obs, not_done, curl_kwargs = replay_buffer.sample_curl()
         else:
-            obs, latent, action, reward, next_obs, not_done = replay_buffer.sample()
+            obs, dynamics, action, reward, next_obs, not_done = replay_buffer.sample()
         
         L.log('train/batch_reward', reward.mean(), step)
 
-        self.update_critic(obs, latent, action, reward, next_obs, not_done, L, step)
+        self.update_critic(obs, dynamics, action, reward, next_obs, not_done, L, step)
 
         if step % self.actor_update_freq == 0:
-            self.update_actor_and_alpha(obs, latent, L, step)
+            self.update_actor_and_alpha(obs, dynamics, L, step)
 
         if step % self.critic_target_update_freq == 0:
             utils.soft_update_params(
@@ -594,12 +604,13 @@ class SacSSAgent(object):
                 self.critic.encoder, self.critic_target.encoder,
                 self.encoder_tau
             )
+            #TODO check if we need an update_params with latent encoder
         
         if self.rot is not None and step % self.ss_update_freq == 0:
             self.update_rot(obs, L, step)
 
         if self.inv is not None and step % self.ss_update_freq == 0:
-            self.update_inv(obs, next_obs, latent, action, L, step)
+            self.update_inv(obs, next_obs, dynamics, action, L, step)
 
         if self.curl is not None and step % self.ss_update_freq == 0:
             obs_anchor, obs_pos = curl_kwargs["obs_anchor"], curl_kwargs["obs_pos"]
@@ -633,6 +644,11 @@ class SacSSAgent(object):
                 self.ss_encoder.state_dict(),
                 '%s/ss_encoder_%s.pt' % (model_dir, step)
             )
+        if self.ss_latent_encoder is not None:
+            torch.save(
+                self.ss_latent_encoder.state_dict(),
+                '%s/ss_latent_encoder_%s.pt' % (model_dir, step)
+            )
 
     def load(self, model_dir, step):
         self.actor.load_state_dict(
@@ -656,4 +672,8 @@ class SacSSAgent(object):
         if self.ss_encoder is not None:
             self.ss_encoder.load_state_dict(
                 torch.load('%s/ss_encoder_%s.pt' % (model_dir, step))
+            )
+        if self.ss_latent_encoder is not None:
+            self.ss_latent_encoder.load_state_dict(
+                torch.load('%s/ss_latent_encoder_%s.pt' % (model_dir, step))
             )
