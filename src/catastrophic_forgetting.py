@@ -155,6 +155,10 @@ def main(args):
     envs = [env_color_easy, training_env]
     evaluate_seq(envs, agent, args, video, recorder, buffer=replay_buffer, clone=clone, adapt=True, reload=False, exp_type="bca", bca=True)
 
+    env_color_easy = init_env(args)
+    envs = [env_color_easy, training_env]
+    evaluate_seq(envs, agent, args, video, recorder, buffer=replay_buffer, clone=clone, adapt=True, reload=False, exp_type="normal", bca=False)
+
     # How does it behave if deployed successively in different envt with and without weight reloading ?
     # Evaluate agent with weight reloading
     # print(f'Evaluating {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) with reloading')
