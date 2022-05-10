@@ -86,6 +86,11 @@ class PixelEncoder(nn.Module):
 			tie_weights(src=source.convs[i], trg=self.convs[i])
 
 
+class LatentEncoder(nn.Module):
+	"""1D Convolutional encoder for time series feature extraction"""
+
+
+
 def make_encoder(
 	obs_shape, feature_dim, num_layers, num_filters, num_shared_layers
 ):

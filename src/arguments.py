@@ -27,6 +27,11 @@ def parse_args():
 	parser.add_argument('--eval_freq', default=100000, type=int)
 	parser.add_argument('--eval_episodes', default=10, type=int)
 
+	# predictor
+	parser.add_argument('--latent_dim', default=2, type=int)
+	parser.add_argument('--predictor', default='cart_mass', type=str)
+	parser.add_argument('--latent_shape', default=100, type=int)
+
 	# critic
 	parser.add_argument('--critic_lr', default=1e-3, type=float)
 	parser.add_argument('--critic_beta', default=0.9, type=float)
@@ -76,6 +81,7 @@ def parse_args():
 	args = parser.parse_args()
 
 	assert args.mode in {'train', 'color_easy', 'color_hard'} or 'video' in args.mode, f'unrecognized mode "{args.mode}"'
+	assert args.predictor in {'cart_mass', 'opp_forces'}, f'unrecognized dynamics "{args.predictor}"'
 	assert args.seed is not None, 'must provide seed for experiment'
 	assert args.work_dir is not None, 'must provide a working directory for experiment'
 
