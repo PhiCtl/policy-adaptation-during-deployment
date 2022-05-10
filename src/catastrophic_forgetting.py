@@ -42,9 +42,9 @@ def evaluate_seq(envs, agent, args, video, recorder, exp_type, clone=None, buffe
     assert(not (bca and reload)), "Either reload or bca mode is allowed"
     episode_rewards = []
 
-    def run_episode(env, episode_agent):
+    def run_episode(env):
         if reload:
-            ep_agent = deepcopy(episode_agent)
+            ep_agent = deepcopy(agent)
         else :
             ep_agent = episode_agent
         ep_rew = 0
@@ -90,7 +90,7 @@ def evaluate_seq(envs, agent, args, video, recorder, exp_type, clone=None, buffe
         episode_reward = 0
 
         for env in envs :
-            episode_reward += run_episode(env, episode_agent)
+            episode_reward += run_episode(env)
 
         episode_rewards.append(episode_reward)
 
@@ -147,16 +147,13 @@ def main(args):
     # How does agent behave when deployed successively in different environment and then back in the training environment
     args.mode = 'color_easy'
     env_color_easy = init_env(args)
-    envs = [env_color_easy, env_color_easy, training_env]
+    envs = [deepcopy(env_color_easy), deepcopy(env_color_easy), deepcopy(training_env)]
     evaluate_seq(envs, agent, args, video, recorder, adapt=True, reload=True, exp_type="reloaded")
 
-
-    env_color_easy = init_env(args)
-    envs = [env_color_easy, env_color_easy, training_env]
+    envs = [deepcopy(env_color_easy), deepcopy(env_color_easy), deepcopy(training_env)]
     evaluate_seq(envs, agent, args, video, recorder, buffer=replay_buffer, clone=clone, adapt=True, reload=False, exp_type="bca", bca=True)
 
-    env_color_easy = init_env(args)
-    envs = [env_color_easy, env_color_easy, training_env]
+    envs = [deepcopy(env_color_easy), deepcopy(env_color_easy), deepcopy(training_env)]
     evaluate_seq(envs, agent, args, video, recorder, buffer=replay_buffer, clone=clone, adapt=True, reload=False, exp_type="normal", bca=False)
 
     # How does it behave if deployed successively in different envt with and without weight reloading ?
