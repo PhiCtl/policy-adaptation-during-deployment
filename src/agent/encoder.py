@@ -88,15 +88,24 @@ class PixelEncoder(nn.Module):
 
 class LatentEncoder(nn.Module):
 	"""1D Convolutional encoder for time series feature extraction"""
-	#TODO: check num_layers and num_filters
-	def __init__(self, latent_shape, feature_dim, num_layers=4, num_filters=32):
+	#TODO: check num_layers and num_filters (maybe 50)
+	def __init__(self, latent_shape, latent_dim, feature_dim, num_filters=32):
 		super().__init__()
 
 		self.feature_dim = feature_dim
-		self.num_layers = num_layers
 
-		self.process = 
+		#TODO: think about an process part 
+		#self.process = 
 
+		self.conv1 = nn.Conv1d(latent_shape, num_filters, kernel_size=3, stride=1)
+		self.pool1 = nn.MaxPool1d(2)
+		self.conv2 = nn.Conv1d(num_filters, num_filters, kernel_size=3, stride =1)
+
+		self.fc = nn.Linear(num_filters, latent_dim)
+  
+	def forward(self, time_serie):
+    
+	
 
 def make_encoder(
 	obs_shape, feature_dim, num_layers, num_filters, num_shared_layers
