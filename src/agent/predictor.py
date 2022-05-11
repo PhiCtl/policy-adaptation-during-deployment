@@ -9,7 +9,7 @@ class Predictor(nn.Module) :
     def __init__(self):
         self.step = None
 
-    def forward(self):
+    def forward(self, x):
         raise NotImplementedError
 
     def sample_dynamics(self):
@@ -32,7 +32,7 @@ class HardcodedPredictor(Predictor):
         self.forecasting_steps = dynamics_shape
         self.dynamics = init_dynamics
 
-    def forward(self):
+    def forward(self, x):
         return self.dynamics.sample_window(self.step, self.forecasting_steps)
 
     def sample_dynamics(self):

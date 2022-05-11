@@ -438,7 +438,7 @@ class SacSSAgent(object):
         with torch.no_grad():
             obs = torch.FloatTensor(obs).cuda()
             obs = obs.unsqueeze(0)
-            dynamics = self.predictor()
+            dynamics = self.predictor(obs)
             mu, _, _, _ = self.actor(
                 obs, dynamics, compute_pi=False, compute_log_pi=False
             )
@@ -448,7 +448,7 @@ class SacSSAgent(object):
         with torch.no_grad():
             obs = torch.FloatTensor(obs).cuda()
             obs = obs.unsqueeze(0)
-            dynamics = self.predictor()
+            dynamics = self.predictor(obs)
             mu, pi, _, _ = self.actor(obs, dynamics, compute_log_pi=False)
             return pi.cpu().data.numpy().flatten(), dynamics
 
