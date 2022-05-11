@@ -16,13 +16,9 @@ from utils import get_curl_pos_neg, AdaptRecorder
 def evaluate(env, agent, args, video, recorder, adapt=False, reload=True, exp_type=""):
     """Evaluate an agent, optionally adapt using PAD"""
     episode_rewards = []
-    ep_agent = deepcopy(agent)
 
     for i in tqdm(range(args.pad_num_episodes)):
-        if reload:
-            ep_agent = deepcopy(agent)  # make a new copy
-        else:  # Test catastrophic forgetting
-            ep_agent = ep_agent
+        ep_agent = deepcopy(agent)  # make a new copy
 
         if args.use_curl:  # initialize replay buffer for CURL
             replay_buffer = utils.ReplayBuffer(
