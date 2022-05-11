@@ -29,8 +29,8 @@ class HardcodedPredictor(Predictor):
 
     def __init__(self, dynamics_shape, init_dynamics):
         super().__init__()
-        self.dynamics = init_dynamics
         self.forecasting_steps = dynamics_shape
+        self.dynamics = init_dynamics
 
     def forward(self):
         return self.dynamics.sample_window(self.step, self.forecasting_steps)
@@ -41,7 +41,7 @@ class HardcodedPredictor(Predictor):
 def build_predictor(predictor, args) :
 
     if predictor == 'cart_mass' and args.domain_name == 'cartpole':
-        return HardcodedPredictor(args.latent_shape,
+        return HardcodedPredictor(args.dynamics_shape,
                                   CartMass(args.window))
     else:
         raise NotImplementedError(f'{predictor} for {args.domain_name} is not handled yet')

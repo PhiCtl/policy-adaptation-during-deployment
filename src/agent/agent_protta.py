@@ -327,8 +327,6 @@ class SacSSAgent(object):
 
         # tie encoders between actor and critic
         self.actor.encoder.copy_conv_weights_from(self.critic.encoder)
-
-        # TODO tie latent encoders between actor critic and SS
         self.actor.latent_encoder.copy_conv_weights_from(self.critic.latent_encoder)
 
         self.log_alpha = torch.tensor(np.log(init_temperature)).cuda()
@@ -351,8 +349,6 @@ class SacSSAgent(object):
                 dynamics_shape, latent_dim)
 
             self.ss_encoder.copy_conv_weights_from(self.critic.encoder, num_shared_layers)
-            
-
             self.ss_latent_encoder.copy_conv_weights_from(self.critic.latent_encoder)
             
             # rotation
@@ -371,10 +367,10 @@ class SacSSAgent(object):
                 self.curl_latent_dim, self.critic, self.critic_target, output_type='continuous').cuda()
 
         # predictor
-        self.predictor = build_predictor(predictor, args) # TODO implement
+        self.predictor = build_predictor(predictor, args)
 
         # ss optimizers
-        self.init_ss_optimizers(encoder_lr, ss_lr) # TODO check optim for latent encoder
+        self.init_ss_optimizers(encoder_lr, ss_lr)
 
         # sac optimizers
         self.actor_optimizer = torch.optim.Adam(
@@ -398,7 +394,7 @@ class SacSSAgent(object):
             self.encoder_optimizer =  torch.optim.Adam(
                 self.ss_encoder.parameters(), lr=encoder_lr
             )
-            # TODO latent encoder optimizer
+
         if self.use_rot:
             self.rot_optimizer =  torch.optim.Adam(
                 self.rot.parameters(), lr=ss_lr
@@ -425,6 +421,8 @@ class SacSSAgent(object):
         self.critic.train(training)
         if self.ss_encoder is not None:
             self.ss_encoder.train(training)
+        if self.ss_latent_encoder is not None:
+            self.ss_latent_encoder.train(training)
         if self.rot is not None:
             self.rot.train(training)
         if self.inv is not None:
@@ -592,7 +590,7 @@ class SacSSAgent(object):
         if step % self.actor_update_freq == 0:
             self.update_actor_and_alpha(obs, dynamics, L, step)
 
-        if step % self.critic_target_update_freq == 0:
+        if step % self.critic_target_update_freq == 0: # Target Q-network update
             utils.soft_update_params(
                 self.critic.Q1, self.critic_target.Q1, self.critic_tau
             )
@@ -603,8 +601,11 @@ class SacSSAgent(object):
                 self.critic.encoder, self.critic_target.encoder,
                 self.encoder_tau
             )
-            #TODO check if we need an update_params with latent encoder
-        
+            utils.soft_update_params(
+                self.critic.latent_encoder, self.critic_target.latent_encoder,
+                self.encoder_tau
+            )
+
         if self.rot is not None and step % self.ss_update_freq == 0:
             self.update_rot(obs, L, step)
 

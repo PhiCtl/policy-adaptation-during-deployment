@@ -103,9 +103,10 @@ class LatentEncoder(nn.Module):
 
 	def forward(self, dynamics, detach=False):
 
+		# TODO should we detach only the first one or all the followings ?
 		conv = torch.relu(self.conv1(dynamics)).detach() if detach else torch.relu(self.conv1(dynamics))
-		pooled = self.pool1(conv).detach() if detach else self.pool1(conv)
-		conv = torch.relu(self.conv2(pooled)).detach() if detach else torch.relu(self.conv2(pooled))
+		pooled = self.pool1(conv)
+		conv = torch.relu(self.conv2(pooled))
 
 		h = conv.view(conv.size(0), -1)
 		output = self.fc(h)
