@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from src.utils import moving_average_reward
+from utils import moving_average_reward
 
 class Predictor(nn.Module) :
 
