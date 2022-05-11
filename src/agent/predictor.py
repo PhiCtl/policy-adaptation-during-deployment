@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from utils import moving_average_reward
+#from utils import moving_average_reward
 
 class Predictor(object) :
 
@@ -33,10 +33,11 @@ class HardcodedPredictor(Predictor):
         self.dynamics = init_dynamics
 
     def __call__(self, x):
-        return self.dynamics.sample_window(self.step, self.forecasting_steps)
+        pred_dynamics = torch.as_tensor(self.dynamics.sample_window(self.step, self.forecasting_steps))
+        return pred_dynamics.unsqueeze(0).float()#.cuda()
 
     def sample_dynamics(self):
-        return self.dynamics.init_value()
+        return torch.as_tensor(self.dynamics.init_value()).unsqueeze(0).float()#.cuda()
 
 def build_predictor(predictor, args) :
 

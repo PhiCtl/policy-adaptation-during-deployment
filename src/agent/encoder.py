@@ -3,6 +3,7 @@ import torch.nn as nn
 
 
 OUT_DIM = {2: 39, 4: 35, 6: 31, 8: 27, 10: 23, 11: 21, 12: 19}
+OUT_LATENT_DIM = {100: 55}
 
 
 def tie_weights(src, trg):
@@ -92,14 +93,14 @@ class LatentEncoder(nn.Module):
 	def __init__(self, dynamics_shape, latent_dim, num_filters=32):
 		super().__init__()
 
-		#TODO: think about an process part 
-		#self.process = 
+		#TODO: think about an process part
+		#self.process =
 
-		self.conv1 = nn.Conv1d(dynamics_shape, num_filters, kernel_size=3, stride=1)
+		self.conv1 = nn.Conv1d(1, num_filters, kernel_size=5, stride=2)
 		self.pool1 = nn.MaxPool1d(2)
-		self.conv2 = nn.Conv1d(num_filters, num_filters, kernel_size=3, stride =1)
+		self.conv2 = nn.Conv1d(num_filters, num_filters, kernel_size=5, stride =2)
 
-		self.fc = nn.Linear(num_filters, latent_dim)
+		self.fc = nn.Linear(OUT_LATENT_DIM[dynamics_shape], latent_dim)
 
 	def forward(self, dynamics, detach=False):
 
@@ -111,6 +112,7 @@ class LatentEncoder(nn.Module):
 		h = conv.view(conv.size(0), -1)
 		output = self.fc(h)
 		return output
+
 
 	def copy_conv_weights_from(self, source):
 		tie_weights(src=source.conv1, trg=self.conv1)
