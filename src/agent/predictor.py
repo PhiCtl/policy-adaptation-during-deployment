@@ -4,12 +4,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 from utils import moving_average_reward
 
-class Predictor(nn.Module) :
+class Predictor(object) :
 
     def __init__(self):
         self.step = None
 
-    def forward(self, x):
+    def __call__(self, x):
         raise NotImplementedError
 
     def sample_dynamics(self):
@@ -32,7 +32,7 @@ class HardcodedPredictor(Predictor):
         self.forecasting_steps = dynamics_shape
         self.dynamics = init_dynamics
 
-    def forward(self, x):
+    def __call__(self, x):
         return self.dynamics.sample_window(self.step, self.forecasting_steps)
 
     def sample_dynamics(self):
