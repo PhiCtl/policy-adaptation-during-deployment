@@ -11,7 +11,6 @@ LOG_FREQ = 10000
 
 
 def make_agent(obs_shape, action_shape, args):
-    print(args.dynamics_shape)
     return SacSSAgent(
         obs_shape=obs_shape,
         action_shape=action_shape,
@@ -359,7 +358,7 @@ class SacSSAgent(object):
 
             # inverse dynamics
             if use_inv:
-                self.inv = InvFunction(encoder_feature_dim, action_shape[0], hidden_dim).cuda()
+                self.inv = InvFunction(encoder_feature_dim, latent_dim, action_shape[0], hidden_dim).cuda()
                 self.inv.apply(weight_init)
             
         # curl
