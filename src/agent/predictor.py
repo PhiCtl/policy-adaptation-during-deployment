@@ -34,10 +34,10 @@ class HardcodedPredictor(Predictor):
 
     def __call__(self, x):
         pred_dynamics = torch.as_tensor(self.dynamics.sample_window(self.step, self.forecasting_steps))
-        return pred_dynamics.unsqueeze(0).float()#.cuda()
+        return pred_dynamics.unsqueeze(0).float().cuda()
 
     def sample_dynamics(self):
-        return torch.as_tensor(self.dynamics.init_value()).unsqueeze(0).float()#.cuda()
+        return torch.as_tensor(self.dynamics.init_value()).unsqueeze(0).float().cuda()
 
 def build_predictor(predictor, args) :
 
