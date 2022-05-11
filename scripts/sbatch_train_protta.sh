@@ -2,22 +2,19 @@
 #SBATCH --nodes 1
 #SBATCH --ntasks 1
 #SBATCH --cpus-per-task 1
-#SBATCH --mem 48G
-#SBATCH --time 1-12:00:00
+#SBATCH --mem 110G
+#SBATCH --time 2-30:00:00
 #SBATCH --account vita
 #SBATCH --gres gpu:1
 
-python3 src/train.py \
-    --domain_name cheetah \
-    --task_name run \
-    --action_repeat 4 \
+python3 src/train_protta.py \
+    --domain_name cartpole \
+    --task_name swingup \
+    --action_repeat 8 \
     --mode train \
+    --dependent \
     --use_inv \
-    --num_shared_layers 8 \
-    --actor_lr 3e-4 \
-    --critic_lr 3e-4 \
-    --encoder_lr 3e-4 \
-    --ss_lr 3e-4 \
+    --num_shared_layers 4 \
     --seed 0 \
-    --work_dir logs/cheetah_run/inv/0 \
+    --work_dir logs/cartpole_swingup_protta/inv/0 \
     --save_model

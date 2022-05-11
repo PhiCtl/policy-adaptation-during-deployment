@@ -14,7 +14,7 @@ def parse_args():
 	parser.add_argument('--mode', default='train', type=str)
 	parser.add_argument('--dependent', default=False, action='store_true')
 	parser.add_argument('--threshold', default=0.0, type=float)
-	parser.add_argument('--window', default=5, type=int)
+	parser.add_argument('--window', default=100, type=int)
 	
 	# agent
 	parser.add_argument('--init_steps', default=1000, type=int)
@@ -28,7 +28,7 @@ def parse_args():
 	parser.add_argument('--eval_episodes', default=10, type=int)
 
 	# predictor
-	parser.add_argument('--latent_dim', default=2, type=int)
+	parser.add_argument('--latent_dim', default=50, type=int)
 	parser.add_argument('--predictor', default='cart_mass', type=str)
 	parser.add_argument('--dynamics_shape', default=100, type=int)
 
