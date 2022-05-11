@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import utils
-from agent.encoder import make_encoder, make_latent_encoder # TODO
+from agent.encoder import make_encoder, make_latent_encoder
 from src.agent.predictor import *
 
 LOG_FREQ = 10000
@@ -14,7 +14,7 @@ def make_agent(obs_shape, action_shape, args):
     return SacSSAgent(
         obs_shape=obs_shape,
         action_shape=action_shape,
-        dynamics_shape=args.dynamics_shape, # TODO change
+        dynamics_shape=args.dynamics_shape,
         latent_dim=args.latent_dim,
         hidden_dim=args.hidden_dim,
         discount=args.discount,
@@ -353,7 +353,7 @@ class SacSSAgent(object):
 
             self.ss_encoder.copy_conv_weights_from(self.critic.encoder, num_shared_layers)
             
-            # -> TODO implement: copy_conv_weights_from
+
             self.ss_latent_encoder.copy_conv_weights_from(self.critic.latent_encoder)
             
             # rotation
@@ -455,8 +455,8 @@ class SacSSAgent(object):
             mu, pi, _, _ = self.actor(obs, dynamics, compute_log_pi=False)
             return pi.cpu().data.numpy().flatten(), dynamics
 
-    def sample_latent(self):
-        return self.predictor.sample_latent() # TODO
+    def sample_dynamics(self):
+        return self.predictor.sample_dynamics()
 
     def update_critic(self, obs, dynamics, action, reward, next_obs, not_done, L, step):
 

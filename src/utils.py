@@ -130,7 +130,7 @@ def make_dir(dir_path):
 class ReplayBuffer(object):
     """Buffer to store environment transitions"""
 
-    def __init__(self, obs_shape, action_shape, capacity, batch_size):
+    def __init__(self, obs_shape, action_shape, capacity, batch_size, dynamics_shape=None):
         self.capacity = capacity
         self.batch_size = batch_size
 
@@ -139,7 +139,9 @@ class ReplayBuffer(object):
 
         self.obses = np.empty((capacity, *obs_shape), dtype=obs_dtype)
         self.next_obses = np.empty((capacity, *obs_shape), dtype=obs_dtype)
-        #self.latents = np.empty((capacity, latent_dim), dtype = np.float32)
+        self.dynamics = None
+        if dynamics_shape :
+            self.dynamics = np.empty((capacity, dynamics_shape), dtype = np.float32)
         self.actions = np.empty((capacity, *action_shape), dtype=np.float32)
         self.rewards = np.empty((capacity, 1), dtype=np.float32)
         self.not_dones = np.empty((capacity, 1), dtype=np.float32)
@@ -147,9 +149,10 @@ class ReplayBuffer(object):
         self.idx = 0
         self.full = False
 
-    def add(self, obs, action, reward, next_obs, done):
+    def add(self, obs, action, reward, next_obs, done, dynamics=None):
         np.copyto(self.obses[self.idx], obs)
-        #np.copyto(self.latents[self.idx], latent)
+        if self.dynamics and dynamics:
+            np.copyto(self.dynamics[self.idx], dynamics)
         np.copyto(self.actions[self.idx], action)
         np.copyto(self.rewards[self.idx], reward)
         np.copyto(self.next_obses[self.idx], next_obs)
@@ -164,7 +167,6 @@ class ReplayBuffer(object):
         )
 
         obses = torch.as_tensor(self.obses[idxs]).float().cuda()
-        #latents = torch.as_tensor(self.latents[idxs]).float().cuda()
         actions = torch.as_tensor(self.actions[idxs]).cuda()
         rewards = torch.as_tensor(self.rewards[idxs]).cuda()
         next_obses = torch.as_tensor(self.next_obses[idxs]).float().cuda()
@@ -172,6 +174,10 @@ class ReplayBuffer(object):
 
         obses = random_crop(obses)
         next_obses = random_crop(next_obses)
+
+        if self.dynamics:
+            dynamics = torch.as_tensor(self.dynamics[idxs]).float().cuda()
+            obses, dynamics, actions, rewards, next_obses, not_dones
 
         return obses, actions, rewards, next_obses, not_dones
 

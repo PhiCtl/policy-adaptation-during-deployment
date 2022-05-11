@@ -19,7 +19,7 @@ def evaluate(env, agent, video, num_episodes, L, step):
 		rewards = []
 		episode_reward = 0
 		j = 0
-		agent.predictor.init_step(j) # TODO reflect in agent
+		agent.predictor.init_step(j)
 		while not done:
 			with utils.eval_mode(agent):
 				action, _ = agent.select_action(obs)
@@ -54,7 +54,7 @@ def main(args):
 	assert torch.cuda.is_available(), 'must have cuda enabled'
 	replay_buffer = utils.ReplayBuffer(
 		obs_shape=env.observation_space.shape,
-		latent_dim=args.latent_dim,
+		dynamics_shape=args.dynamics_shape, # stores dynamics and not latent
 		action_shape=env.action_space.shape,
 		capacity=args.train_steps,
 		batch_size=args.batch_size
@@ -98,17 +98,17 @@ def main(args):
 			episode_reward = 0
 			episode_step = 0
 			rewards = []
-			agent.predictor.init_step(episode_step)  # TODO bad practise
+			agent.predictor.init_step(episode_step)
 			episode += 1
 			L.log('train/episode', episode, step)
 
 		# Sample action for data collection
 		if step < args.init_steps:
 			action = env.action_space.sample()
-			latent = agent.sample_latent()
+			dynamics = agent.sample_dynamics()
 		else:
 			with utils.eval_mode(agent):
-				action, latent = agent.sample_action(obs)
+				action, dynamics = agent.sample_action(obs)
 
 		# Run training update
 		if step >= args.init_steps:
@@ -119,7 +119,7 @@ def main(args):
 		# Take step
 		next_obs, reward, done, _, _, _ = env.step(action, rewards)
 		done_bool = 0 if episode_step + 1 == env._max_episode_steps else float(done)
-		replay_buffer.add(obs, latent, action, reward, next_obs, done_bool)
+		replay_buffer.add(obs, action, reward, next_obs, done_bool, dynamics)
 		episode_reward += reward
 		obs = next_obs
 

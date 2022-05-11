@@ -30,7 +30,7 @@ def parse_args():
 	# predictor
 	parser.add_argument('--latent_dim', default=2, type=int)
 	parser.add_argument('--predictor', default='cart_mass', type=str)
-	parser.add_argument('--latent_shape', default=100, type=int)
+	parser.add_argument('--dynamics_shape', default=100, type=int)
 
 	# critic
 	parser.add_argument('--critic_lr', default=1e-3, type=float)
