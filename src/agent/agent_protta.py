@@ -11,6 +11,7 @@ LOG_FREQ = 10000
 
 
 def make_agent(obs_shape, action_shape, args):
+    print(args.dynamics_shape)
     return SacSSAgent(
         obs_shape=obs_shape,
         action_shape=action_shape,
@@ -223,8 +224,8 @@ class CURL(nn.Module):
 class Critic(nn.Module):
     """Critic network, employes two q-functions."""
     def __init__(
-        self, obs_shape, dynamics_shape, latent_dim, action_shape, hidden_dim,
-        encoder_feature_dim, num_layers, num_filters, num_shared_layers
+        self, obs_shape, dynamics_shape, action_shape, hidden_dim, latent_dim,
+            encoder_feature_dim, num_layers, num_filters, num_shared_layers
     ):
         super().__init__()
 
@@ -315,12 +316,12 @@ class SacSSAgent(object):
 
         self.critic = Critic(
             obs_shape, dynamics_shape, action_shape, hidden_dim, latent_dim,
-            encoder_feature_dim, num_layers, num_filters, num_layers
+            encoder_feature_dim, num_layers, num_filters, num_shared_layers
         ).cuda()
 
         self.critic_target = Critic(
             obs_shape, dynamics_shape, action_shape, hidden_dim, latent_dim,
-            encoder_feature_dim, num_layers, num_filters, num_layers
+            encoder_feature_dim, num_layers, num_filters, num_shared_layers
         ).cuda()
 
         self.critic_target.load_state_dict(self.critic.state_dict())
