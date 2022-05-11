@@ -90,7 +90,6 @@ class Actor(nn.Module):
     ):
         super().__init__()
 
-        # How many encoders ?
         self.encoder = make_encoder(
             obs_shape, encoder_feature_dim, num_layers,
             num_filters, num_shared_layers

@@ -41,7 +41,7 @@ class HardcodedPredictor(Predictor):
 def build_predictor(predictor, args) :
 
     if predictor == 'cart_mass' and args.domain_name == 'cartpole':
-        return HardcodedPredictor( args.latent_shape,
+        return HardcodedPredictor(args.latent_shape,
                                   CartMass(args.window))
     else:
         raise NotImplementedError(f'{predictor} for {args.domain_name} is not handled yet')
@@ -54,31 +54,45 @@ class Dynamics(object) :
     def init_value(self):
         raise NotImplementedError
 
-    def _create_values(self):
+    def _create_values(self, allowed_values):
         raise NotImplementedError
 
-    def sample_window(self):
+    def sample_window(self, start_point, length):
         raise NotImplementedError
 
 class CartMass(Dynamics) :
 
-    def __init__(self, time_change, allowed_values=[1,0.1], step = -0.1):
+    def __init__(self, time_of_invariance, allowed_values=[0.1, 1], step=-0.1):
         super().__init__()
-        self.time_change = time_change
+        assert allowed_values[0] < allowed_values[1], "Allowed values should be of the type [min_value, max_value]"
+        self.time_of_invariance = time_of_invariance
         self.step = step
         self.values = None
-        self._create_values()
+        self._create_values(allowed_values)
 
     def _create_values(self, allowed_values):
-        # TODO implement
-        pass
+        if self.step < 0:
+            end, start = allowed_values
+        else :
+            start, end = allowed_values
+        values, current = [], start
+
+        while current*np.sign(self.step) >= end*np.sign(self.step):
+            values.extend([current]*self.time_of_invariance)
+            current += self.step
+
+        self.values = np.array(values)
 
     def init_value(self):
         if self.values :
             return self.values[0]
 
     def sample_window(self, start_point, length):
-        # TODO implement
-        pass
+        tot_length = len(self.values)
+        i = start_point %  tot_length
+        if i + length >= tot_length:
+            res = np.concatenate([self.values[i:], self.values[:tot_length-length]])
+            return res
+        return self.values[i: i+length]
 
 
