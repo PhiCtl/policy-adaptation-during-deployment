@@ -77,7 +77,7 @@ class CartMass(Dynamics) :
             start, end = allowed_values
         values, current = [], start
 
-        while current*np.sign(self.step) >= end*np.sign(self.step):
+        while current*np.sign(-self.step) >= end*np.sign(-self.step):
             values.extend([current]*self.time_of_invariance)
             current += self.step
 
