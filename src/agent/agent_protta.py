@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 import utils
 from agent.encoder import make_encoder, make_latent_encoder
-from src.agent.predictor import *
+from agent.predictor import *
 
 LOG_FREQ = 10000
 
