@@ -63,7 +63,7 @@ class ColorWrapper(gym.Wrapper):
         self._dependent = dependent
         self._window = window
         self._color = None
-        self._change = 0
+        self._change = -2
         self._step = -1
         self.time_step = 0
         if 'color' in self._mode:
@@ -80,7 +80,7 @@ class ColorWrapper(gym.Wrapper):
                  'skybox_rgb2': [.2, .8, .2],
                  'skybox_markrgb': [.2, .8, .2]
                  })
-        self._change = 0
+        self._change = -2
         self._step = -1
         return self.env.reset()
 
