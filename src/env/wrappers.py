@@ -80,7 +80,7 @@ class ColorWrapper(gym.Wrapper):
                  })
 
         _env = self._get_dmc_wrapper()
-        self._change = _env.physics.model.body_mass[1].copy()
+        self._change = 1
         self._step = -0.3
         return self.env.reset()
 
