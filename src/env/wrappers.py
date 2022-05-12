@@ -80,8 +80,8 @@ class ColorWrapper(gym.Wrapper):
                  })
 
         _env = self._get_dmc_wrapper()
-        self._change = 1
-        self._step = -0.3
+        self._change = 0.10
+        self._step = 0.3
         return self.env.reset()
 
     def step(self, action, rewards=None):
