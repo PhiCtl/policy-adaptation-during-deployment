@@ -135,17 +135,17 @@ def main(args):
 
     # Evaluate agent with PAD (if applicable)
     # pad_reward = None
-    # if args.use_inv or args.use_curl or args.use_rot:
+    if args.use_inv or args.use_curl or args.use_rot:
     #     env = init_env(args)
     #     print( f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
     #     pad_reward, std = evaluate(env, agent, args, video, recorder, adapt=True, exp_type="pad")
     #     print('pad reward:', int(pad_reward), ' +/- ', int(std))
     #
-    #     env = init_env(args)
-    #     print(
-    #         f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-    #     pad_reward, std = evaluate(env, agent, args, video, recorder, adapt=True, reload=True, exp_type="reloaded_pad")
-    #     print('pad reward:', int(pad_reward), ' +/- ', int(std))
+        env = init_env(args)
+        print(
+            f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
+        pad_reward, std = evaluate(env, agent, args, video, recorder, adapt=True, reload=True, exp_type="reloaded_pad")
+        print('pad reward:', int(pad_reward), ' +/- ', int(std))
 
     # Save results
     results_fp = os.path.join(args.work_dir, f'pad_{args.mode}.pt')
