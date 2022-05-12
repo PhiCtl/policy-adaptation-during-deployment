@@ -13,7 +13,7 @@ from agent.agent import make_agent
 from utils import get_curl_pos_neg, AdaptRecorder
 
 
-def evaluate(env, agent, args, video, recorder, adapt=False, reload=True, exp_type=""):
+def evaluate(env, agent, args, video, recorder, adapt=False, reload=False, exp_type=""):
     """Evaluate an agent, optionally adapt using PAD"""
     episode_rewards = []
 
@@ -82,8 +82,8 @@ def evaluate(env, agent, args, video, recorder, adapt=False, reload=True, exp_ty
             obs = next_obs
             step += 1
 
-            # if has_changed and reload:
-            #     ep_agent = deepcopy(agent)
+            if has_changed and reload:
+                ep_agent = deepcopy(agent)
 
         video.save(f'{args.mode}_pad_{i}.mp4' if adapt else f'{args.mode}_eval_{i}.mp4')
         episode_rewards.append(episode_reward)
@@ -138,7 +138,13 @@ def main(args):
     if args.use_inv or args.use_curl or args.use_rot:
         env = init_env(args)
         print( f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-        pad_reward, std = evaluate(env, agent, args, video, recorder, adapt=True, exp_type="reloaded_pad")
+        pad_reward, std = evaluate(env, agent, args, video, recorder, adapt=True, exp_type="pad")
+        print('pad reward:', int(pad_reward), ' +/- ', int(std))
+
+        env = init_env(args)
+        print(
+            f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
+        pad_reward, std = evaluate(env, agent, args, video, recorder, adapt=True, reload=True, exp_type="reloaded_pad")
         print('pad reward:', int(pad_reward), ' +/- ', int(std))
 
     # Save results
