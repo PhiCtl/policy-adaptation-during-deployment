@@ -81,7 +81,6 @@ class ColorWrapper(gym.Wrapper):
                  'skybox_markrgb': [.2, .8, .2]
                  })
 
-        _env = self._get_dmc_wrapper()
         self._change = 1
         self._step = -0.1
         return self.env.reset()
@@ -92,6 +91,7 @@ class ColorWrapper(gym.Wrapper):
         next_obs, reward, done, info = self.env.step(action)
         rewards.append(reward)
         has_changed = False
+        _env = self._get_dmc_wrapper()
 
         if self._dependent:
             avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=self._window)
@@ -100,7 +100,7 @@ class ColorWrapper(gym.Wrapper):
                 self.modify_physics_model()
                 has_changed = True
 
-        return next_obs, reward, done, info, self._change, has_changed
+        return next_obs, reward, done, info, _env.physics.model.body_mass[1], has_changed
 
     def randomize(self):
         if 'color' in self._mode :
