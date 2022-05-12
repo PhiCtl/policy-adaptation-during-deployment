@@ -103,9 +103,7 @@ class LatentEncoder(nn.Module):
 		self.fc = nn.Linear(OUT_LATENT_DIM[dynamics_shape], latent_dim)
 
 	def forward(self, dynamics, detach=False):
-
 		# TODO should we detach only the first one or all the followings ?
-		print(dynamics.shape)
 		conv = torch.relu(self.conv1(dynamics)).detach() if detach else torch.relu(self.conv1(dynamics))
 		pooled = self.pool1(conv)
 		conv = torch.relu(self.conv2(pooled))

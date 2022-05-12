@@ -439,6 +439,7 @@ class SacSSAgent(object):
             obs = torch.FloatTensor(obs).cuda()
             obs = obs.unsqueeze(0)
             dynamics = self.predictor(obs)
+            if dynamics.dim < 3 : dynamics = dynamics.unsqueeze(0) # create a batch
             mu, _, _, _ = self.actor(
                 obs, dynamics, compute_pi=False, compute_log_pi=False
             )
@@ -449,6 +450,7 @@ class SacSSAgent(object):
             obs = torch.FloatTensor(obs).cuda()
             obs = obs.unsqueeze(0)
             dynamics = self.predictor(obs)
+            if dynamics.dim < 3: dynamics = dynamics.unsqueeze(0)  # create a batch
             mu, pi, _, _ = self.actor(obs, dynamics, compute_log_pi=False)
             return pi.cpu().data.numpy().flatten(), dynamics
 
