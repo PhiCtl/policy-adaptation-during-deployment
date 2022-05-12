@@ -80,8 +80,8 @@ class ColorWrapper(gym.Wrapper):
                  })
 
         _env = self._get_dmc_wrapper()
-        self._change = 0.10
-        self._step = 0.3
+        self._change = 0
+        self._step = -2
         return self.env.reset()
 
     def step(self, action, rewards=None):
@@ -130,7 +130,7 @@ class ColorWrapper(gym.Wrapper):
         #self._change *= -1
         #self._change = 0.2
         #self._change = self._change*10 if self._change < 1 else self._change / 10
-        if self._change < 0.099 or self._change > 1.1: self._step *= -1
+        if self._change <= -4 or self._change >= 4: self._step *= -1
         self._change = self._change + self._step
         #_env.physics.model.opt.gravity[:2] = self._change
         _env.physics.model.body_mass[1] = self._change
