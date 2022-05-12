@@ -42,7 +42,7 @@ def evaluate(env, agent, args, video, recorder, adapt=False, reload=False, exp_t
                 action = ep_agent.select_action(obs)
             next_obs, reward, done, info, change, has_changed = env.step(action, rewards)
             episode_reward += reward
-            recorder.update(change, reward)
+            recorder.update(change, reward, action)
 
             # Make self-supervised update if flag is true
             if adapt:
@@ -129,9 +129,9 @@ def main(args):
     recorder = AdaptRecorder(args.work_dir, args.mode)
 
     # Evaluate agent without PAD
-    print(f'Evaluating {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-    eval_reward, std = evaluate(env, agent, args, video, recorder)
-    print('eval reward:', int(eval_reward), ' +/- ', int(std))
+    # print(f'Evaluating {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
+    # eval_reward, std = evaluate(env, agent, args, video, recorder)
+    # print('eval reward:', int(eval_reward), ' +/- ', int(std))
 
     # Evaluate agent with PAD (if applicable)
     pad_reward = None
