@@ -130,7 +130,7 @@ class ColorWrapper(gym.Wrapper):
         #self._change *= -1
         #self._change = 0.2
         #self._change = self._change*10 if self._change < 1 else self._change / 10
-        if self._change <= -3 or self._change >= 3: self._step *= -1
+        if self._change <= -5 or self._change >= 5: self._step *= -1
         self._change = self._change + self._step
         _env.physics.model.opt.gravity[:2] = self._change
         #_env.physics.model.body_mass[1] = self._change
