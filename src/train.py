@@ -42,6 +42,8 @@ def main(args):
 		mode=args.mode,
 		mass=args.cart_mass # for domain difference during training
 	)
+	_env = env._get_dmc_wrapper()
+	print(_env.physics.model.body_mass[1])
 
 	utils.make_dir(args.work_dir)
 	model_dir = utils.make_dir(os.path.join(args.work_dir, 'model'))
