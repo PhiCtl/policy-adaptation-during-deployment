@@ -42,10 +42,10 @@ def make_pad_env(
         frame_skip=action_repeat
     )
     env.seed(seed)
-    # If the domain is the cartpole, then we can introduce the custom mass
 
     env = GreenScreen(env, mode, threshold, dependent, window)
     env = FrameStack(env, frame_stack)
+    # If the domain is the cartpole, then we can introduce the custom mass
     if domain_name == 'cartpole' :
         env = ColorWrapper(env, mode, threshold, dependent, window, mass=mass)
     else :
@@ -92,6 +92,7 @@ class ColorWrapper(gym.Wrapper):
         if self.mass : # If a mass is specified -> cart pole domain, then we change the mass of the cart
             _env.physics.model.body_mass[1] = self.mass
 
+        print(_env.physics.model.body_mass[1])
         return self.env.reset()
 
     def step(self, action, rewards=None):
