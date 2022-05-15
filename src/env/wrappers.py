@@ -43,12 +43,13 @@ def make_pad_env(
     )
     env.seed(seed)
     # If the domain is the cartpole, then we can introduce the custom mass
-    if domain_name == 'cartpole' :
-        env = GreenScreen(env, mode, threshold, dependent, window, mass)
-    else :
-        env = GreenScreen(env, mode, threshold, dependent, window)
+
+    env = GreenScreen(env, mode, threshold, dependent, window)
     env = FrameStack(env, frame_stack)
-    env = ColorWrapper(env, mode, threshold, dependent, window)
+    if domain_name == 'cartpole' :
+        env = ColorWrapper(env, mode, threshold, dependent, window, mass=mass)
+    else :
+        env = ColorWrapper(env, mode, threshold, dependent, window, mass=None)
 
     assert env.action_space.low.min() >= -1
     assert env.action_space.high.max() <= 1
