@@ -104,13 +104,16 @@ def init_env(args):
         mode=args.mode,
         dependent=args.dependent,
         threshold=args.threshold,
-        window=args.window
+        window=args.window,
+        mass=args.cart_mass
     )
 
 
 def main(args):
     # Initialize environment
     env = init_env(args)
+    _env = env._get_dmc_wrapper()
+    print(_env.physics.model.body_mass[1])
     model_dir = utils.make_dir(os.path.join(args.work_dir, 'model'))
     video_dir = utils.make_dir(os.path.join(args.work_dir, 'video'))
     video = VideoRecorder(video_dir if args.save_video else None, height=448, width=448)
