@@ -15,6 +15,7 @@ def parse_args():
 	parser.add_argument('--dependent', default=False, action='store_true')
 	parser.add_argument('--threshold', default=0.0, type=float)
 	parser.add_argument('--window', default=100, type=int)
+	parser.add_argument('--cart_mass', default=1, type=float)
 	
 	# agent
 	parser.add_argument('--init_steps', default=1000, type=int)
