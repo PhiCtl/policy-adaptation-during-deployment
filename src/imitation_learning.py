@@ -139,7 +139,7 @@ def main(args):
             # Forward pass for all agents
             for agent, buffer in zip(il_agents, buffers):
                 obs, action, next_obs, _ = buffer.sample() # sample a batch
-                action_pred = agent(obs) # evaluate agent in train mode
+                action_pred = agent.select_action(obs) # evaluate agent in train mode
                 obses.append(obs)
                 preds.append(action_pred)
                 gts.append(action)
