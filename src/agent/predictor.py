@@ -2,14 +2,14 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from src.utils import moving_average_reward
+#from utils import moving_average_reward
 
-class Predictor(nn.Module) :
+class Predictor(object) :
 
     def __init__(self):
         self.step = None
 
-    def forward(self):
+    def __call__(self, x):
         raise NotImplementedError
 
     def sample_dynamics(self):
@@ -29,19 +29,20 @@ class HardcodedPredictor(Predictor):
 
     def __init__(self, dynamics_shape, init_dynamics):
         super().__init__()
-        self.dynamics = init_dynamics
         self.forecasting_steps = dynamics_shape
+        self.dynamics = init_dynamics
 
-    def forward(self):
-        return self.dynamics.sample_window(self.step, self.forecasting_steps)
+    def __call__(self, x):
+        pred_dynamics = torch.as_tensor(self.dynamics.sample_window(self.step, self.forecasting_steps))
+        return pred_dynamics.unsqueeze(0).float().cuda()
 
     def sample_dynamics(self):
-        return self.dynamics.init_value()
+        return torch.as_tensor(self.dynamics.init_value()).unsqueeze(0).float().cuda()
 
 def build_predictor(predictor, args) :
 
     if predictor == 'cart_mass' and args.domain_name == 'cartpole':
-        return HardcodedPredictor(args.latent_shape,
+        return HardcodedPredictor(args.dynamics_shape,
                                   CartMass(args.window))
     else:
         raise NotImplementedError(f'{predictor} for {args.domain_name} is not handled yet')
@@ -77,7 +78,7 @@ class CartMass(Dynamics) :
             start, end = allowed_values
         values, current = [], start
 
-        while current*np.sign(self.step) >= end*np.sign(self.step):
+        while current*np.sign(-self.step) >= end*np.sign(-self.step):
             values.extend([current]*self.time_of_invariance)
             current += self.step
 

@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 import utils
 from agent.encoder import make_encoder, make_latent_encoder
-from src.agent.predictor import *
+from agent.predictor import *
 
 LOG_FREQ = 10000
 
@@ -223,8 +223,8 @@ class CURL(nn.Module):
 class Critic(nn.Module):
     """Critic network, employes two q-functions."""
     def __init__(
-        self, obs_shape, dynamics_shape, latent_dim, action_shape, hidden_dim,
-        encoder_feature_dim, num_layers, num_filters, num_shared_layers
+        self, obs_shape, dynamics_shape, action_shape, hidden_dim, latent_dim,
+            encoder_feature_dim, num_layers, num_filters, num_shared_layers
     ):
         super().__init__()
 
@@ -315,20 +315,18 @@ class SacSSAgent(object):
 
         self.critic = Critic(
             obs_shape, dynamics_shape, action_shape, hidden_dim, latent_dim,
-            encoder_feature_dim, num_layers, num_filters, num_layers
+            encoder_feature_dim, num_layers, num_filters, num_shared_layers
         ).cuda()
 
         self.critic_target = Critic(
             obs_shape, dynamics_shape, action_shape, hidden_dim, latent_dim,
-            encoder_feature_dim, num_layers, num_filters, num_layers
+            encoder_feature_dim, num_layers, num_filters, num_shared_layers
         ).cuda()
 
         self.critic_target.load_state_dict(self.critic.state_dict())
 
         # tie encoders between actor and critic
         self.actor.encoder.copy_conv_weights_from(self.critic.encoder)
-
-        # TODO tie latent encoders between actor critic and SS
         self.actor.latent_encoder.copy_conv_weights_from(self.critic.latent_encoder)
 
         self.log_alpha = torch.tensor(np.log(init_temperature)).cuda()
@@ -351,8 +349,6 @@ class SacSSAgent(object):
                 dynamics_shape, latent_dim)
 
             self.ss_encoder.copy_conv_weights_from(self.critic.encoder, num_shared_layers)
-            
-
             self.ss_latent_encoder.copy_conv_weights_from(self.critic.latent_encoder)
             
             # rotation
@@ -362,7 +358,7 @@ class SacSSAgent(object):
 
             # inverse dynamics
             if use_inv:
-                self.inv = InvFunction(encoder_feature_dim, action_shape[0], hidden_dim).cuda()
+                self.inv = InvFunction(encoder_feature_dim, latent_dim, action_shape[0], hidden_dim).cuda()
                 self.inv.apply(weight_init)
             
         # curl
@@ -371,10 +367,10 @@ class SacSSAgent(object):
                 self.curl_latent_dim, self.critic, self.critic_target, output_type='continuous').cuda()
 
         # predictor
-        self.predictor = build_predictor(predictor, args) # TODO implement
+        self.predictor = build_predictor(predictor, args)
 
         # ss optimizers
-        self.init_ss_optimizers(encoder_lr, ss_lr) # TODO check optim for latent encoder
+        self.init_ss_optimizers(encoder_lr, ss_lr)
 
         # sac optimizers
         self.actor_optimizer = torch.optim.Adam(
@@ -398,7 +394,7 @@ class SacSSAgent(object):
             self.encoder_optimizer =  torch.optim.Adam(
                 self.ss_encoder.parameters(), lr=encoder_lr
             )
-            # TODO latent encoder optimizer
+
         if self.use_rot:
             self.rot_optimizer =  torch.optim.Adam(
                 self.rot.parameters(), lr=ss_lr
@@ -425,6 +421,8 @@ class SacSSAgent(object):
         self.critic.train(training)
         if self.ss_encoder is not None:
             self.ss_encoder.train(training)
+        if self.ss_latent_encoder is not None:
+            self.ss_latent_encoder.train(training)
         if self.rot is not None:
             self.rot.train(training)
         if self.inv is not None:
@@ -440,7 +438,8 @@ class SacSSAgent(object):
         with torch.no_grad():
             obs = torch.FloatTensor(obs).cuda()
             obs = obs.unsqueeze(0)
-            dynamics = self.predictor()
+            dynamics = self.predictor(obs)
+            if dynamics.dim() < 3 : dynamics = dynamics.unsqueeze(0) # create a batch
             mu, _, _, _ = self.actor(
                 obs, dynamics, compute_pi=False, compute_log_pi=False
             )
@@ -450,7 +449,8 @@ class SacSSAgent(object):
         with torch.no_grad():
             obs = torch.FloatTensor(obs).cuda()
             obs = obs.unsqueeze(0)
-            dynamics = self.predictor()
+            dynamics = self.predictor(obs)
+            if dynamics.dim() < 3: dynamics = dynamics.unsqueeze(0)  # create a batch
             mu, pi, _, _ = self.actor(obs, dynamics, compute_log_pi=False)
             return pi.cpu().data.numpy().flatten(), dynamics
 
@@ -592,7 +592,7 @@ class SacSSAgent(object):
         if step % self.actor_update_freq == 0:
             self.update_actor_and_alpha(obs, dynamics, L, step)
 
-        if step % self.critic_target_update_freq == 0:
+        if step % self.critic_target_update_freq == 0: # Target Q-network update
             utils.soft_update_params(
                 self.critic.Q1, self.critic_target.Q1, self.critic_tau
             )
@@ -603,8 +603,11 @@ class SacSSAgent(object):
                 self.critic.encoder, self.critic_target.encoder,
                 self.encoder_tau
             )
-            #TODO check if we need an update_params with latent encoder
-        
+            utils.soft_update_params(
+                self.critic.latent_encoder, self.critic_target.latent_encoder,
+                self.encoder_tau
+            )
+
         if self.rot is not None and step % self.ss_update_freq == 0:
             self.update_rot(obs, L, step)
 

@@ -39,7 +39,8 @@ def main(args):
 		seed=args.seed,
 		episode_length=args.episode_length,
 		action_repeat=args.action_repeat,
-		mode=args.mode
+		mode=args.mode,
+		mass=args.cart_mass # for domain difference during training
 	)
 
 	utils.make_dir(args.work_dir)

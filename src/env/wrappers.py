@@ -27,6 +27,7 @@ def make_pad_env(
         dependent=False,
         threshold=0,
         window=3,
+        mass=1
 ):
     """Make environment for PAD experiments"""
     env = dmc2gym.make(
@@ -41,9 +42,14 @@ def make_pad_env(
         frame_skip=action_repeat
     )
     env.seed(seed)
+
     env = GreenScreen(env, mode, threshold, dependent, window)
     env = FrameStack(env, frame_stack)
-    env = ColorWrapper(env, mode, threshold, dependent, window)
+    # If the domain is the cartpole, then we can introduce the custom mass
+    if domain_name == 'cartpole' :
+        env = ColorWrapper(env, mode, threshold, dependent, window, mass=mass)
+    else :
+        env = ColorWrapper(env, mode, threshold, dependent, window, mass=None)
 
     assert env.action_space.low.min() >= -1
     assert env.action_space.high.max() <= 1
@@ -54,7 +60,7 @@ def make_pad_env(
 class ColorWrapper(gym.Wrapper):
     """Wrapper for the color experiments"""
 
-    def __init__(self, env, mode, threshold, dependent, window):
+    def __init__(self, env, mode, threshold, dependent, window, mass=None):
         assert isinstance(env, FrameStack), 'wrapped env must be a framestack'
         gym.Wrapper.__init__(self, env)
         self._max_episode_steps = env._max_episode_steps
@@ -63,10 +69,14 @@ class ColorWrapper(gym.Wrapper):
         self._dependent = dependent
         self._window = window
         self._color = None
-        self._change = 10.67303744
         self.time_step = 0
+        #self._change = -3 # Reflects change in the environment
         if 'color' in self._mode:
             self._load_colors()
+
+        _env = self._get_dmc_wrapper()
+        if mass:  # If a mass is specified -> cart pole domain, then we change the mass of the cart
+            _env.physics.model.body_mass[1] = mass
 
     def reset(self):
         self.time_step = 0
@@ -79,7 +89,6 @@ class ColorWrapper(gym.Wrapper):
                  'skybox_rgb2': [.2, .8, .2],
                  'skybox_markrgb': [.2, .8, .2]
                  })
-        self._change = 10.67303744
         return self.env.reset()
 
     def step(self, action, rewards=None):
@@ -87,16 +96,16 @@ class ColorWrapper(gym.Wrapper):
         # Make a step
         next_obs, reward, done, info = self.env.step(action)
         rewards.append(reward)
-        has_changed = False
+        has_changed = False # To reload the pre-trained weights whenever a change happened
 
-        if self._dependent:
+        if self._dependent: # Won't be true in the actual training setting
             avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=self._window)
 
-            if self.time_step % self._window == 0 and self.time_step > 1:
+            if self.time_step % self._window == 0 :
                 self.modify_physics_model()
                 has_changed = True
 
-        return next_obs, reward, done, info, self._change, has_changed
+        return next_obs, reward, done, info, None, has_changed
 
     def randomize(self):
         if 'color' in self._mode :
@@ -124,13 +133,16 @@ class ColorWrapper(gym.Wrapper):
         self._set_state(state)
 
     def modify_physics_model(self):
+        """Won't be used in current training setting
+        Is a bit dubious"""
         _env = self._get_dmc_wrapper()
         #self._change *= -1
         #self._change = 0.2
         #self._change = self._change*10 if self._change < 1 else self._change / 10
-        self._change = self._change - 2 if self._change >= 4 else 10.67303744
-        #_env.physics.model.opt.gravity[:2] = self._change
-        _env.physics.model.body_mass[1] = self._change
+        self._change -= 0.2
+        if self._change <= -5 : self._change = -2
+        _env.physics.model.opt.gravity[:2] = self._change
+        #_env.physics.model.body_mass[1] = self._change
 
     def get_state(self):
         return self._get_state()
