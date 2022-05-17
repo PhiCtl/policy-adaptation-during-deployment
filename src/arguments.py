@@ -33,6 +33,11 @@ def parse_args():
 	parser.add_argument('--predictor', default='cart_mass', type=str)
 	parser.add_argument('--dynamics_shape', default=100, type=int)
 
+	# imitation learning
+	parser.add_argument('--num_rollouts', default=100, type=int)
+	parser.add_argument('--n_iter', default=10, type=int)
+	parser.add_argument('--il_steps', default=1000, type=int)
+
 	# critic
 	parser.add_argument('--critic_lr', default=1e-3, type=float)
 	parser.add_argument('--critic_beta', default=0.9, type=float)
