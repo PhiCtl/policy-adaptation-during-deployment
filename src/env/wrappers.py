@@ -89,8 +89,6 @@ class ColorWrapper(gym.Wrapper):
                  'skybox_rgb2': [.2, .8, .2],
                  'skybox_markrgb': [.2, .8, .2]
                  })
-        _env = self._get_dmc_wrapper()
-        print(f'Reset {_env.physics.model.body_mass[1]}')
         return self.env.reset()
 
     def step(self, action, rewards=None):
