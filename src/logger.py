@@ -20,6 +20,18 @@ FORMAT_CONFIG = {
     }
 }
 
+FORMAT_IL_CONFIG = {
+    'il': {
+        'train': [
+            ('episode', 'E', 'int'), ('step', 'S', 'int'),
+            ('duration', 'D', 'time'), ('episode_reward', 'R', 'float'),
+            ('batch_reward', 'BR', 'float'), ('actor_loss', 'ALOSS', 'float'),
+            ('ae_loss', 'RLOSS', 'float')
+        ],
+        'eval': [('step', 'S', 'int'), ('episode_reward', 'ER', 'float')]
+    }
+}
+
 
 class AverageMeter(object):
     def __init__(self):
