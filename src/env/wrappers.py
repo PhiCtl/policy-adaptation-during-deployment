@@ -71,6 +71,7 @@ class ColorWrapper(gym.Wrapper):
         self._color = None
         self.time_step = 0
         #self._change = -3 # Reflects change in the environment
+        self.mass = mass
         if 'color' in self._mode:
             self._load_colors()
 
@@ -90,7 +91,7 @@ class ColorWrapper(gym.Wrapper):
                  'skybox_markrgb': [.2, .8, .2]
                  })
         _env = self._get_dmc_wrapper()
-        _env.physics.model.body_mass[1] = 0.4
+        _env.physics.model.body_mass[1] = self.mass
         return self.env.reset()
 
     def step(self, action, rewards=None):
