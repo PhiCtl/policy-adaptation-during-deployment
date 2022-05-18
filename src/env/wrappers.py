@@ -13,7 +13,7 @@ import dmc2gym
 from dm_control.suite import common
 import cv2
 from collections import deque
-from utils import moving_average_reward, compute_distance
+from utils import moving_average_reward
 
 
 def make_pad_env(
