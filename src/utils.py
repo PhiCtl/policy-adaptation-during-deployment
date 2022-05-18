@@ -167,7 +167,7 @@ class SimpleBuffer(object):
         obses = random_crop(obses)
         next_obses = random_crop(next_obses)
 
-        return obses, actions, next_obses, self.label
+        return obses, actions, next_obses
 
     def sample_recent(self):
         obses = torch.as_tensor(self.obses[-self.batch_size:]).float().cuda()
@@ -177,7 +177,7 @@ class SimpleBuffer(object):
         obses = random_crop(obses)
         next_obses = random_crop(next_obses)
 
-        return obses, actions, next_obses, self.label
+        return obses, actions, next_obses
 
 
 class ReplayBuffer(SimpleBuffer):
@@ -215,7 +215,7 @@ class ReplayBuffer(SimpleBuffer):
         obses = random_crop(obses)
         next_obses = random_crop(next_obses)
 
-        return obses, actions, rewards, next_obses, not_dones, self.label
+        return obses, actions, rewards, next_obses, not_dones
 
     def sample_recent(self):
         obses = torch.as_tensor(self.obses[-self.batch_size:]).float().cuda()
@@ -227,7 +227,7 @@ class ReplayBuffer(SimpleBuffer):
         obses = random_crop(obses)
         next_obses = random_crop(next_obses)
 
-        return obses, actions, rewards, next_obses, not_dones, self.label
+        return obses, actions, rewards, next_obses, not_dones
 
 
     def sample_curl(self):
