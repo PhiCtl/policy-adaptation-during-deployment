@@ -70,7 +70,7 @@ class ColorWrapper(gym.Wrapper):
         self._window = window
         self._color = None
         self.time_step = 0
-        #self._change = -3 # Reflects change in the environment
+        self._change = 1
         self.mass = mass
         if 'color' in self._mode:
             self._load_colors()
@@ -78,6 +78,7 @@ class ColorWrapper(gym.Wrapper):
         _env = self._get_dmc_wrapper()
         if mass:  # If a mass is specified -> cart pole domain, then we change the mass of the cart
             _env.physics.model.body_mass[1] = mass
+            self._change = mass
 
     def reset(self):
         self.time_step = 0
@@ -90,6 +91,7 @@ class ColorWrapper(gym.Wrapper):
                  'skybox_rgb2': [.2, .8, .2],
                  'skybox_markrgb': [.2, .8, .2]
                  })
+        self._change = self.mass
         _env = self._get_dmc_wrapper()
         _env.physics.model.body_mass[1] = self.mass
         return self.env.reset()
