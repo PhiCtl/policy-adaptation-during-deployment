@@ -439,7 +439,7 @@ class SacSSAgent(object):
     def update_actor_and_alpha(self, obs, L=None, step=None, update_alpha=True, bca_loss = False, buffer=None, clone=None):
         # detach encoder, so we don't update it with the actor loss
 
-        if bca_loss : # If we're in the test phase and want to adapt
+        if bca_loss : # If we're in the test phase and want to adapt using clone actions
 
             assert buffer is not None, "Need a buffer to use behavioural cloning adaptation"
             assert clone is not None, "Need  clone to use behavioural cloning adaptation"
@@ -448,13 +448,13 @@ class SacSSAgent(object):
             obses_src, _, _, _, _ = buffer.sample()
 
             # Evaluate clone agent
-            with utils.eval_mode(clone) and torch.no_grad():
-                _, pi_target, _, _ = clone.actor(obses_src, compute_log_pi=False)
+            with utils.eval_mode(clone):
+                _, pi_target, log_pi_target, _ = clone.actor(obses_src, compute_log_pi=False)
 
             # Compute KL divergence loss
             _, pi, log_pi, _  = self.actor(obses_src, detach_encoder=True)
             kl_loss = nn.KLDivLoss(reduction='batchmean')
-            actor_loss = kl_loss(log_pi, pi_target)
+            actor_loss = kl_loss(log_pi, log_pi_target, log_target=True)
 
         else : # We're in the training phase
             _, pi, log_pi, log_std = self.actor(obs, detach_encoder=True)

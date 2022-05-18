@@ -90,7 +90,7 @@ def evaluate(env, agent, clone, buffer, args, video, recorder, exp_type="", adap
 
                 if bca:
                     # Adapt using KL divergence loss and train Actor-Critic network
-                    agent.update_actor_and_alpha(obs, bca_loss=bca, buffer=buffer, clone=clone)
+                    agent.update_actor_and_alpha(obs, bca_loss=bca, buffer=buffer, clone=clone, update_alpha=False)
 
             # TODO remove losses as they're not updated with actor loss and not printed either
             video.record(env, losses)
@@ -133,7 +133,14 @@ def main(args):
         args=args
     )
     agent.load(model_dir, args.pad_checkpoint)
-    clone_agent = deepcopy(agent)
+
+    # Teacher agent
+    expert = make_agent(
+        obs_shape=cropped_obs_shape,
+        action_shape=env.action_space.shape,
+        args=args
+    )
+    expert.load(model_dir, args.pad_checkpoint)
 
     # Collect observations from source environment
     replay_buffer = utils.ReplayBuffer(
@@ -142,31 +149,31 @@ def main(args):
         capacity=args.train_steps,
         batch_size=args.pad_batch_size
     )
-    #prepare_BCA(training_env, clone_agent, replay_buffer, args.pad_num_episodes)
+    prepare_BCA(training_env, expert, replay_buffer, args.pad_num_episodes)
 
     # Recorder
     recorder = AdaptRecorder(args.work_dir, args.mode)
 
     # Evaluate agent without PAD
     print(f'Evaluating {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-    eval_reward, std = evaluate(env, agent, clone_agent, replay_buffer, args, video, recorder, adapt=False, bca=False, exp_type="eval")
+    eval_reward, std = evaluate(env, agent, None, None, args, video, recorder, adapt=False, bca=False, exp_type="eval")
     print('eval reward:', int(eval_reward), ' +/- ', int(std))
 
     # Evaluate agent with PAD (if applicable)
     if args.use_inv or args.use_curl or args.use_rot:
+        env = init_env(args)
+        print( f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) with BCA')
+        pad_reward, std = evaluate(env, agent, expert, replay_buffer, args, video, recorder, adapt=True, bca=True, exp_type="bca")
+        print('pad reward:', int(pad_reward), ' +/- ', int(std))
+
         # env = init_env(args)
-        # print( f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) with BCA')
-        # pad_reward, std = evaluate(env, agent, clone_agent, replay_buffer, args, video, recorder, adapt=True, bca=True, exp_type="bca")
+        # print( f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) without BCA')
+        # pad_reward, std = evaluate(env, agent, clone_agent, replay_buffer, args, video, recorder, adapt=True, bca=False, exp_type="normal")
         # print('pad reward:', int(pad_reward), ' +/- ', int(std))
 
         env = init_env(args)
-        print( f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) without BCA')
-        pad_reward, std = evaluate(env, agent, clone_agent, replay_buffer, args, video, recorder, adapt=True, bca=False, exp_type="normal")
-        print('pad reward:', int(pad_reward), ' +/- ', int(std))
-
-        env = init_env(args)
         print(f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) with reload')
-        pad_reward, std = evaluate(env, agent, clone_agent, None, args, video, recorder, adapt=True, bca=False, exp_type="reloaded", reload=True)
+        pad_reward, std = evaluate(env, agent, None, None, args, video, recorder, adapt=True, bca=False, exp_type="reloaded", reload=True)
         print('pad reward:', int(pad_reward), ' +/- ', int(std))
 
 
