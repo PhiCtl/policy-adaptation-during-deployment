@@ -56,11 +56,9 @@ class AdaptRecorder(Recorder):
     def reset(self):
         self.changes, self.rewards, self.actions = [], [], []
 
-    def update(self, change, reward, action):
+    def update(self, change, reward):
         self.changes.append(change)
         self.rewards.append(reward)
-        if self.actions :
-            self.actions.append(action)
 
     def end_episode(self):
         self.changes_tot.append(self.changes)
