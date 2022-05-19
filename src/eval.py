@@ -42,7 +42,7 @@ def evaluate(env, agent, args, video, recorder, adapt=False, reload=False, exp_t
                 action = ep_agent.select_action(obs)
             next_obs, reward, done, info, change, has_changed = env.step(action, rewards)
             episode_reward += reward
-            recorder.update(change, reward, action)
+            recorder.update(change, reward)
 
             # Make self-supervised update if flag is true
             if adapt:
