@@ -77,7 +77,7 @@ def relabel(obses, expert): # OK
             actions_new.append(expert.select_action(obs))
     return actions_new
 
-def load_agent(label, suffix, action_shape, args): # OK
+def load_agent(label, action_shape, args): # OK
     """Load model from directory"""
 
     work_dir = args.work_dir
@@ -122,7 +122,7 @@ def main(args):
     loggers = []
     for mass in labels:
         # All envs have should have the same action space shape
-        agent, logger = load_agent(mass, "1", envs[0].action_space.shape, args)
+        agent, logger = load_agent(mass, envs[0].action_space.shape, args)
         experts.append(agent)
         loggers.append(logger)
 
