@@ -241,10 +241,16 @@ class SacSSAgent(object):
                 mu  = self.actor(obs, dyn_feat)
                 return mu.cpu().data.numpy().flatten()
 
-    def predict_action(self, obs, next_obs, mass):
+    def predict_action(self, obs, next_obs, mass, gt, L=None, step=None):
         """Make the forward pass for actor, domain specific and ss head"""
 
-        # Do the forward pass
+        # 1. Reset gradients
+        self.actor_optimizer.zero_grad()
+        self.domain_spe_optimizer.zero_grad()
+        self.encoder_optimizer.zero_grad()
+        self.inv_optimizer.zero_grad()
+
+        # 2 . Do the forward pass
         if obs.dim() < 3 :
             obs = obs.unsqueeze(0)
         # TODO should we move obs to cuda ?
@@ -262,8 +268,14 @@ class SacSSAgent(object):
         h_next = self.ss_encoder(next_obs)
         pred_action = self.inv(h, h_next, dyn_feat)
 
+        # 3. Compute losses
+        actor_loss = F.mse_loss(mu, gt)
+        inv_loss = F.mse_loss(pred_action, gt)
+        if L is not None:
+            L.log('train_actor/loss', actor_loss, step)
+            L.log('train_inv/inv_loss', inv_loss, step)
 
-        return mu, pred_action
+        return mu, pred_action, actor_loss + inv_loss
 
 
     def update_actor(self, pred, gt, L = None, step=None):
@@ -300,13 +312,13 @@ class SacSSAgent(object):
         return inv_loss.item()
 
     
-    def update(self, pred_actor, pred_inv, gt, L=None,  step=None):
+    def update(self):
 
-        if step % self.actor_update_freq == 0:
-            self.update_actor(pred_actor, gt, L, step)
+        self.actor_optimizer.step()
+        self.encoder_optimizer.step()
+        self.inv_optimizer.step()
+        self.domain_spe_optimizer.step()
 
-        if self.inv is not None and step % self.ss_update_freq == 0:
-            self.update_inv(pred_inv, gt, L, step)
             
     def tie_agent_from(self, source):
         """Tie all domain generic part between self and source"""
