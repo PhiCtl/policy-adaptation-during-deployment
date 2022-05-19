@@ -156,9 +156,9 @@ def main(args):
     recorder = AdaptRecorder(args.work_dir, args.mode)
 
     # Evaluate agent without PAD
-    print(f'Evaluating {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-    eval_reward, std = evaluate(env, agent, None, None, args, video, recorder, adapt=False, bca=False, exp_type="eval")
-    print('eval reward:', int(eval_reward), ' +/- ', int(std))
+    # print(f'Evaluating {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
+    # eval_reward, std = evaluate(env, agent, None, None, args, video, recorder, adapt=False, bca=False, exp_type="eval")
+    # print('eval reward:', int(eval_reward), ' +/- ', int(std))
 
     # Evaluate agent with PAD (if applicable)
     if args.use_inv or args.use_curl or args.use_rot:
