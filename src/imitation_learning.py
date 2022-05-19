@@ -148,7 +148,7 @@ def main(args):
         il_agent = make_il_agent(
             obs_shape=cropped_obs_shape,
             action_shape=envs[0].action_space.shape,
-            dynamics_input_shape=mass.shape,
+            dynamics_input_shape=mass.shape[0],
             args=args)
         il_agents.append(il_agent)
 
