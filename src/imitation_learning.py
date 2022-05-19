@@ -76,6 +76,7 @@ def relabel(obses, expert): # OK
     with utils.eval_mode(expert):
         actions_new = []
         for obs in obses:
+            obs = torch.FloatTensor(obs).cuda()
             actions_new.append(expert.select_action(obs))
     return actions_new
 
