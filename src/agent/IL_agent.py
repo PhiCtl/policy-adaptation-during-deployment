@@ -266,7 +266,7 @@ class SacSSAgent(object):
         return mu, pred_action
 
 
-    def update_actor(self, pred, gt, step = None, L=None):
+    def update_actor(self, pred, gt, L = None, step=None):
     
         actor_loss = F.mse_loss(pred, gt)
 
