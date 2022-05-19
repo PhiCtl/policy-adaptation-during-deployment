@@ -24,7 +24,6 @@ def make_il_agent(obs_shape, action_shape, args, dynamics_input_shape, dynamics_
         encoder_feature_dim=args.encoder_feature_dim,
         encoder_lr=args.encoder_lr,
         encoder_tau=args.encoder_tau,
-        use_inv=args.use_inv,
         ss_lr=args.ss_lr,
         ss_update_freq=args.ss_update_freq,
         num_layers=args.num_layers,
@@ -328,6 +327,12 @@ class SacSSAgent(object):
             torch.save(
                 self.ss_encoder.state_dict(),
                 '%s/ss_encoder_%s.pt' % (model_dir, step)
+            )
+        
+        if self.domain_spe is not None:
+            torch.save(
+                self.domain_spe.state_dict(),
+                '%s/domain_specific_%s.pt' %(model_dir, step)
             )
 
     def load(self, model_dir, step):
