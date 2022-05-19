@@ -1,3 +1,4 @@
+from turtle import forward
 import torch
 import os
 from tqdm import tqdm
@@ -34,7 +35,7 @@ def evaluate(agent, env, args, buffer=None, step=None, L=None): # OK
             if L and step:
                 L.log('eval/episode_reward', episode_reward, step)
             # Save data into replay buffer
-            if buffer :
+            if buffer:
                 buffer.add(obs, action, next_obs)
             obses.append(obs)
             actions.append(action)
@@ -95,6 +96,20 @@ def load_agent(label, action_shape, args): # OK
 
     return agent, L
 
+class DomainSpecific(nn.Module):
+    """MLP specific domain network."""
+    def __init__(self, dynamics_shape, hidden_dim, output_dim):
+        super().__init__()
+        
+        self.specific = nn.Sequential(nn.Linear(dynamics_shape, hidden_dim), nn.ReLu(),
+                                      nn.Linear(hidden_dim, output_dim))
+    
+    def forward(self, gt):
+         
+        res = self.specific(gt)
+        
+        return res
+    
 def main(args):
 
     # TODO we need the following directories -> args.work_dir + _{label} or _normal
