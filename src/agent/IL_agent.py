@@ -14,10 +14,6 @@ def make_il_agent(obs_shape, action_shape, args):
         obs_shape=obs_shape,
         action_shape=action_shape,
         hidden_dim=args.hidden_dim,
-        discount=args.discount,
-        init_temperature=args.init_temperature,
-        alpha_lr=args.alpha_lr,
-        alpha_beta=args.alpha_beta,
         actor_lr=args.actor_lr,
         actor_beta=args.actor_beta,
         encoder_feature_dim=args.encoder_feature_dim,
@@ -69,6 +65,7 @@ def weight_init(m):
 
 #IL agent is a regresson that want to predict the following actions
 class Actor(nn.Module):
+    # TODO latent here
     """MLP actor network."""
     def __init__(
         self, obs_shape, action_shape, hidden_dim,
@@ -99,6 +96,7 @@ class Actor(nn.Module):
 
 class InvFunction(nn.Module):
     """MLP for inverse dynamics model."""
+    # TODO latent here
     def __init__(self, obs_dim, action_dim, hidden_dim):
         super().__init__()
 
@@ -123,24 +121,19 @@ class SacSSAgent(object):
         obs_shape,
         action_shape,
         hidden_dim=256,
-        discount=0.99,
-        init_temperature=0.01,
-        alpha_lr=1e-3,
-        alpha_beta=0.9,
         actor_lr=1e-3,
         actor_beta=0.9,
         actor_update_freq=2,
         encoder_feature_dim=50,
         encoder_lr=1e-3,
         encoder_tau=0.005,
-        use_inv=False,
+        use_inv=True,
         ss_lr=1e-3,
         ss_update_freq=1,
         num_layers=4,
         num_shared_layers=4,
         num_filters=32,
     ):
-        self.discount = discount
         self.encoder_tau = encoder_tau
         self.actor_update_freq = actor_update_freq
         self.ss_update_freq = ss_update_freq
@@ -148,9 +141,10 @@ class SacSSAgent(object):
 
         assert num_layers >= num_shared_layers, 'num shared layers cannot exceed total amount'
 
+        # TODO add latent dim here
         self.actor = Actor(
             obs_shape, action_shape, hidden_dim,
-            encoder_feature_dim, actor_log_std_min, actor_log_std_max,
+            encoder_feature_dim,
             num_layers, num_filters, num_layers
         ).cuda()
         
@@ -159,13 +153,14 @@ class SacSSAgent(object):
         self.ss_encoder = None
 
         if use_inv:
+
             self.ss_encoder = make_encoder(
                 obs_shape, encoder_feature_dim, num_layers,
                 num_filters, num_shared_layers
             ).cuda()
             
             self.ss_encoder.copy_conv_weights_from(self.actor.encoder, num_shared_layers)
-
+            # TODO add latent dim here
             self.inv = InvFunction(encoder_feature_dim, action_shape[0], hidden_dim).cuda()
             self.inv.apply(weight_init)
             
@@ -174,12 +169,12 @@ class SacSSAgent(object):
 
         # sac optimizers
         self.actor_optimizer = torch.optim.Adam(
-            #self.actor.parameters(), lr=actor_lr, weight_decay=1e-3, betas=(actor_beta, 0.999)
             self.actor.parameters(), lr=actor_lr, betas=(actor_beta, 0.999)
         )
 
+        # TODO domain specific module optimizer
+
         self.train()
-        self.actor.train()
 
     def init_ss_optimizers(self, encoder_lr=1e-3, ss_lr=1e-3):
         
@@ -206,20 +201,12 @@ class SacSSAgent(object):
             self.inv.train(training)
 
     def select_action(self, obs):
+        # TODO add latent here
         with torch.no_grad():
             obs = torch.FloatTensor(obs).cuda()
             obs = obs.unsqueeze(0)
-            mu, _, _, _ = self.actor(
-                obs, compute_pi=False, compute_log_pi=False
-            )
+            mu  = self.actor(obs)
             return mu.cpu().data.numpy().flatten()
-
-    def sample_action(self, obs):
-        with torch.no_grad():
-            obs = torch.FloatTensor(obs).cuda()
-            obs = obs.unsqueeze(0)
-            mu, pi, _, _ = self.actor(obs, compute_log_pi=False)
-            return pi.cpu().data.numpy().flatten()
 
     def update_actor(self, pred, gt, step = None, L=None):
     
@@ -239,6 +226,7 @@ class SacSSAgent(object):
 
         h = self.ss_encoder(obs)
         h_next = self.ss_encoder(next_obs)
+        # TODO extract features from dynamics here
 
         pred_action = self.inv(h, h_next)
         inv_loss = F.mse_loss(pred_action, action)
