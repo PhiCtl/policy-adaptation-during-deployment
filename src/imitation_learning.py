@@ -106,6 +106,7 @@ def main(args):
     print("-"*60)
     print("Define environment")
     envs = []
+    # TODO collect masses
     for mass in labels:
         envs.append(init_env(args, mass))
 
@@ -154,7 +155,9 @@ def main(args):
             # Forward pass for all agents
             for agent, buffer in zip(il_agents, buffers):
                 obs, action, next_obs = buffer.sample() # sample a batch
+                # TODO add mass as input
                 action_pred = agent.select_action(obs) # evaluate agent in train mode
+                # TODO inverse dynamics
                 obses.append(obs)
                 preds.append(action_pred)
                 gts.append(action)
