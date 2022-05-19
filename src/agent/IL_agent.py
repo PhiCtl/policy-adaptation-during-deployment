@@ -184,7 +184,7 @@ class SacSSAgent(object):
         ).cuda()
 
         # Domain specific part
-        self.domain_spe = DomainSpecific(dynamics_input_shape, dynamics_output_shape)
+        self.domain_spe = DomainSpecific(dynamics_input_shape, dynamics_output_shape).cuda()
         
         # Self-supervision
         self.ss_encoder = make_encoder(
@@ -249,6 +249,7 @@ class SacSSAgent(object):
         mass = mass.unsqueeze(0)
         if obs.dim() < 3 :
             obs = obs.unsqueeze(0)
+        # TODO should we move obs to cuda ?
 
         dyn_feat = self.domain_spe(mass) # compute dynamics features
 
