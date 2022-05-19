@@ -86,6 +86,13 @@ class PixelEncoder(nn.Module):
 		for i in range(n):
 			tie_weights(src=source.convs[i], trg=self.convs[i])
 
+	def tie_encoder_from(self, source):
+		# Copy convolutional layers
+		self.copy_conv_weights_from(source)
+		# Copy linear layer
+		tie_weights(self.fc, source.fc)
+
+
 
 class LatentEncoder(nn.Module):
 	"""1D Convolutional encoder for time series feature extraction"""
