@@ -247,9 +247,9 @@ class SacSSAgent(object):
         # Do the forward pass
         mass = torch.FloatTensor(mass).cuda()
         mass = mass.unsqueeze(0)
-        if obs.dim < 2 :
+        if obs.dim < 3 :
             obs = obs.unsqueeze(0)
-            
+
         dyn_feat = self.domain_spe(mass) # compute dynamics features
 
         # Make actor prediction
