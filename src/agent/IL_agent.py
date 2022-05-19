@@ -21,7 +21,6 @@ def make_il_agent(obs_shape, action_shape, args, dynamics_input_shape, dynamics_
         dynamics_output_shape=dynamics_output_shape,
         hidden_dim=args.hidden_dim,
         actor_lr=args.actor_lr,
-        actor_beta=args.actor_beta,
         encoder_feature_dim=args.encoder_feature_dim,
         encoder_lr=args.encoder_lr,
         encoder_tau=args.encoder_tau,
