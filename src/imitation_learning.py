@@ -82,7 +82,7 @@ def load_agent(label, suffix, action_shape, args): # OK
 
     work_dir = args.work_dir + "_" + suffix
     L = Logger(work_dir, use_tb=True, config='il')
-    model_dir = utils.make_dir(os.path.join(work_dir, 'model'))
+    model_dir = os.path.join(work_dir, 'model')
     print(f'Load agent from {work_dir}')
 
     # Prepare agent
