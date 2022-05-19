@@ -195,6 +195,8 @@ def main(args):
 
 
     # Evaluate IL agents on environments
+    for agent in il_agent:
+        agent.save(args.save_dir, "final")
 
     # Baseline agent -> PAD
     pad_agent = load_agent("pad", "1", envs[0].action_space.shape, args)
