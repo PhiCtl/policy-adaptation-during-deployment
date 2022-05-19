@@ -30,7 +30,10 @@ def evaluate(agent, env, args, buffer=None, step=None, L=None): # OK
         while not done:
             # Take a step
             mass = env.get_masses()
-            obs = torch.FloatTensor(obs).cuda()
+            if isinstance(obs, np.ndarray):
+                obs = torch.FloatTensor(obs).cuda()
+            elif obs.device == "cpu" :
+                obs = obs.cuda()
             with utils.eval_mode(agent):
                 action = agent.select_action(obs, mass)
             next_obs, reward, done, info, _, _ = env.step(action, rewards)
