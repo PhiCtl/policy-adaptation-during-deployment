@@ -299,13 +299,13 @@ class SacSSAgent(object):
         return inv_loss.item()
 
     
-    def update(self, pred, gt, L=None,  step=None):
+    def update(self, pred_actor, pred_inv, gt, L=None,  step=None):
 
         if step % self.actor_update_freq == 0:
-            self.update_actor(pred, gt, L, step)
+            self.update_actor(pred_actor, gt, L, step)
 
         if self.inv is not None and step % self.ss_update_freq == 0:
-            self.update_inv(pred, gt, L, step)
+            self.update_inv(pred_inv, gt, L, step)
             
     def tie_agent_from(self, source):
         """Tie all domain generic part between self and source"""
