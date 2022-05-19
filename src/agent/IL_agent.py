@@ -116,8 +116,8 @@ class DomainSpecific(nn.Module):
     def __init__(self, dynamics_input_shape, dynamics_output_shape, hidden_dim=20):
         super().__init__()
 
-        self.specific = nn.Sequential(nn.Linear(dynamics_input_shape, hidden_dim), nn.ReLu(),
-                                      nn.Linear(hidden_dim, hidden_dim), nn.ReLu(),
+        self.specific = nn.Sequential(nn.Linear(dynamics_input_shape, hidden_dim), nn.ReLU(),
+                                      nn.Linear(hidden_dim, hidden_dim), nn.ReLU(),
                                       nn.Linear(hidden_dim, dynamics_output_shape))
 
     def forward(self, gt):
