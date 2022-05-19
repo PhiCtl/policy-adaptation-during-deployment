@@ -252,7 +252,7 @@ class DynamicsBuffer(SimpleBuffer):
     def __init__(self, obs_shape, action_shape, dynamics_input_shape, capacity, batch_size, label=None):
 
         super().__init__(obs_shape, action_shape, capacity, batch_size, label)
-        self.dynamics = np.empty((capacity, *dynamics_input_shape), dtype=np.float32)
+        self.dynamics = np.empty((capacity, dynamics_input_shape), dtype=np.float32)
 
     def add(self, obs, action, next_obs, dynamics):
         np.copyto(self.dynamics[self.idx], dynamics)
