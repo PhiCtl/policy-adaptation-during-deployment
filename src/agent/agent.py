@@ -400,7 +400,7 @@ class SacSSAgent(object):
     def alpha(self):
         return self.log_alpha.exp()
 
-    def select_action(self, obs):
+    def select_action(self, obs, mass=None):
         with torch.no_grad():
             obs = torch.FloatTensor(obs).cuda()
             obs = obs.unsqueeze(0)
