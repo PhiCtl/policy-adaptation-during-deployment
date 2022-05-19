@@ -92,7 +92,6 @@ class Actor(nn.Module):
 
     def forward(self, obs, dyn_feat, detach_encoder=False):
         obs = self.encoder(obs, detach=detach_encoder)
-        print(obs.shape, dyn_feat.shape, self.input_feat_dim)
         joint_input = torch.cat([obs, dyn_feat], dim=1)
         mu = self.trunk(joint_input)
 

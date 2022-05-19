@@ -173,7 +173,6 @@ def main(args):
             preds, pred_invs, gts, losses = [], [], [], 0
 
             # Forward pass sequentially for all agents
-            print("Forward pass")
             for agent, buffer, mass, L in zip(il_agents, buffers, masses, loggers):
                 obs, action, next_obs = buffer.sample() # sample a batch
                 action_pred, action_inv, loss = agent.predict_action(obs, next_obs, mass, action, L=L, step=step)
@@ -184,7 +183,6 @@ def main(args):
                 losses += loss
 
             # Backward pass
-            print("Backward pass")
             losses.backward()
 
             for agent in il_agents:
