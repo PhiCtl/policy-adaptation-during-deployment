@@ -188,16 +188,14 @@ class ReplayBuffer(SimpleBuffer):
         self.not_dones = np.empty((capacity, 1), dtype=np.float32)
 
     def add(self, obs, action, reward, next_obs, done):
-
         np.copyto(self.rewards[self.idx], reward)
         np.copyto(self.not_dones[self.idx], not done)
         # idx is incremented in the super class
         super().add(obs, action, next_obs)
 
-    def add_batch(self, obses, actions, rewards, next_obses, dones ):
+    def add_batch(self, obses, actions, rewards, next_obses, dones):
         for obs, action, reward, next_obs, done in zip(obses, actions, rewards, next_obses, dones):
             self.add(obs, action, reward, next_obs, done)
-
 
     def sample(self):
         idxs = np.random.randint(
@@ -226,7 +224,6 @@ class ReplayBuffer(SimpleBuffer):
         next_obses = random_crop(next_obses)
 
         return obses, actions, rewards, next_obses, not_dones
-
 
     def sample_curl(self):
         idxs = np.random.randint(

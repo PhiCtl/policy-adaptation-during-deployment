@@ -453,8 +453,8 @@ class SacSSAgent(object):
 
             # Compute KL divergence loss
             _, pi, log_pi, _  = self.actor(obses_src, detach_encoder=True)
-            kl_loss = nn.KLDivLoss(reduction='batchmean')
-            actor_loss = kl_loss(log_pi, log_pi_target, log_target=True)
+            kl_loss = nn.KLDivLoss(reduction='batchmean', log_target=True)
+            actor_loss = kl_loss(log_pi, log_pi_target)
 
         else : # We're in the training phase
             _, pi, log_pi, log_std = self.actor(obs, detach_encoder=True)
