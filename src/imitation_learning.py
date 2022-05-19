@@ -182,6 +182,7 @@ def main(args):
 
             # Backward pass
             for agent, L, pred_actor, pred_inv, gt in zip(il_agents, loggers, preds, pred_invs, gts):
+                print(pred_actor)
                 agent.update(pred_actor, pred_inv, gt, L, step)
 
         # Evaluate - Perform IL agent policy rollouts
