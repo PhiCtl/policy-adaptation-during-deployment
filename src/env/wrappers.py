@@ -185,6 +185,11 @@ class ColorWrapper(gym.Wrapper):
     def _set_state(self, state):
         self._get_physics().set_state(state)
 
+    def get_masses(self):
+        _env = self._get_dmc_wrapper()
+        # We're not interested in the env mass, which is 0 at index 0 so we skip it
+        return np.copy(_env.physics.model.body_mass[1:])
+
 
 class FrameStack(gym.Wrapper):
     """Stack frames as observation"""
