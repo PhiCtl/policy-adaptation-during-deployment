@@ -24,7 +24,7 @@ def init_env(args):
         dependent=args.dependent,
         threshold=args.threshold,
         window=args.window,
-        cart_mass=args.cart_mass
+        mass=args.cart_mass
     )
 
 def prepare_BCA(env, agent, buffer, num_episodes) :
