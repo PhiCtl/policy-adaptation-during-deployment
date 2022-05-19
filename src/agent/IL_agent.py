@@ -243,7 +243,6 @@ class SacSSAgent(object):
     def predict_action(self, obs, next_obs, mass):
         """Make the forward pass for actor, domain specific and ss head"""
 
-
         # Do the forward pass
         mass = torch.FloatTensor(mass).cuda()
         mass = mass.unsqueeze(0)
