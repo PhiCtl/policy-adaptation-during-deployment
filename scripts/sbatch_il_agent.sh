@@ -2,7 +2,7 @@
 #SBATCH --nodes 1
 #SBATCH --ntasks 1
 #SBATCH --cpus-per-task 1
-#SBATCH --mem 48G
+#SBATCH --mem 80G
 #SBATCH --time 11:00:00
 #SBATCH --account vita
 #SBATCH --gres gpu:1

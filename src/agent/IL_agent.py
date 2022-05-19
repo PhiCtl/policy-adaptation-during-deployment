@@ -24,7 +24,6 @@ def make_il_agent(obs_shape, action_shape, args, dynamics_input_shape, dynamics_
         encoder_feature_dim=args.encoder_feature_dim,
         encoder_lr=args.encoder_lr,
         encoder_tau=args.encoder_tau,
-        use_inv=args.use_inv,
         ss_lr=args.ss_lr,
         ss_update_freq=args.ss_update_freq,
         num_layers=args.num_layers,
@@ -83,9 +82,9 @@ class Actor(nn.Module):
         )
 
         # Concatenate dynamics and obs
-        input_feat_dim = self.encoder.feature_dim + dynamics_output_shape
+        self.input_feat_dim = self.encoder.feature_dim + dynamics_output_shape
         self.trunk = nn.Sequential(
-            nn.Linear(input_feat_dim, hidden_dim), nn.ReLU(),
+            nn.Linear(self.input_feat_dim, hidden_dim), nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim), nn.ReLU(),
             nn.Linear(hidden_dim, action_shape[0])
         )
@@ -93,6 +92,7 @@ class Actor(nn.Module):
 
     def forward(self, obs, dyn_feat, detach_encoder=False):
         obs = self.encoder(obs, detach=detach_encoder)
+        print(obs.shape, dyn_feat.shape, self.input_feat_dim)
         joint_input = torch.cat([obs, dyn_feat], dim=1)
         mu = self.trunk(joint_input)
 
@@ -117,8 +117,8 @@ class DomainSpecific(nn.Module):
     def __init__(self, dynamics_input_shape, dynamics_output_shape, hidden_dim=20):
         super().__init__()
 
-        self.specific = nn.Sequential(nn.Linear(dynamics_input_shape, hidden_dim), nn.ReLu(),
-                                      nn.Linear(hidden_dim, hidden_dim), nn.ReLu(),
+        self.specific = nn.Sequential(nn.Linear(dynamics_input_shape, hidden_dim), nn.ReLU(),
+                                      nn.Linear(hidden_dim, hidden_dim), nn.ReLU(),
                                       nn.Linear(hidden_dim, dynamics_output_shape))
 
     def forward(self, gt):
@@ -185,7 +185,7 @@ class SacSSAgent(object):
         ).cuda()
 
         # Domain specific part
-        self.domain_spe = DomainSpecific(dynamics_input_shape, dynamics_output_shape)
+        self.domain_spe = DomainSpecific(dynamics_input_shape, dynamics_output_shape).cuda()
         
         # Self-supervision
         self.ss_encoder = make_encoder(
@@ -232,8 +232,11 @@ class SacSSAgent(object):
 
     def select_action(self, obs, mass):
         with torch.no_grad():
-                obs = torch.FloatTensor(obs).cuda()
+                if obs.device == "cpu" :
+                    obs = torch.FloatTensor(obs).cuda()
                 obs = obs.unsqueeze(0)
+                mass = torch.FloatTensor(mass).cuda()
+                mass = mass.unsqueeze(0)
                 dyn_feat = self.domain_spe(mass)
                 mu  = self.actor(obs, dyn_feat)
                 return mu.cpu().data.numpy().flatten()
@@ -241,10 +244,13 @@ class SacSSAgent(object):
     def predict_action(self, obs, next_obs, mass):
         """Make the forward pass for actor, domain specific and ss head"""
 
-
         # Do the forward pass
-        obs = torch.FloatTensor(obs).cuda()
-        obs = obs.unsqueeze(0)
+        mass = torch.FloatTensor(mass).cuda()
+        mass = mass.unsqueeze(0)
+        if obs.dim() < 3 :
+            obs = obs.unsqueeze(0)
+        # TODO should we move obs to cuda ?
+
         dyn_feat = self.domain_spe(mass) # compute dynamics features
 
         # Make actor prediction
@@ -293,13 +299,13 @@ class SacSSAgent(object):
         return inv_loss.item()
 
     
-    def update(self, pred, gt, L=None,  step=None):
+    def update(self, pred_actor, pred_inv, gt, L=None,  step=None):
 
         if step % self.actor_update_freq == 0:
-            self.update_actor(pred, gt, L, step)
+            self.update_actor(pred_actor, gt, L, step)
 
         if self.inv is not None and step % self.ss_update_freq == 0:
-            self.update_inv(pred, gt, L, step)
+            self.update_inv(pred_inv, gt, L, step)
             
     def tie_agent_from(self, source):
         """Tie all domain generic part between self and source"""
@@ -328,6 +334,12 @@ class SacSSAgent(object):
             torch.save(
                 self.ss_encoder.state_dict(),
                 '%s/ss_encoder_%s.pt' % (model_dir, step)
+            )
+        
+        if self.domain_spe is not None:
+            torch.save(
+                self.domain_spe.state_dict(),
+                '%s/domain_specific_%s.pt' %(model_dir, step)
             )
 
     def load(self, model_dir, step):
