@@ -288,7 +288,7 @@ class SacSSAgent(object):
                 torch.load('%s/ss_encoder_%s.pt' % (model_dir, step))
             )
 
-def copy_weights(agent1, agent2, num_shared_layers):
+def tie_domain_generic(agent1, agent2, num_shared_layers):
     
     if agent1 is SacSSAgent and agent2 is SacSSAgent:
         
