@@ -245,11 +245,12 @@ class SacSSAgent(object):
         """Make the forward pass for actor, domain specific and ss head"""
 
         # Do the forward pass
-        mass = torch.FloatTensor(mass).cuda()
-        mass = mass.unsqueeze(0)
         if obs.dim() < 3 :
             obs = obs.unsqueeze(0)
         # TODO should we move obs to cuda ?
+
+        mass = torch.FloatTensor(mass).cuda()
+        mass = mass.repeat(obs.shape[0], 1) # create a batch of masses
 
         dyn_feat = self.domain_spe(mass) # compute dynamics features
 
