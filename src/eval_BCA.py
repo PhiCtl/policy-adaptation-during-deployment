@@ -150,7 +150,7 @@ def main(args):
         capacity=args.train_steps,
         batch_size=args.pad_batch_size
     )
-    prepare_BCA(training_env, expert, replay_buZZffer, args.pad_num_episodes)
+    prepare_BCA(training_env, expert, replay_buffer, args.pad_num_episodes)
 
     # Recorder
     recorder = AdaptRecorder(args.work_dir, args.mode)
