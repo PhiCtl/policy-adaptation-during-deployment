@@ -197,7 +197,7 @@ def main(args):
     # Evaluate IL agents on environments
 
     # Baseline agent -> PAD
-    pad_agent = load_agent("pad", "pad", envs[0].action_space.shape, args)
+    pad_agent = load_agent("pad", "1", envs[0].action_space.shape, args)
     pad_stats = dict()
 
     for env, label in zip(envs, labels) :
