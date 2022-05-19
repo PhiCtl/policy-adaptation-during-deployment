@@ -162,20 +162,20 @@ def main(args):
 
     # Evaluate agent with PAD (if applicable)
     if args.use_inv or args.use_curl or args.use_rot:
-        env = init_env(args)
-        print( f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) with BCA')
-        pad_reward, std = evaluate(env, agent, expert, replay_buffer, args, video, recorder, adapt=True, bca=True, exp_type="bca")
-        print('pad reward:', int(pad_reward), ' +/- ', int(std))
-
         # env = init_env(args)
-        # print( f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) without BCA')
-        # pad_reward, std = evaluate(env, agent, clone_agent, replay_buffer, args, video, recorder, adapt=True, bca=False, exp_type="normal")
+        # print( f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) with BCA')
+        # pad_reward, std = evaluate(env, agent, expert, replay_buffer, args, video, recorder, adapt=True, bca=True, exp_type="bca")
         # print('pad reward:', int(pad_reward), ' +/- ', int(std))
 
         env = init_env(args)
-        print(f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) with reload')
-        pad_reward, std = evaluate(env, agent, None, None, args, video, recorder, adapt=True, bca=False, exp_type="reloaded", reload=True)
+        print( f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) without BCA')
+        pad_reward, std = evaluate(env, agent, clone_agent, replay_buffer, args, video, recorder, adapt=True, bca=False, exp_type="normal")
         print('pad reward:', int(pad_reward), ' +/- ', int(std))
+
+        # env = init_env(args)
+        # print(f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) with reload')
+        # pad_reward, std = evaluate(env, agent, None, None, args, video, recorder, adapt=True, bca=False, exp_type="reloaded", reload=True)
+        # print('pad reward:', int(pad_reward), ' +/- ', int(std))
 
 
 
