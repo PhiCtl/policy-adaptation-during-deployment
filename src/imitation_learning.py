@@ -30,6 +30,7 @@ def evaluate(agent, env, args, buffer=None, step=None, L=None): # OK
         while not done:
             # Take a step
             mass = env.get_masses()
+            obs = torch.FloatTensor(obs).cuda()
             with utils.eval_mode(agent):
                 action = agent.select_action(obs, mass)
             next_obs, reward, done, info, _, _ = env.step(action, rewards)
@@ -76,7 +77,6 @@ def relabel(obses, expert): # OK
     with utils.eval_mode(expert):
         actions_new = []
         for obs in obses:
-            obs = torch.FloatTensor(obs).cuda()
             actions_new.append(expert.select_action(obs))
     return actions_new
 
@@ -205,7 +205,7 @@ def main(args):
         agent.save(args.save_dir, "final")
 
     # Baseline agent -> PAD
-    pad_agent = load_agent("pad", "1", envs[0].action_space.shape, args)
+    pad_agent = load_agent("pad", "", envs[0].action_space.shape, args)
     pad_stats = dict()
 
     for env, label in zip(envs, labels) :
