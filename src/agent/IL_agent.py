@@ -2,17 +2,23 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 import utils
 from agent.encoder import make_encoder
 
 LOG_FREQ = 10000
 
+def tie_weights(src, trg):
+    assert type(src) == type(trg)
+    trg.weight = src.weight
+    trg.bias = src.bias
 
-def make_il_agent(obs_shape, action_shape, args):
+
+def make_il_agent(obs_shape, action_shape, args, dynamics_input_shape, dynamics_output_shape=10):
     return SacSSAgent(
         obs_shape=obs_shape,
         action_shape=action_shape,
+        dynamics_input_shape=dynamics_input_shape,
+        dynamics_output_shape=dynamics_output_shape,
         hidden_dim=args.hidden_dim,
         actor_lr=args.actor_lr,
         actor_beta=args.actor_beta,
@@ -65,10 +71,9 @@ def weight_init(m):
 
 #IL agent is a regresson that want to predict the following actions
 class Actor(nn.Module):
-    # TODO latent here
     """MLP actor network."""
     def __init__(
-        self, obs_shape, action_shape, hidden_dim,
+        self, obs_shape, action_shape, dynamics_output_shape, hidden_dim,
         encoder_feature_dim, num_layers, num_filters, num_shared_layers
     ):
         super().__init__()
@@ -78,37 +83,70 @@ class Actor(nn.Module):
             num_filters, num_shared_layers
         )
 
+        # Concatenate dynamics and obs
+        input_feat_dim = self.encoder.feature_dim + dynamics_output_shape
         self.trunk = nn.Sequential(
-            nn.Linear(self.encoder.feature_dim, hidden_dim), nn.ReLU(),
+            nn.Linear(input_feat_dim, hidden_dim), nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim), nn.ReLU(),
             nn.Linear(hidden_dim, action_shape[0])
         )
         self.apply(weight_init)
 
-    def forward(
-        self, obs, detach_encoder=False
-    ):
+    def forward(self, obs, dyn_feat, detach_encoder=False):
         obs = self.encoder(obs, detach=detach_encoder)
-
-        mu = self.trunk(obs) 
+        joint_input = torch.cat([obs, dyn_feat], dim=1)
+        mu = self.trunk(joint_input)
 
         return mu
 
+    def tie_actor_from(self, source):
+        """Tie actor parameters to another actor"""
+        # Both objects should be actor models
+        assert type(self) == type(source)
+
+        # We copy actor encoder
+        self.encoder.tie_encoder_from(source)
+        # Copy linear layers
+        for tgt, src in zip(self.trunk, source.trunk):
+            if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
+                tie_weights(tgt, src)
+
+
+class DomainSpecific(nn.Module):
+    """MLP specific domain network."""
+
+    def __init__(self, dynamics_input_shape, dynamics_output_shape, hidden_dim=20):
+        super().__init__()
+
+        self.specific = nn.Sequential(nn.Linear(dynamics_input_shape, hidden_dim), nn.ReLu(),
+                                      nn.Linear(hidden_dim, hidden_dim), nn.ReLu(),
+                                      nn.Linear(hidden_dim, dynamics_output_shape))
+
+    def forward(self, gt):
+        res = self.specific(gt)
+        return res
+
 class InvFunction(nn.Module):
     """MLP for inverse dynamics model."""
-    # TODO latent here
-    def __init__(self, obs_dim, action_dim, hidden_dim):
+    def __init__(self, obs_dim, action_dim, dynamics_output_shape, hidden_dim):
         super().__init__()
 
         self.trunk = nn.Sequential(
-            nn.Linear(2*obs_dim, hidden_dim), nn.ReLU(),
+            nn.Linear(2*obs_dim + dynamics_output_shape, hidden_dim), nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim), nn.ReLU(),
             nn.Linear(hidden_dim, action_dim)
         )
 
-    def forward(self, h, h_next):
-        joint_h = torch.cat([h, h_next], dim=1)
-        return self.trunk(joint_h)
+    def forward(self, h, h_next, dyn_feat):
+        joint_input = torch.cat([h, h_next, dyn_feat], dim=1)
+        return self.trunk(joint_input)
+
+    def tie_inv_from(self, source):
+        assert type(self) == type(source)
+        # Copy linear layers
+        for tgt, src in zip(self.trunk, source.trunk):
+            if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
+                tie_weights(tgt, src)
 
 
 class SacSSAgent(object):
@@ -120,14 +158,14 @@ class SacSSAgent(object):
         self,
         obs_shape,
         action_shape,
+        dynamics_input_shape,
+        dynamics_output_shape,
         hidden_dim=256,
         actor_lr=1e-3,
-        actor_beta=0.9,
         actor_update_freq=2,
         encoder_feature_dim=50,
         encoder_lr=1e-3,
         encoder_tau=0.005,
-        use_inv=True,
         ss_lr=1e-3,
         ss_update_freq=1,
         num_layers=4,
@@ -137,76 +175,90 @@ class SacSSAgent(object):
         self.encoder_tau = encoder_tau
         self.actor_update_freq = actor_update_freq
         self.ss_update_freq = ss_update_freq
-        self.use_inv = use_inv
 
         assert num_layers >= num_shared_layers, 'num shared layers cannot exceed total amount'
 
-        # TODO add latent dim here
+        # Actor
         self.actor = Actor(
-            obs_shape, action_shape, hidden_dim,
+            obs_shape, action_shape, dynamics_output_shape, hidden_dim,
             encoder_feature_dim,
             num_layers, num_filters, num_layers
         ).cuda()
+
+        # Domain specific part
+        self.domain_spe = DomainSpecific(dynamics_input_shape, dynamics_output_shape)
         
-        # self-supervision
-        self.inv = None
-        self.ss_encoder = None
+        # Self-supervision
+        self.ss_encoder = make_encoder(
+            obs_shape, encoder_feature_dim, num_layers,
+            num_filters, num_shared_layers
+        ).cuda()
 
-        if use_inv:
+        self.ss_encoder.copy_conv_weights_from(self.actor.encoder, num_shared_layers)
+        self.inv = InvFunction(encoder_feature_dim, action_shape[0], dynamics_output_shape, hidden_dim).cuda()
+        self.inv.apply(weight_init)
 
-            self.ss_encoder = make_encoder(
-                obs_shape, encoder_feature_dim, num_layers,
-                num_filters, num_shared_layers
-            ).cuda()
-            
-            self.ss_encoder.copy_conv_weights_from(self.actor.encoder, num_shared_layers)
-            # TODO add latent dim here
-            self.inv = InvFunction(encoder_feature_dim, action_shape[0], hidden_dim).cuda()
-            self.inv.apply(weight_init)
-            
-        # ss otimizers
-        self.init_ss_optimizers(encoder_lr, ss_lr)
-
-        # sac optimizers
+        # actor optimizers
         self.actor_optimizer = torch.optim.Adam(
-            self.actor.parameters(), lr=actor_lr, betas=(actor_beta, 0.999)
+            self.actor.parameters(), lr=actor_lr
         )
 
-        # TODO domain specific module optimizer
+        # domain specific optimizer
+        self.domain_spe_optimizer = torch.optim.Adam(
+            self.domain_spe.parameters(), lr=ss_lr
+        )
+            
+        # ss optimizers
+        self.init_ss_optimizers(encoder_lr, ss_lr)
 
         self.train()
 
     def init_ss_optimizers(self, encoder_lr=1e-3, ss_lr=1e-3):
         
-        if self.ss_encoder is not None:
-            self.encoder_optimizer =  torch.optim.Adam(
+        self.encoder_optimizer =  torch.optim.Adam(
                 self.ss_encoder.parameters(), lr=encoder_lr
-            )
-        if self.use_rot:
-            self.rot_optimizer =  torch.optim.Adam(
-                self.rot.parameters(), lr=ss_lr
-            )
-        if self.use_inv:
-            self.inv_optimizer =  torch.optim.Adam(
+        )
+        self.inv_optimizer =  torch.optim.Adam(
                 self.inv.parameters(), lr=ss_lr
-            )    
+        )
     
     def train(self, training=True):
         self.training = training
         self.actor.train(training)
-
+        self.domain_spe.train(training)
         if self.ss_encoder is not None:
             self.ss_encoder.train(training)
         if self.inv is not None:
             self.inv.train(training)
 
-    def select_action(self, obs):
-        # TODO add latent here
+    def select_action(self, obs, mass):
         with torch.no_grad():
-            obs = torch.FloatTensor(obs).cuda()
-            obs = obs.unsqueeze(0)
-            mu  = self.actor(obs)
-            return mu.cpu().data.numpy().flatten()
+                obs = torch.FloatTensor(obs).cuda()
+                obs = obs.unsqueeze(0)
+                dyn_feat = self.domain_spe(mass)
+                mu  = self.actor(obs, dyn_feat)
+                return mu.cpu().data.numpy().flatten()
+
+    def predict_action(self, obs, next_obs, mass):
+        """Make the forward pass for actor, domain specific and ss head"""
+
+
+        # Do the forward pass
+        obs = torch.FloatTensor(obs).cuda()
+        obs = obs.unsqueeze(0)
+        dyn_feat = self.domain_spe(mass) # compute dynamics features
+
+        # Make actor prediction
+        mu = self.actor(obs, dyn_feat)
+
+        # Make SS prediction
+        h = self.ss_encoder(obs)
+        h_next = self.ss_encoder(next_obs)
+        pred_action = self.inv(h, h_next, dyn_feat)
+
+
+        return mu, pred_action
+
 
     def update_actor(self, pred, gt, step = None, L=None):
     
@@ -215,28 +267,26 @@ class SacSSAgent(object):
         if L is not None:
             L.log('train_actor/loss', actor_loss, step)
 
-        # optimize the actor
+        # optimize the actor and the domain specific module
         self.actor_optimizer.zero_grad()
+        self.domain_spe_optimizer.zero_grad()
         actor_loss.backward()
         self.actor_optimizer.step()
+        self.domain_spe_optimizer.step()
 
 
-    def update_inv(self, obs, next_obs, action, L=None, step=None):
-        assert obs.shape[-1] == 84 and next_obs.shape[-1] == 84
+    def update_inv(self, pred, gt, L=None, step=None):
 
-        h = self.ss_encoder(obs)
-        h_next = self.ss_encoder(next_obs)
-        # TODO extract features from dynamics here
-
-        pred_action = self.inv(h, h_next)
-        inv_loss = F.mse_loss(pred_action, action)
+        inv_loss = F.mse_loss(pred, gt)
 
         self.encoder_optimizer.zero_grad()
         self.inv_optimizer.zero_grad()
+        self.domain_spe_optimizer.zero_grad()
         inv_loss.backward()
 
         self.encoder_optimizer.step()
         self.inv_optimizer.step()
+        self.domain_spe_optimizer.step()
 
         if L is not None:
             L.log('train_inv/inv_loss', inv_loss, step)
@@ -244,17 +294,25 @@ class SacSSAgent(object):
         return inv_loss.item()
 
     
-    def update(self, obs, next_obs, L, step, pred, gt, replay_buffer):
-        obs, action, reward, next_obs, not_done = replay_buffer.sample()
-        
-        L.log('train/batch_reward', reward.mean(), step)
+    def update(self, pred, gt, L=None,  step=None):
 
         if step % self.actor_update_freq == 0:
-            self.update_actor(pred, gt)
+            self.update_actor(pred, gt, L, step)
 
         if self.inv is not None and step % self.ss_update_freq == 0:
-            self.update_inv(obs, next_obs, action, L, step)
+            self.update_inv(pred, gt, L, step)
             
+    def tie_agent_from(self, source):
+        """Tie all domain generic part between self and source"""
+        # Tie full agents
+        assert(isinstance(source, SacSSAgent))
+
+        # Tie SS encoder
+        self.ss_encoder.tie_encoder(source.ss_encoder)
+        # Tie actor
+        self.actor.tie_actor_from(source.actor)
+        # Tie inv
+        self.inv.tie_inv_from(source.inv)
 
     def save(self, model_dir, step):
         torch.save(
@@ -287,11 +345,3 @@ class SacSSAgent(object):
             self.ss_encoder.load_state_dict(
                 torch.load('%s/ss_encoder_%s.pt' % (model_dir, step))
             )
-
-def tie_domain_generic(agent1, agent2, num_shared_layers):
-    
-    if agent1 is SacSSAgent and agent2 is SacSSAgent:
-        
-        agent1.ss_encoder.copy_conv_weights_from(agent1.actor.encoder, num_shared_layers)
-        agent2.ss_encoder.copy_conv_weights_from(agent2.actor.encoder, num_shared_layers)
-        agent1.ss_encoder.copy_conv_weights_from(agent2.actor.encoder, num_shared_layers)
