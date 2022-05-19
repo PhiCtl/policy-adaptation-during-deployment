@@ -241,7 +241,6 @@ class SacSSAgent(object):
     def predict_action(self, obs, next_obs, mass):
         """Make the forward pass for actor, domain specific and ss head"""
 
-
         # Do the forward pass
         dyn_feat = self.domain_spe(mass) # compute dynamics features
 
