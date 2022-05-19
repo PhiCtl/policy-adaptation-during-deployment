@@ -150,7 +150,7 @@ class SacSSAgent(object):
 
         self.actor = Actor(
             obs_shape, action_shape, hidden_dim,
-            encoder_feature_dim, actor_log_std_min, actor_log_std_max,
+            encoder_feature_dim,
             num_layers, num_filters, num_layers
         ).cuda()
         
@@ -300,7 +300,7 @@ class SacSSAgent(object):
                 torch.load('%s/ss_encoder_%s.pt' % (model_dir, step))
             )
 
-def copy_weights(agent1, agent2, num_shared_layers):
+def tie_domain_generic(agent1, agent2, num_shared_layers):
     
     if agent1 is SacSSAgent and agent2 is SacSSAgent:
         
