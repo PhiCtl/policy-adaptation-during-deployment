@@ -16,6 +16,7 @@ python3 src/imitation_learning.py \
     --num_shared_layers 8 \
     --actor_lr 3e-4 \
     --encoder_lr 3e-4 \
+    --pad_checkpoint 500k \
     --ss_lr 3e-4 \
     --seed 0 \
     --work_dir logs/cartpole_swingup/inv/0 \
