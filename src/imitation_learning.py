@@ -80,7 +80,7 @@ def relabel(obses, expert): # OK
 def load_agent(label, suffix, action_shape, args): # OK
     """Load model from directory"""
 
-    work_dir = args.work_dir + "_" + suffix
+    work_dir = args.work_dir
     L = Logger(work_dir, use_tb=True, config='il')
     model_dir = os.path.join(work_dir, 'model')
     print(f'Load agent from {work_dir}')

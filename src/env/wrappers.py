@@ -94,7 +94,7 @@ class ColorWrapper(gym.Wrapper):
         self._change = self.mass
         _env = self._get_dmc_wrapper()
         _env.physics.model.body_mass[1] = self.mass
-        print(_env.physics.model.body_mass[1])
+        #print(_env.physics.model.body_mass[1])
         return self.env.reset()
 
     def step(self, action, rewards=None):

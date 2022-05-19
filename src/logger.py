@@ -17,10 +17,7 @@ FORMAT_CONFIG = {
             ('critic_loss', 'CLOSS', 'float'), ('ae_loss', 'RLOSS', 'float')
         ],
         'eval': [('step', 'S', 'int'), ('episode_reward', 'ER', 'float')]
-    }
-}
-
-FORMAT_IL_CONFIG = {
+    },
     'il': {
         'train': [
             ('episode', 'E', 'int'), ('step', 'S', 'int'),
@@ -30,8 +27,8 @@ FORMAT_IL_CONFIG = {
         ],
         'eval': [('step', 'S', 'int'), ('episode_reward', 'ER', 'float')]
     }
+    
 }
-
 
 class AverageMeter(object):
     def __init__(self):
