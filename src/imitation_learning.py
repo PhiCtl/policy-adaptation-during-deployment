@@ -77,10 +77,10 @@ def relabel(obses, expert): # OK
             actions_new.append(expert.select_action(obs))
     return actions_new
 
-def load_agent(label, action_shape, args): # OK
+def load_agent(label, suffix, action_shape, args): # OK
     """Load model from directory"""
 
-    work_dir = args.work_dir + "_" + str(label)
+    work_dir = args.work_dir + "_" + suffix
     L = Logger(work_dir, use_tb=True, config='il')
     model_dir = utils.make_dir(os.path.join(work_dir, 'model'))
     print(f'Load agent from {work_dir}')
@@ -122,7 +122,7 @@ def main(args):
     loggers = []
     for mass in labels:
         # All envs have should have the same action space shape
-        agent, logger = load_agent(mass, envs[0].action_space.shape, args)
+        agent, logger = load_agent(mass, "1", envs[0].action_space.shape, args)
         experts.append(agent)
         loggers.append(logger)
 
@@ -197,7 +197,7 @@ def main(args):
     # Evaluate IL agents on environments
 
     # Baseline agent -> PAD
-    pad_agent = load_agent("pad", envs[0].action_space.shape, args)
+    pad_agent = load_agent("pad", "pad", envs[0].action_space.shape, args)
     pad_stats = dict()
 
     for env, label in zip(envs, labels) :
