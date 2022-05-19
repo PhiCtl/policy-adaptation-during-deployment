@@ -7,6 +7,7 @@ import numpy as np
 
 from arguments import parse_args
 from agent.agent import make_agent
+from agent.IL_agent import make_il_agent
 import utils
 from eval import init_env
 from logger import Logger
@@ -95,35 +96,24 @@ def load_agent(label, action_shape, args): # OK
     agent.load(model_dir, args.pad_checkpoint)
 
     return agent, L
-
-class DomainSpecific(nn.Module):
-    """MLP specific domain network."""
-    def __init__(self, dynamics_shape, hidden_dim, output_dim):
-        super().__init__()
-        
-        self.specific = nn.Sequential(nn.Linear(dynamics_shape, hidden_dim), nn.ReLu(),
-                                      nn.Linear(hidden_dim, output_dim))
-    
-    def forward(self, gt):
-         
-        res = self.specific(gt)
-        
-        return res
     
 def main(args):
 
     # TODO we need the following directories -> args.work_dir + _{label} or _normal
 
-
     # TODO better practise than lists
-    labels = [0.4, 0.3, 0.2, 0.15]
+    #labels = [0.4, 0.3, 0.2, 0.15]
+    labels = [1]
     # Define 4 envts
     print("-"*60)
     print("Define environment")
     envs = []
-    # TODO collect masses
+    masses = []
     for mass in labels:
-        envs.append(init_env(args, mass))
+        env = init_env(args, mass)
+        masses.append(env.get_masses())
+        print(masses[-1]) # debug
+        envs.append(env)
 
     # Load expert agents
     print("-" * 60)
@@ -149,10 +139,22 @@ def main(args):
         buffers.append(buffer)
         stats_expert[mass] = [mean, std]
 
-    # TODO create 4 IL agents sharing domain generic part
     print("-" * 60)
     print("Create IL agents")
     il_agents = []
+    cropped_obs_shape = (3 * args.frame_stack, 84, 84)
+
+    for mass in masses:
+        il_agent = make_il_agent(
+            obs_shape=cropped_obs_shape,
+            action_shape=envs[0].action_space.shape,
+            dynamics_input_shape=mass.shape,
+            args=args)
+        il_agents.append(il_agent)
+
+    # Share domain generic part between agents
+    for il_agent in il_agents[1:]:
+        il_agent.tie_agent_from(il_agents[0])
 
     # Train the four IL agents with DAgger algorithm
     print("-" * 60)
@@ -165,22 +167,22 @@ def main(args):
         for step in range(args.il_steps):
 
             # Sample data
-            obses, next_obses, preds, gts = [], [], [], []
+            obses, next_obses, preds, pred_invs, gts = [], [], [], [], []
 
-            # Forward pass for all agents
-            for agent, buffer in zip(il_agents, buffers):
+            # Forward pass sequentially for all agents
+            for agent, buffer, mass in zip(il_agents, buffers, masses):
                 obs, action, next_obs = buffer.sample() # sample a batch
-                # TODO add mass as input
-                action_pred = agent.select_action(obs) # evaluate agent in train mode
-                # TODO inverse dynamics
+                action_pred, action_inv = agent.predict_action(obs, next_obs, mass)
+
                 obses.append(obs)
-                preds.append(action_pred)
+                preds.append(action_pred) # Action from actor network
+                pred_invs.append(action_inv) # Action from SS head
                 gts.append(action)
                 next_obses.append(next_obs)
 
             # Backward pass
             for agent, L, obs, next_obs, pred, gt in zip(il_agents, loggers, obses, next_obses, preds, gts):
-                agent.update(obs, next_obs, pred, gt, step, L)
+                agent.update(pred, gt, L, step)
 
         # Evaluate - Perform IL agent policy rollouts
         print("\n\n********** Evaluation and relabeling %i ************" % it)
