@@ -234,6 +234,8 @@ class SacSSAgent(object):
                 if obs.device == "cpu" :
                     obs = torch.FloatTensor(obs).cuda()
                 obs = obs.unsqueeze(0)
+                mass = torch.FloatTensor(mass).cuda()
+                mass = mass.unsqueeze(0)
                 dyn_feat = self.domain_spe(mass)
                 mu  = self.actor(obs, dyn_feat)
                 return mu.cpu().data.numpy().flatten()
@@ -243,6 +245,11 @@ class SacSSAgent(object):
 
 
         # Do the forward pass
+        mass = torch.FloatTensor(mass).cuda()
+        mass = mass.unsqueeze(0)
+        if obs.dim < 2 :
+            obs = obs.unsqueeze(0)
+            
         dyn_feat = self.domain_spe(mass) # compute dynamics features
 
         # Make actor prediction
