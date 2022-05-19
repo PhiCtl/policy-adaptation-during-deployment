@@ -66,7 +66,7 @@ def main(args):
 	if args.pad_checkpoint is not None :
 		agent.load(model_dir, args.pad_checkpoint) # To keep on training...
 
-	L = Logger(args.work_dir, use_tb=False)
+	L = Logger(args.work_dir, use_tb=True)
 	episode, episode_reward, done = 0, 0, True
 	rewards = []
 	start_time = time.time()

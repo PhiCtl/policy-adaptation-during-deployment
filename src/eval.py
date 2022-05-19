@@ -93,7 +93,7 @@ def evaluate(env, agent, args, video, recorder, adapt=False, reload=False, exp_t
     return np.mean(episode_rewards), np.std(episode_rewards)
 
 
-def init_env(args):
+def init_env(args, mass=None):
     utils.set_seed_everywhere(args.seed)
     return make_pad_env(
         domain_name=args.domain_name,
@@ -105,7 +105,7 @@ def init_env(args):
         dependent=args.dependent,
         threshold=args.threshold,
         window=args.window,
-        mass=args.cart_mass
+        mass= mass if mass else args.cart_mass
     )
 
 
@@ -138,24 +138,24 @@ def main(args):
 
     # Evaluate agent with PAD (if applicable)
     # pad_reward = None
-    if args.use_inv or args.use_curl or args.use_rot:
+    # if args.use_inv or args.use_curl or args.use_rot:
     #     env = init_env(args)
     #     print( f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
     #     pad_reward, std = evaluate(env, agent, args, video, recorder, adapt=True, exp_type="pad")
     #     print('pad reward:', int(pad_reward), ' +/- ', int(std))
     #
-        env = init_env(args)
-        print(
-            f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-        pad_reward, std = evaluate(env, agent, args, video, recorder, adapt=True, reload=True, exp_type="reloaded_pad")
-        print('pad reward:', int(pad_reward), ' +/- ', int(std))
+        # env = init_env(args)
+        # print(
+        #     f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
+        # pad_reward, std = evaluate(env, agent, args, video, recorder, adapt=True, reload=True, exp_type="reloaded_pad")
+        # print('pad reward:', int(pad_reward), ' +/- ', int(std))
 
     # Save results
     results_fp = os.path.join(args.work_dir, f'pad_{args.mode}.pt')
     torch.save({
-        'args': args,
+        'args': args  #,
         #'eval_reward': eval_reward,
-        'pad_reward': pad_reward
+        #'pad_reward': pad_reward
     }, results_fp)
     print(f' Threshold {args.threshold} Window size {args.window}')
     print('Saved results to', results_fp)
