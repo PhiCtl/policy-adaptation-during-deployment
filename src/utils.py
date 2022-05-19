@@ -167,15 +167,15 @@ class SimpleBuffer(object):
 
         return obses, actions, next_obses
 
-    def sample_recent(self):
-        obses = torch.as_tensor(self.obses[-self.batch_size:]).float().cuda()
-        actions = torch.as_tensor(self.actions[-self.batch_size:]).cuda()
-        next_obses = torch.as_tensor(self.next_obses[-self.batch_size:]).float().cuda()
-
-        obses = random_crop(obses)
-        next_obses = random_crop(next_obses)
-
-        return obses, actions, next_obses
+    # def sample_recent(self):
+    #     obses = torch.as_tensor(self.obses[-self.batch_size:]).float().cuda()
+    #     actions = torch.as_tensor(self.actions[-self.batch_size:]).cuda()
+    #     next_obses = torch.as_tensor(self.next_obses[-self.batch_size:]).float().cuda()
+    #
+    #     obses = random_crop(obses)
+    #     next_obses = random_crop(next_obses)
+    #
+    #     return obses, actions, next_obses
 
 
 class ReplayBuffer(SimpleBuffer):
@@ -246,6 +246,37 @@ class ReplayBuffer(SimpleBuffer):
                            time_anchor=None, time_pos=None)
 
         return obses, actions, rewards, next_obses, not_dones, curl_kwargs
+
+class DynamicsBuffer(SimpleBuffer):
+
+    def __init__(self, obs_shape, action_shape, dynamics_input_shape, capacity, batch_size, label=None):
+
+        super().__init__(obs_shape, action_shape, capacity, batch_size, label)
+        self.dynamics = np.empty((capacity, dynamics_input_shape), dtype=np.float32)
+
+    def add(self, obs, action, next_obs, dynamics):
+        np.copyto(self.dynamics[self.idx], dynamics)
+        # idx is incremented in the super class
+        super().add(obs, action, next_obs)
+
+    def add_batch(self, obses, actions, next_obses, dynamics):
+        for obs, action, next_obs, d in zip(obses, actions, next_obses, dynamics):
+            self.add(obs, action, next_obs, d)
+
+    def sample(self):
+        idxs = np.random.randint(
+            0, self.capacity if self.full else self.idx, size=self.batch_size
+        )
+
+        obses = torch.as_tensor(self.obses[idxs]).float().cuda()
+        actions = torch.as_tensor(self.actions[idxs]).cuda()
+        next_obses = torch.as_tensor(self.next_obses[idxs]).float().cuda()
+        dynamics = torch.as_tensor(self.dynamics[idxs]).float().cuda()
+
+        obses = random_crop(obses)
+        next_obses = random_crop(next_obses)
+
+        return obses, actions, next_obses, dynamics
 
 
 def get_curl_pos_neg(obs, replay_buffer):

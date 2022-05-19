@@ -17,7 +17,7 @@ def evaluate(agent, env, args, buffer=None, step=None, L=None): # OK
     """Evaluate agent on env, storing obses, actions and next obses in buffer if any"""
 
     ep_rewards = []
-    obses, actions, next_obses = [], [], []
+    obses, actions, next_obses, masses = [], [], [], []
 
     for i in range(args.num_rollouts):
         obs = env.reset()
@@ -29,25 +29,27 @@ def evaluate(agent, env, args, buffer=None, step=None, L=None): # OK
 
         while not done:
             # Take a step
+            mass = env.get_masses()
             with utils.eval_mode(agent):
-                action = agent.select_action(obs)
+                action = agent.select_action(obs, mass)
             next_obs, reward, done, info, _, _ = env.step(action, rewards)
             episode_reward += reward
             if L and step:
                 L.log('eval/episode_reward', episode_reward, step)
             # Save data into replay buffer
             if buffer:
-                buffer.add(obs, action, next_obs)
+                buffer.add(obs, action, next_obs, mass)
             obses.append(obs)
             actions.append(action)
             next_obses.append(next_obs)
+            masses.append(mass)
             obs = next_obs
             step += 1
 
     if L and step:
         L.dump(step)
 
-    return np.array(ep_rewards), obses, actions, next_obses
+    return np.array(ep_rewards), obses, actions, next_obses, masses
 
 
 def collect_expert_samples(agent, env, args, label): # OK
@@ -58,15 +60,16 @@ def collect_expert_samples(agent, env, args, label): # OK
               - label : env specificity, eg. the cartmass
        """
     # Create replay buffer with label
-    buffer = utils.SimpleBuffer(
+    buffer = utils.DynamicsBuffer(
         obs_shape=env.observation_space.shape,
         action_shape=env.action_space.shape,
+        dynamics_input_shape=env.get_masses().shape[0],
         capacity=args.train_steps,
         batch_size=args.batch_size,
         label=label
     )
 
-    ep_rewards, _, _, _ = evaluate(agent, env, args, buffer)
+    ep_rewards, _, _, _, _ = evaluate(agent, env, args, buffer)
     return buffer, ep_rewards.mean(), ep_rewards.std()
 
 def relabel(obses, expert): # OK
@@ -167,31 +170,29 @@ def main(args):
         for step in range(args.il_steps):
 
             # Sample data
-            obses, next_obses, preds, pred_invs, gts = [], [], [], [], []
+            preds, pred_invs, gts = [], [], []
 
             # Forward pass sequentially for all agents
-            for agent, buffer, mass in zip(il_agents, buffers, masses):
-                obs, action, next_obs = buffer.sample() # sample a batch
+            for agent, buffer in zip(il_agents, buffers):
+                obs, action, next_obs, mass = buffer.sample() # sample a batch
                 action_pred, action_inv = agent.predict_action(obs, next_obs, mass)
 
-                obses.append(obs)
                 preds.append(action_pred) # Action from actor network
                 pred_invs.append(action_inv) # Action from SS head
                 gts.append(action)
-                next_obses.append(next_obs)
 
             # Backward pass
-            for agent, L, obs, next_obs, pred, gt in zip(il_agents, loggers, obses, next_obses, preds, gts):
-                agent.update(pred, gt, L, step)
+            for agent, L, pred_actor, pred_inv, gt in zip(il_agents, loggers, preds, pred_invs, gts):
+                agent.update(pred_actor, pred_inv, gt, L, step)
 
         # Evaluate - Perform IL agent policy rollouts
         print("\n\n********** Evaluation and relabeling %i ************" % it)
         for agent, expert, logger, env, buffer, mass in zip(il_agents, experts, loggers, envs, buffers, labels):
-            rewards, obses, actions, next_obses = evaluate(agent, env, args, L=logger, step=step) # evaluate agent on environment
+            rewards, obses, actions, next_obses, masses = evaluate(agent, env, args, L=logger, step=step) # evaluate agent on environment
             stats_il[mass].append([rewards.mean(), rewards.std()]) # save intermediary score
             print(f'Performance of agent on mass {mass} : {rewards.mean()} +/- {rewards.std()}')
             actions_new = relabel(obses, expert)
-            buffer.add_batch(obses, actions_new, next_obses)
+            buffer.add_batch(obses, actions_new, next_obses, masses)
 
 
     # Evaluate IL agents on environments
