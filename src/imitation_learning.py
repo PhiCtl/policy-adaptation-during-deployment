@@ -1,3 +1,4 @@
+from turtle import forward
 import torch
 import os
 from tqdm import tqdm
@@ -6,6 +7,7 @@ import numpy as np
 
 from arguments import parse_args
 from agent.agent import make_agent
+from agent.IL_agent import make_il_agent
 import utils
 from eval import init_env
 from logger import Logger
@@ -34,7 +36,7 @@ def evaluate(agent, env, args, buffer=None, step=None, L=None): # OK
             if L and step:
                 L.log('eval/episode_reward', episode_reward, step)
             # Save data into replay buffer
-            if buffer :
+            if buffer:
                 buffer.add(obs, action, next_obs)
             obses.append(obs)
             actions.append(action)
@@ -75,12 +77,12 @@ def relabel(obses, expert): # OK
             actions_new.append(expert.select_action(obs))
     return actions_new
 
-def load_agent(label, action_shape, args): # OK
+def load_agent(label, suffix, action_shape, args): # OK
     """Load model from directory"""
 
-    work_dir = args.work_dir + "_" + str(label)
+    work_dir = args.work_dir + "_" + suffix
     L = Logger(work_dir, use_tb=True, config='il')
-    model_dir = utils.make_dir(os.path.join(work_dir, 'model'))
+    model_dir = os.path.join(work_dir, 'model')
     print(f'Load agent from {work_dir}')
 
     # Prepare agent
@@ -94,20 +96,24 @@ def load_agent(label, action_shape, args): # OK
     agent.load(model_dir, args.pad_checkpoint)
 
     return agent, L
-
+    
 def main(args):
 
     # TODO we need the following directories -> args.work_dir + _{label} or _normal
 
-
     # TODO better practise than lists
-    labels = [0.4, 0.3, 0.2, 0.15]
+    #labels = [0.4, 0.3, 0.2, 0.15]
+    labels = [1]
     # Define 4 envts
     print("-"*60)
     print("Define environment")
     envs = []
+    masses = []
     for mass in labels:
-        envs.append(init_env(args, mass))
+        env = init_env(args, mass)
+        masses.append(env.get_masses())
+        print(masses[-1]) # debug
+        envs.append(env)
 
     # Load expert agents
     print("-" * 60)
@@ -116,7 +122,7 @@ def main(args):
     loggers = []
     for mass in labels:
         # All envs have should have the same action space shape
-        agent, logger = load_agent(mass, envs[0].action_space.shape, args)
+        agent, logger = load_agent(mass, "1", envs[0].action_space.shape, args)
         experts.append(agent)
         loggers.append(logger)
 
@@ -133,10 +139,22 @@ def main(args):
         buffers.append(buffer)
         stats_expert[mass] = [mean, std]
 
-    # TODO create 4 IL agents sharing domain generic part
     print("-" * 60)
     print("Create IL agents")
     il_agents = []
+    cropped_obs_shape = (3 * args.frame_stack, 84, 84)
+
+    for mass in masses:
+        il_agent = make_il_agent(
+            obs_shape=cropped_obs_shape,
+            action_shape=envs[0].action_space.shape,
+            dynamics_input_shape=mass.shape,
+            args=args)
+        il_agents.append(il_agent)
+
+    # Share domain generic part between agents
+    for il_agent in il_agents[1:]:
+        il_agent.tie_agent_from(il_agents[0])
 
     # Train the four IL agents with DAgger algorithm
     print("-" * 60)
@@ -149,20 +167,22 @@ def main(args):
         for step in range(args.il_steps):
 
             # Sample data
-            obses, next_obses, preds, gts = [], [], [], []
+            obses, next_obses, preds, pred_invs, gts = [], [], [], [], []
 
-            # Forward pass for all agents
-            for agent, buffer in zip(il_agents, buffers):
+            # Forward pass sequentially for all agents
+            for agent, buffer, mass in zip(il_agents, buffers, masses):
                 obs, action, next_obs = buffer.sample() # sample a batch
-                action_pred = agent.select_action(obs) # evaluate agent in train mode
+                action_pred, action_inv = agent.predict_action(obs, next_obs, mass)
+
                 obses.append(obs)
-                preds.append(action_pred)
+                preds.append(action_pred) # Action from actor network
+                pred_invs.append(action_inv) # Action from SS head
                 gts.append(action)
                 next_obses.append(next_obs)
 
             # Backward pass
             for agent, L, obs, next_obs, pred, gt in zip(il_agents, loggers, obses, next_obses, preds, gts):
-                agent.update(obs, next_obs, pred, gt, step, L)
+                agent.update(pred, gt, L, step)
 
         # Evaluate - Perform IL agent policy rollouts
         print("\n\n********** Evaluation and relabeling %i ************" % it)
@@ -177,7 +197,7 @@ def main(args):
     # Evaluate IL agents on environments
 
     # Baseline agent -> PAD
-    pad_agent = load_agent("pad", envs[0].action_space.shape, args)
+    pad_agent = load_agent("pad", "1", envs[0].action_space.shape, args)
     pad_stats = dict()
 
     for env, label in zip(envs, labels) :
