@@ -15,6 +15,6 @@ python3 src/train.py \
     --use_inv \
     --num_shared_layers 8 \
     --seed 0 \
-    --work_dir logs/walker_walk/inv/0 \
+    --work_dir logs/walker_walk/inv/0_-1 \
     --save_model \
     --force_walker -1.0
