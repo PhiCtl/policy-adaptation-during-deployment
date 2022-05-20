@@ -27,8 +27,8 @@ def make_pad_env(
         dependent=False,
         threshold=0,
         window=3,
-        mass=1,
-        force=0
+        mass=1.0,
+        force=0.0
 ):
     """Make environment for PAD experiments"""
     env = dmc2gym.make(
@@ -99,9 +99,11 @@ class ColorWrapper(gym.Wrapper):
                  })
         self._change = self.mass
         _env = self._get_dmc_wrapper()
-        _env.physics.model.body_mass[1] = self.mass
-        _env.physics.model.opt.gravity[:2] = -self.force
-        print(_env.physics.model.opt.gravity[:2]) # TODO remove when it is ok
+        if self.mass :
+            _env.physics.model.body_mass[1] = self.mass
+        if self.force :
+            _env.physics.model.opt.gravity[:2] = -self.force
+        # print(_env.physics.model.opt.gravity[:2]) # TODO remove when it is ok
         return self.env.reset()
 
     def step(self, action, rewards=None):
