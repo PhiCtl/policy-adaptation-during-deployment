@@ -169,7 +169,7 @@ def main(args):
 
         env = init_env(args)
         print( f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode}) without BCA')
-        pad_reward, std = evaluate(env, agent, clone_agent, replay_buffer, args, video, recorder, adapt=True, bca=False, exp_type="normal")
+        pad_reward, std = evaluate(env, agent, None, None, args, video, recorder, adapt=True, bca=False, exp_type="normal")
         print('pad reward:', int(pad_reward), ' +/- ', int(std))
 
         # env = init_env(args)
