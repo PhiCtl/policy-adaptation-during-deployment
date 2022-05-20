@@ -18,6 +18,7 @@ def evaluate(env, agent, video, num_episodes, L, step):
 		done = False
 		episode_reward = 0
 		rewards = []
+
 		while not done:
 			with utils.eval_mode(agent):
 				action = agent.select_action(obs)
@@ -40,7 +41,8 @@ def main(args):
 		episode_length=args.episode_length,
 		action_repeat=args.action_repeat,
 		mode=args.mode,
-		mass=args.cart_mass # for domain difference during training
+		mass=args.cart_mass, # for domain difference during training
+		force=args.force_walker
 	)
 
 	utils.make_dir(args.work_dir)

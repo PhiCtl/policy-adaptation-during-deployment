@@ -27,7 +27,8 @@ def make_pad_env(
         dependent=False,
         threshold=0,
         window=3,
-        mass=1
+        mass=1,
+        force=0
 ):
     """Make environment for PAD experiments"""
     env = dmc2gym.make(
@@ -48,8 +49,10 @@ def make_pad_env(
     # If the domain is the cartpole, then we can introduce the custom mass
     if domain_name == 'cartpole' :
         env = ColorWrapper(env, mode, threshold, dependent, window, mass=mass)
+    elif domain_name == 'walker':
+        env = ColorWrapper(env, mode, threshold, dependent, window, force=force)
     else :
-        env = ColorWrapper(env, mode, threshold, dependent, window, mass=None)
+        env = ColorWrapper(env, mode, threshold, dependent, window, mass=None, force=None)
 
     assert env.action_space.low.min() >= -1
     assert env.action_space.high.max() <= 1
@@ -60,7 +63,7 @@ def make_pad_env(
 class ColorWrapper(gym.Wrapper):
     """Wrapper for the color experiments"""
 
-    def __init__(self, env, mode, threshold, dependent, window, mass=None):
+    def __init__(self, env, mode, threshold, dependent, window, mass=None, force=None):
         assert isinstance(env, FrameStack), 'wrapped env must be a framestack'
         gym.Wrapper.__init__(self, env)
         self._max_episode_steps = env._max_episode_steps
@@ -72,6 +75,7 @@ class ColorWrapper(gym.Wrapper):
         self.time_step = 0
         self._change = 1
         self.mass = mass
+        self.force = force
         if 'color' in self._mode:
             self._load_colors()
 
@@ -79,6 +83,8 @@ class ColorWrapper(gym.Wrapper):
         if mass:  # If a mass is specified -> cart pole domain, then we change the mass of the cart
             _env.physics.model.body_mass[1] = mass
             self._change = mass
+        elif force:
+            _env.physics.model.opt.gravity[:2] = force
 
     def reset(self):
         self.time_step = 0
@@ -94,7 +100,8 @@ class ColorWrapper(gym.Wrapper):
         self._change = self.mass
         _env = self._get_dmc_wrapper()
         _env.physics.model.body_mass[1] = self.mass
-        #print(_env.physics.model.body_mass[1])
+        _env.physics.model.opt.gravity[:2] = self.force
+        print(_env.physics.model.opt.gravity[:2]) # TODO remove when it is ok
         return self.env.reset()
 
     def step(self, action, rewards=None):
