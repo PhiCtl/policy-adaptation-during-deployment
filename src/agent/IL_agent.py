@@ -86,7 +86,7 @@ class Actor(nn.Module):
         self.trunk = nn.Sequential(
             nn.Linear(self.input_feat_dim, hidden_dim), nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim), nn.ReLU(),
-            nn.Linear(hidden_dim, action_shape[0])
+            nn.Linear(hidden_dim, action_shape[0]), nn.Tanh()
         )
         self.apply(weight_init)
 
