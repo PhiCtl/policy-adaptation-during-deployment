@@ -84,7 +84,7 @@ class ColorWrapper(gym.Wrapper):
             _env.physics.model.body_mass[1] = mass
             self._change = mass
         elif force:
-            _env.physics.model.opt.gravity[:2] = force
+            _env.physics.model.opt.gravity[:2] = -force
 
     def reset(self):
         self.time_step = 0
@@ -100,7 +100,7 @@ class ColorWrapper(gym.Wrapper):
         self._change = self.mass
         _env = self._get_dmc_wrapper()
         _env.physics.model.body_mass[1] = self.mass
-        _env.physics.model.opt.gravity[:2] = self.force
+        _env.physics.model.opt.gravity[:2] = -self.force
         print(_env.physics.model.opt.gravity[:2]) # TODO remove when it is ok
         return self.env.reset()
 
