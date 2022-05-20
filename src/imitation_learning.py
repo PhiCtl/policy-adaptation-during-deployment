@@ -202,7 +202,7 @@ def main(args):
         agent.save(args.save_dir, "final")
 
     # Baseline agent -> PAD
-    pad_agent = load_agent("pad", "", envs[0].action_space.shape, args)
+    pad_agent = load_agent("pad", envs[0].action_space.shape, args)
     pad_stats = dict()
 
     for env, label in zip(envs, labels) :
