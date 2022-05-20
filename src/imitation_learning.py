@@ -198,7 +198,7 @@ def main(args):
 
 
     # Evaluate IL agents on environments
-    for agent in il_agent:
+    for agent in il_agents:
         agent.save(args.save_dir, "final")
 
     # Baseline agent -> PAD
