@@ -231,7 +231,7 @@ class SacSSAgent(object):
 
     def select_action(self, obs, mass):
         with torch.no_grad():
-                if obs.device == "cpu" :
+                if isinstance(obs, np.ndarray):
                     obs = torch.FloatTensor(obs).cuda()
                 obs = obs.unsqueeze(0)
                 mass = torch.FloatTensor(mass).cuda()
