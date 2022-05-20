@@ -17,4 +17,4 @@ python3 src/train.py \
     --seed 0 \
     --work_dir logs/walker_walk/inv/0_-1 \
     --save_model \
-    --force_walker -1.0
+    --force_walker 1.0
