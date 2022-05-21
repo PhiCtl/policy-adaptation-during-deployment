@@ -82,9 +82,9 @@ def relabel(obses, expert): # OK
 def load_agent(label, action_shape, args): # OK
     """Load model from directory"""
 
-    work_dir = args.work_dir
+    work_dir = args.work_dir + "_" + label
     L = Logger(work_dir, use_tb=True, config='il')
-    model_dir = os.path.join(work_dir, 'model')
+    model_dir = os.path.join(work_dir, 'inv', '0', 'model')
     print(f'Load agent from {work_dir}')
 
     # Prepare agent
@@ -101,11 +101,9 @@ def load_agent(label, action_shape, args): # OK
     
 def main(args):
 
-    # TODO we need the following directories -> args.work_dir + _{label} or _normal
 
     # TODO better practise than lists
-    #labels = [0.4, 0.3, 0.2, 0.15]
-    labels = [1]
+    labels = ["0_4", ""]
     # Define 4 envts
     print("-"*60)
     print("Define environment")
@@ -215,7 +213,7 @@ def main(args):
         print(f'Mass of {label}')
         print(f'Baseline performance: {pad_stats[label][0]} +/- {pad_stats[label][1]}')
         print(f'Expert performance : {stats_expert[label][0]} +/- {stats_expert[label][1]}')
-        print(f'Imitation learning agent with dagger performance : {stats_il[label][-1][0]} +/- {stats_il[label][-1][0]}')
+        print(f'Imitation learning agent with dagger performance : {stats_il[label][-1][0]} +/- {stats_il[label][-1][1]}')
 
 if __name__ == '__main__':
     args = parse_args()

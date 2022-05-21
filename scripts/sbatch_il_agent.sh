@@ -16,5 +16,5 @@ python3 src/imitation_learning.py \
     --num_shared_layers 8 \
     --pad_checkpoint 500k \
     --seed 0 \
-    --work_dir logs/cartpole_swingup/inv/0 \
+    --work_dir logs/cartpole_swingup \
     --save_model
