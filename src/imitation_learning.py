@@ -103,13 +103,13 @@ def main(args):
 
 
     # TODO better practise than lists
-    labels = ["0_4", "0_3", "0_2", "0_25"]
+    labels = ["", "0_2"]
     # Define 4 envts
     print("-"*60)
     print("Define environment")
     envs = []
     masses = []
-    for mass in [0.4, 0.3, 0.2, 0.25]:
+    for mass in [1, 0.2]:
         env = init_env(args, mass)
         masses.append(env.get_masses())
         print(masses[-1]) # debug
