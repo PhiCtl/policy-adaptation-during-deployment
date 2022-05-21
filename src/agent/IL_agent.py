@@ -325,7 +325,7 @@ class SacSSAgent(object):
         assert(isinstance(source, SacSSAgent))
 
         # Tie SS encoder
-        self.ss_encoder.tie_encoder(source.ss_encoder)
+        self.ss_encoder.tie_encoder_from(source.ss_encoder)
         # Tie actor
         self.actor.tie_actor_from(source.actor)
         # Tie inv
