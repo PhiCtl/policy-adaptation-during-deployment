@@ -103,13 +103,13 @@ def main(args):
 
 
     # TODO better practise than lists
-    labels = ["0_4", ""]
+    labels = ["0_4", "0_3", "0_2", "0_25"]
     # Define 4 envts
     print("-"*60)
     print("Define environment")
     envs = []
     masses = []
-    for mass in labels:
+    for mass in [0.4, 0.3, 0.2, 0.25]:
         env = init_env(args, mass)
         masses.append(env.get_masses())
         print(masses[-1]) # debug
@@ -120,9 +120,9 @@ def main(args):
     print("Load experts")
     experts = []
     loggers = []
-    for mass in labels:
+    for label in labels:
         # All envs have should have the same action space shape
-        agent, logger = load_agent(mass, envs[0].action_space.shape, args)
+        agent, logger = load_agent(label, envs[0].action_space.shape, args)
         experts.append(agent)
         loggers.append(logger)
 
@@ -196,8 +196,8 @@ def main(args):
 
 
     # Evaluate IL agents on environments
-    for agent in il_agents:
-        save_dir = utils.make_dir(os.path.join(args.save_dir, 'model'))
+    for agent, label in zip(il_agents, labels):
+        save_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
         agent.save(save_dir, "final")
 
     # Baseline agent -> PAD
