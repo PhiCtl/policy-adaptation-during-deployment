@@ -103,7 +103,7 @@ class Actor(nn.Module):
         assert type(self) == type(source)
 
         # We copy actor encoder
-        self.encoder.tie_encoder_from(source)
+        self.encoder.tie_encoder_from(source.encoder)
         # Copy linear layers
         for tgt, src in zip(self.trunk, source.trunk):
             if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
