@@ -82,7 +82,7 @@ def relabel(obses, expert): # OK
 def load_agent(label, action_shape, args): # OK
     """Load model from directory"""
 
-    work_dir = args.work_dir + "_" + label
+    work_dir = args.work_dir + label
     L = Logger(work_dir, use_tb=True, config='il')
     model_dir = os.path.join(work_dir, 'inv', '0', 'model')
     print(f'Load agent from {work_dir}')
@@ -103,7 +103,7 @@ def main(args):
 
 
     # TODO better practise than lists
-    labels = ["", "0_2"]
+    labels = ["", "_0_2"]
     # Define 4 envts
     print("-"*60)
     print("Define environment")
