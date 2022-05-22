@@ -109,7 +109,7 @@ def main(args):
     print("Define environment")
     envs = []
     masses = []
-    for mass in [1, 0.2]:
+    for mass in [0.4, 0.2, 0.25, 0.3]:
         env = init_env(args, mass)
         masses.append(env.get_masses())
         print(masses[-1]) # debug
@@ -221,6 +221,35 @@ def main(args):
         print(f'Baseline performance: {pad_stats[label][0]} +/- {pad_stats[label][1]}')
         print(f'Expert performance : {stats_expert[label][0]} +/- {stats_expert[label][1]}')
         print(f'Imitation learning agent with dagger performance : {stats_il[label][-1][0]} +/- {stats_il[label][-1][1]}')
+
+def test_agents(args):
+
+    il_agents = []
+    labels = ["", "_0_2"]
+    # Define 4 envts
+
+    print("-" * 60)
+    print("Define environment")
+    envs = []
+    masses = []
+    for mass in [1, 0.2]:
+        env = init_env(args, mass)
+        masses.append(env.get_masses())
+        print(masses[-1])  # debug
+        envs.append(env)
+    cropped_obs_shape = (3 * args.frame_stack, 84, 84)
+
+    print("Load agents")
+    for label, mass in zip(labels, masses):
+        load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
+        il_agent = make_il_agent(
+            obs_shape=cropped_obs_shape,
+            action_shape=envs[0].action_space.shape,
+            dynamics_input_shape=mass.shape[0],
+            args=args)
+        il_agent.load(load_dir, "final")
+        il_agents.append(il_agent)
+
 
 if __name__ == '__main__':
     args = parse_args()

@@ -358,13 +358,15 @@ class SacSSAgent(object):
         self.actor.load_state_dict(
             torch.load('%s/actor_%s.pt' % (model_dir, step))
         )
-     
-        if self.inv is not None:
-            self.inv.load_state_dict(
-                torch.load('%s/inv_%s.pt' % (model_dir, step))
-            )
-   
-        if self.ss_encoder is not None:
-            self.ss_encoder.load_state_dict(
-                torch.load('%s/ss_encoder_%s.pt' % (model_dir, step))
-            )
+
+        self.inv.load_state_dict(
+            torch.load('%s/inv_%s.pt' % (model_dir, step))
+        )
+
+        self.ss_encoder.load_state_dict(
+            torch.load('%s/ss_encoder_%s.pt' % (model_dir, step))
+        )
+
+        self.domain_spe.load_state_dict(
+            torch.load('%s/domain_specific_%s.pt' % (model_dir, step))
+        )
