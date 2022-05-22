@@ -103,7 +103,7 @@ def main(args):
 
 
     # TODO better practise than lists
-    labels = ["", "_0_2"]
+    labels = ["_0_4", "_0_2", "_0_25", "_0_3"]
     # Define 4 envts
     print("-"*60)
     print("Define environment")
@@ -208,7 +208,7 @@ def main(args):
         agent.save(save_dir, "final")
 
     # Baseline agent -> PAD
-    pad_agent, _ = load_agent("pad", envs[0].action_space.shape, args)
+    pad_agent, _ = load_agent("", envs[0].action_space.shape, args)
     pad_stats = dict()
 
     for env, label in zip(envs, labels) :
