@@ -224,10 +224,9 @@ def main(args):
 
 def test_agents(args):
 
-    il_agents = []
     labels = ["", "_0_2"]
-    # Define 4 envts
 
+    # Define 2 envts
     print("-" * 60)
     print("Define environment")
     envs = []
@@ -239,6 +238,31 @@ def test_agents(args):
         envs.append(env)
     cropped_obs_shape = (3 * args.frame_stack, 84, 84)
 
+    # Load expert agents
+    print("-" * 60)
+    print("Load experts")
+    experts = []
+    loggers = []
+    for label in labels:
+        # All envs have should have the same action space shape
+        agent, logger = load_agent(label, envs[0].action_space.shape, args)
+        experts.append(agent)
+        loggers.append(logger)
+
+    # Collect samples from 4 RL agents
+    print("-" * 60)
+    print("Fill in buffers")
+    buffers = []  # save data for IL
+    stats_expert = dict()  # save score of trained RL agents on corresponding environments
+    stats_il = {k: [] for k in labels}  # save score of Il agents
+
+    # Initialize buffers by collecting experts data and collect their performance in the meantime
+    for expert, mass, env in zip(experts, labels, envs):
+        buffer, mean, std = collect_expert_samples(expert, env, args, mass)
+        buffers.append(buffer)
+        stats_expert[mass] = [mean, std]
+
+    il_agents = []
     print("Load agents")
     for label, mass in zip(labels, masses):
         load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
@@ -250,7 +274,25 @@ def test_agents(args):
         il_agent.load(load_dir, "final")
         il_agents.append(il_agent)
 
+    # Baseline agent -> PAD
+    pad_agent, _ = load_agent("", envs[0].action_space.shape, args)
+    pad_stats = dict()
+
+    for env, label in zip(envs, labels):
+        rewards, _, _, _ = evaluate(pad_agent, env, args)
+        pad_stats[label] = [rewards.mean(), rewards.std()]
+
+    for label in labels:
+        print("-" * 60)
+        print(f'Mass of {label}')
+        print(f'Baseline performance: {pad_stats[label][0]} +/- {pad_stats[label][1]}')
+        print(f'Expert performance : {stats_expert[label][0]} +/- {stats_expert[label][1]}')
+        print(
+            f'Imitation learning agent with dagger performance : {stats_il[label][-1][0]} +/- {stats_il[label][-1][1]}')
+
+
+
 
 if __name__ == '__main__':
     args = parse_args()
-    main(args)
+    test_agents(args)
