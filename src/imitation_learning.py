@@ -278,9 +278,11 @@ def test_agents(args):
     pad_agent, _ = load_agent("", envs[0].action_space.shape, args)
     pad_stats = dict()
 
-    for env, label in zip(envs, labels):
+    for env, label, il_agent in zip(envs, labels, il_agents):
         rewards, _, _, _ = evaluate(pad_agent, env, args)
+        rewards_il, _, _, _ = evaluate(il_agent, env, args)
         pad_stats[label] = [rewards.mean(), rewards.std()]
+        stats_il[label] = [rewards_il.mean(), rewards_il.std()]
 
     for label in labels:
         print("-" * 60)
@@ -289,8 +291,6 @@ def test_agents(args):
         print(f'Expert performance : {stats_expert[label][0]} +/- {stats_expert[label][1]}')
         print(
             f'Imitation learning agent with dagger performance : {stats_il[label][-1][0]} +/- {stats_il[label][-1][1]}')
-
-
 
 
 if __name__ == '__main__':
