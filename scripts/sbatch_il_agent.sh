@@ -17,4 +17,4 @@ python3 src/imitation_learning.py \
     --pad_checkpoint 500k \
     --seed 0 \
     --work_dir logs/cartpole_swingup \
-    --save_dir logs/IL/cartpole_swingup
+    --save_dir logs/IL/cartpole_swingup 
