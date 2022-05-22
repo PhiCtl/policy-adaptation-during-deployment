@@ -290,7 +290,7 @@ def test_agents(args):
         print(f'Baseline performance: {pad_stats[label][0]} +/- {pad_stats[label][1]}')
         print(f'Expert performance : {stats_expert[label][0]} +/- {stats_expert[label][1]}')
         print(
-            f'Imitation learning agent with dagger performance : {stats_il[label][-1][0]} +/- {stats_il[label][-1][1]}')
+            f'Imitation learning agent with dagger performance : {stats_il[label][0]} +/- {stats_il[label][1]}')
 
 
 if __name__ == '__main__':
