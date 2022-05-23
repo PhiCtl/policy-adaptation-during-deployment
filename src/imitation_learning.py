@@ -279,8 +279,15 @@ def test_agents(args):
         il_agent.load(load_dir, "12")
         il_agents.append(il_agent)
 
-    # Baseline agent -> PAD
-    pad_agent, _ = load_agent("", envs[0].action_space.shape, args)
+    # Baseline agent -> PADcropped_obs_shape = (3 * args.frame_stack, 84, 84)
+    pad_agent = make_agent(
+        obs_shape=cropped_obs_shape,
+        action_shape=envs[0].action_space.shape,
+        args=args
+    )
+    work_dir = args.work_dir + ""
+    model_dir = os.path.join(work_dir, 'inv', '0', 'model')
+    pad_agent.load(model_dir, args.pad_checkpoint)
     pad_stats = dict()
 
     for env, label, il_agent in zip(envs, labels, il_agents):
