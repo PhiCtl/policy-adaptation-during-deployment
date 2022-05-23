@@ -285,9 +285,9 @@ def test_agents(args):
 
     for env, label, il_agent in zip(envs, labels, il_agents):
         agent = deepcopy(pad_agent)
-        rewards, _, _, _ = evaluate(agent, env, args, video, recorder, adapt=True)
+        rewards_avg, rewards_std = evaluate(agent, env, args, video, recorder, adapt=True)
         rewards_il, _, _, _ = evaluate_agent(il_agent, env, args)
-        pad_stats[label] = [rewards.mean(), rewards.std()]
+        pad_stats[label] = [rewards_avg, rewards_std]
         stats_il[label] = [rewards_il.mean(), rewards_il.std()]
 
     for label in labels:
