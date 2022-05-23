@@ -35,7 +35,7 @@ def parse_args():
 	parser.add_argument('--dynamics_shape', default=100, type=int)
 
 	# imitation learning
-	parser.add_argument('--num_rollouts', default=100, type=int)
+	parser.add_argument('--num_rollouts', default=25, type=int)
 	parser.add_argument('--n_iter', default=30, type=int)
 	parser.add_argument('--il_steps', default=5000, type=int)
 

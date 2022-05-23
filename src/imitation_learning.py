@@ -4,16 +4,18 @@ import os
 from tqdm import tqdm
 import torch.nn as nn
 import numpy as np
+from copy import deepcopy
 
+from video import VideoRecorder
 from arguments import parse_args
 from agent.agent import make_agent
 from agent.IL_agent import make_il_agent
 import utils
-from eval import init_env
+from eval import init_env, evaluate
 from logger import Logger
 
 
-def evaluate(agent, env, args, buffer=None, step=None, L=None): # OK
+def evaluate_agent(agent, env, args, buffer=None, step=None, L=None): # OK
     """Evaluate agent on env, storing obses, actions and next obses in buffer if any"""
 
     ep_rewards = []
@@ -68,7 +70,7 @@ def collect_expert_samples(agent, env, args, label): # OK
         label=label
     )
 
-    ep_rewards, _, _, _ = evaluate(agent, env, args, buffer)
+    ep_rewards, _, _, _ = evaluate_agent(agent, env, args, buffer)
     return buffer, ep_rewards.mean(), ep_rewards.std()
 
 def relabel(obses, expert): # OK
@@ -188,7 +190,7 @@ def main(args):
         # Evaluate - Perform IL agent policy rollouts
         print("\n\n********** Evaluation and relabeling %i ************" % it)
         for agent, expert, logger, env, buffer, mass in zip(il_agents, experts, loggers, envs, buffers, labels):
-            rewards, obses, actions, next_obses = evaluate(agent, env, args, L=logger, step=step) # evaluate agent on environment
+            rewards, obses, actions, next_obses = evaluate_agent(agent, env, args, L=logger, step=step) # evaluate agent on environment
             stats_il[mass].append([rewards.mean(), rewards.std()]) # save intermediary score
             print(f'Performance of agent on mass {mass} : {rewards.mean()} +/- {rewards.std()}')
             actions_new = relabel(obses, expert)
@@ -212,7 +214,7 @@ def main(args):
     pad_stats = dict()
 
     for env, label in zip(envs, labels) :
-        rewards, _, _, _ = evaluate(pad_agent, env, args)
+        rewards, _, _, _ = evaluate_agent(pad_agent, env, args)
         pad_stats[label] = [rewards.mean(), rewards.std()]
 
     for label in labels :
@@ -225,6 +227,9 @@ def main(args):
 def test_agents(args):
 
     labels = ["_0_4", "_0_2", "_0_25", "_0_3"]
+    video_dir = utils.make_dir(os.path.join(args.work_dir, 'video'))
+    video = VideoRecorder(video_dir if args.save_video else None, height=448, width=448)
+    recorder = utils.AdaptRecorder(args.work_dir, args.mode)
 
     # Define 2 envts
     print("-" * 60)
@@ -279,8 +284,9 @@ def test_agents(args):
     pad_stats = dict()
 
     for env, label, il_agent in zip(envs, labels, il_agents):
-        rewards, _, _, _ = evaluate(pad_agent, env, args)
-        rewards_il, _, _, _ = evaluate(il_agent, env, args)
+        agent = deepcopy(pad_agent)
+        rewards, _, _, _ = evaluate(agent, env, args, video, recorder, adapt=True)
+        rewards_il, _, _, _ = evaluate_agent(il_agent, env, args)
         pad_stats[label] = [rewards.mean(), rewards.std()]
         stats_il[label] = [rewards_il.mean(), rewards_il.std()]
 
