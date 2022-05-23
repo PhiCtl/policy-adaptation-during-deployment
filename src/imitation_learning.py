@@ -224,14 +224,14 @@ def main(args):
 
 def test_agents(args):
 
-    labels = ["", "_0_2"]
+    labels = ["_0_4", "_0_2", "_0_25", "_0_3"]
 
     # Define 2 envts
     print("-" * 60)
     print("Define environment")
     envs = []
     masses = []
-    for mass in [1, 0.2]:
+    for mass in [0.4, 0.2, 0.25, 0.3]:
         env = init_env(args, mass)
         masses.append(env.get_masses())
         print(masses[-1])  # debug
@@ -271,7 +271,7 @@ def test_agents(args):
             action_shape=envs[0].action_space.shape,
             dynamics_input_shape=mass.shape[0],
             args=args)
-        il_agent.load(load_dir, "final")
+        il_agent.load(load_dir, "12")
         il_agents.append(il_agent)
 
     # Baseline agent -> PAD
