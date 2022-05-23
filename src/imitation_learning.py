@@ -284,7 +284,7 @@ def test_agents(args):
     pad_stats = dict()
 
     for env, label, il_agent in zip(envs, labels, il_agents):
-        rewards_avg, rewards_std = evaluate(agent, env, args, video, recorder, adapt=True)
+        rewards_avg, rewards_std = evaluate(pad_agent, env, args, video, recorder, adapt=True)
         rewards_il, _, _, _ = evaluate_agent(il_agent, env, args)
         pad_stats[label] = [rewards_avg, rewards_std]
         stats_il[label] = [rewards_il.mean(), rewards_il.std()]
