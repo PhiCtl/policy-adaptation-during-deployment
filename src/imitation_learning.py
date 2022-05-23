@@ -4,16 +4,18 @@ import os
 from tqdm import tqdm
 import torch.nn as nn
 import numpy as np
+from copy import deepcopy
 
+from video import VideoRecorder
 from arguments import parse_args
 from agent.agent import make_agent
 from agent.IL_agent import make_il_agent
 import utils
-from eval import init_env
+from eval import init_env, evaluate
 from logger import Logger
 
 
-def evaluate(agent, env, args, buffer=None, step=None, L=None): # OK
+def evaluate_agent(agent, env, args, buffer=None, step=None, L=None): # OK
     """Evaluate agent on env, storing obses, actions and next obses in buffer if any"""
 
     ep_rewards = []
@@ -68,7 +70,7 @@ def collect_expert_samples(agent, env, args, label): # OK
         label=label
     )
 
-    ep_rewards, _, _, _ = evaluate(agent, env, args, buffer)
+    ep_rewards, _, _, _ = evaluate_agent(agent, env, args, buffer)
     return buffer, ep_rewards.mean(), ep_rewards.std()
 
 def relabel(obses, expert): # OK
@@ -103,13 +105,13 @@ def main(args):
 
 
     # TODO better practise than lists
-    labels = ["", "_0_2"]
+    labels = ["_0_4", "_0_2", "_0_25", "_0_3"]
     # Define 4 envts
     print("-"*60)
     print("Define environment")
     envs = []
     masses = []
-    for mass in [1, 0.2]:
+    for mass in [0.4, 0.2, 0.25, 0.3]:
         env = init_env(args, mass)
         masses.append(env.get_masses())
         print(masses[-1]) # debug
@@ -188,7 +190,7 @@ def main(args):
         # Evaluate - Perform IL agent policy rollouts
         print("\n\n********** Evaluation and relabeling %i ************" % it)
         for agent, expert, logger, env, buffer, mass in zip(il_agents, experts, loggers, envs, buffers, labels):
-            rewards, obses, actions, next_obses = evaluate(agent, env, args, L=logger, step=step) # evaluate agent on environment
+            rewards, obses, actions, next_obses = evaluate_agent(agent, env, args, L=logger, step=step) # evaluate agent on environment
             stats_il[mass].append([rewards.mean(), rewards.std()]) # save intermediary score
             print(f'Performance of agent on mass {mass} : {rewards.mean()} +/- {rewards.std()}')
             actions_new = relabel(obses, expert)
@@ -208,11 +210,11 @@ def main(args):
         agent.save(save_dir, "final")
 
     # Baseline agent -> PAD
-    pad_agent, _ = load_agent("pad", envs[0].action_space.shape, args)
+    pad_agent, _ = load_agent("", envs[0].action_space.shape, args)
     pad_stats = dict()
 
     for env, label in zip(envs, labels) :
-        rewards, _, _, _ = evaluate(pad_agent, env, args)
+        rewards, _, _, _ = evaluate_agent(pad_agent, env, args)
         pad_stats[label] = [rewards.mean(), rewards.std()]
 
     for label in labels :
@@ -222,6 +224,87 @@ def main(args):
         print(f'Expert performance : {stats_expert[label][0]} +/- {stats_expert[label][1]}')
         print(f'Imitation learning agent with dagger performance : {stats_il[label][-1][0]} +/- {stats_il[label][-1][1]}')
 
+def test_agents(args):
+
+    labels = ["_0_4", "_0_2", "_0_25", "_0_3"]
+    video_dir = utils.make_dir(os.path.join(args.work_dir, 'video'))
+    video = VideoRecorder(video_dir if args.save_video else None, height=448, width=448)
+    recorder = utils.AdaptRecorder(args.work_dir, args.mode)
+
+    # Define 2 envts
+    print("-" * 60)
+    print("Define environment")
+    envs = []
+    masses = []
+    for mass in [0.4, 0.2, 0.25, 0.3]:
+        env = init_env(args, mass)
+        masses.append(env.get_masses())
+        print(masses[-1])  # debug
+        envs.append(env)
+    cropped_obs_shape = (3 * args.frame_stack, 84, 84)
+
+    # Load expert agents
+    print("-" * 60)
+    print("Load experts")
+    experts = []
+    loggers = []
+    for label in labels:
+        # All envs have should have the same action space shape
+        agent, logger = load_agent(label, envs[0].action_space.shape, args)
+        experts.append(agent)
+        loggers.append(logger)
+
+    # Collect samples from 4 RL agents
+    print("-" * 60)
+    print("Fill in buffers")
+    buffers = []  # save data for IL
+    stats_expert = dict()  # save score of trained RL agents on corresponding environments
+    stats_il = {k: [] for k in labels}  # save score of Il agents
+
+    # Initialize buffers by collecting experts data and collect their performance in the meantime
+    for expert, mass, env in zip(experts, labels, envs):
+        buffer, mean, std = collect_expert_samples(expert, env, args, mass)
+        buffers.append(buffer)
+        stats_expert[mass] = [mean, std]
+
+    il_agents = []
+    print("Load agents")
+    for label, mass in zip(labels, masses):
+        load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
+        il_agent = make_il_agent(
+            obs_shape=cropped_obs_shape,
+            action_shape=envs[0].action_space.shape,
+            dynamics_input_shape=mass.shape[0],
+            args=args)
+        il_agent.load(load_dir, "12")
+        il_agents.append(il_agent)
+
+    # Baseline agent -> PADcropped_obs_shape = (3 * args.frame_stack, 84, 84)
+    pad_agent = make_agent(
+        obs_shape=cropped_obs_shape,
+        action_shape=envs[0].action_space.shape,
+        args=args
+    )
+    work_dir = args.work_dir + ""
+    model_dir = os.path.join(work_dir, 'inv', '0', 'model')
+    pad_agent.load(model_dir, args.pad_checkpoint)
+    pad_stats = dict()
+
+    for env, label, il_agent in zip(envs, labels, il_agents):
+        rewards_avg, rewards_std = evaluate(pad_agent, env, args, video, recorder, adapt=True)
+        rewards_il, _, _, _ = evaluate_agent(il_agent, env, args)
+        pad_stats[label] = [rewards_avg, rewards_std]
+        stats_il[label] = [rewards_il.mean(), rewards_il.std()]
+
+    for label in labels:
+        print("-" * 60)
+        print(f'Mass of {label}')
+        print(f'Baseline performance: {pad_stats[label][0]} +/- {pad_stats[label][1]}')
+        print(f'Expert performance : {stats_expert[label][0]} +/- {stats_expert[label][1]}')
+        print(
+            f'Imitation learning agent with dagger performance : {stats_il[label][0]} +/- {stats_il[label][1]}')
+
+
 if __name__ == '__main__':
     args = parse_args()
-    main(args)
+    test_agents(args)
