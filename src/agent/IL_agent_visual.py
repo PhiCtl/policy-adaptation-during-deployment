@@ -131,6 +131,7 @@ class DomainSpecificVisual(nn.Module):
                                       nn.Linear(hidden_dim, dynamics_output_shape))
 
     def forward(self, obs1, act1, obs2, act2, obs3):
+        print(obs1.shape, act1.shape)
         obs1 = self.encoder(obs1)
         obs2 = self.encoder(obs2)
         obs3 = self.encoder(obs3)
