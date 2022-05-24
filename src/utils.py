@@ -180,11 +180,15 @@ class SimpleBuffer(object):
         return obses, actions, next_obses, [obses, actions, next_obses, next_actions, next_next_obses]
 
     def sample_traj(self):
+        "Sample single trajectory -> so we need to create a 1 sample batch with unsqueeze"
+        ix = np.random.randint(0, self.capacity if self.full else self.idx, size=1)
+        obs = torch.as_tensor(self.obses[ix]).float().unsqueeze(0).cuda()
+        act = torch.as_tensor(self.actions[ix]).float().unsqueeze(0).cuda()
+        next_obs = torch.as_tensor(self.next_obses[ix]).float().unsqueeze(0).cuda()
+        next_act = torch.as_tensor(self.next_actions[ix]).float().unsqueeze(0).cuda()
+        next_next_obs = torch.as_tensor(self.next_next_obses[ix]).float().unsqueeze(0).cuda()
 
-        _, _, _, traj = self.sample()
-
-        return traj
-
+        return [obs, act, next_obs, next_act, next_next_obs]
 
 
 
