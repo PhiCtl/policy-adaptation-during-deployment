@@ -188,7 +188,7 @@ def main(args):
         print("\n\n********** Evaluation and relabeling %i ************" % it)
         for expert, env in zip(experts, envs):
             rewards, obses, actions = evaluate_agent(domain_generic_agent, env, args)
-            domain_generic_agent.append([rewards.mean(), rewards.std()])
+            stats_domain_generic_agent.append([rewards.mean(), rewards.std()])
             print(f'Performance of domain generic agent: {rewards.mean()} +/- {rewards.std()}') 
             actions_new = relabel(obses, expert)
             buffer.add_path(obses, actions_new)
