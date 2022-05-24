@@ -243,7 +243,7 @@ class SacSSAgent(object):
                 if isinstance(obs, np.ndarray):
                     obs = torch.FloatTensor(obs).cuda()
                 obs = obs.unsqueeze(0)
-                if mass : # If we're in the training phase
+                if mass is not None: # If we're in the training phase
                     mass = torch.FloatTensor(mass).cuda()
                     mass = mass.unsqueeze(0)
                     dyn_feat = self.domain_spe(mass)
