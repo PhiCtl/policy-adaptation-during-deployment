@@ -217,7 +217,7 @@ class SacSSAgent(object):
     def init_feat_vect(self, init_value):
         self.feat_vect = torch.tensor(init_value, requires_grad=True).unsqueeze(0)
         self.feat_vect_optimizer = torch.optim.Adam(
-            self.feat_vect, lr=1e-3
+            [self.feat_vect], lr=1e-3
         )
 
     def init_ss_optimizers(self, encoder_lr=1e-3, ss_lr=1e-3):
