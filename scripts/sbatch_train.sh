@@ -3,7 +3,7 @@
 #SBATCH --nodes 1
 #SBATCH --ntasks 1
 #SBATCH --cpus-per-task 1
-#SBATCH --mem 100G
+#SBATCH --mem 80G
 #SBATCH --time 2-00:00:00
 #SBATCH --gres gpu:1
 
@@ -15,6 +15,6 @@ python3 src/train.py \
     --use_inv \
     --num_shared_layers 8 \
     --seed 0 \
-    --work_dir logs/walker_walk/inv/0_-1 \
+    --work_dir logs/walker_walk/inv/0_-3 \
     --save_model \
-    --force_walker 2.0
+    --force_walker 3.0
