@@ -35,7 +35,7 @@ def main(args):
     # 1. Load agent
 
     # Load environment
-    env = init_env(args, 0.35)
+    env = init_env(args, 0.5) # tried with out of range value
     mass = env.get_masses()
 
     # Load IL agent
