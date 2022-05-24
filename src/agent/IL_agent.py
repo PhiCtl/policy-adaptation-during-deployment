@@ -185,6 +185,7 @@ class SacSSAgent(object):
 
         # Domain specific part
         self.domain_spe = DomainSpecific(dynamics_input_shape, dynamics_output_shape).cuda()
+        self.feat_vect = torch.as_tensor(np.random.rand((dynamics_output_shape,)), requires_grad=True)
         
         # Self-supervision
         self.ss_encoder = make_encoder(
@@ -205,6 +206,7 @@ class SacSSAgent(object):
         self.domain_spe_optimizer = torch.optim.Adam(
             self.domain_spe.parameters(), lr=ss_lr
         )
+        self.feat
             
         # ss optimizers
         self.init_ss_optimizers(encoder_lr, ss_lr)
@@ -237,6 +239,7 @@ class SacSSAgent(object):
                 mass = torch.FloatTensor(mass).cuda()
                 mass = mass.unsqueeze(0)
                 dyn_feat = self.domain_spe(mass)
+                self.feat_vect = dyn_feat
                 mu  = self.actor(obs, dyn_feat)
                 return mu.cpu().data.numpy().flatten()
 
@@ -258,6 +261,7 @@ class SacSSAgent(object):
         mass = mass.repeat(obs.shape[0], 1) # create a batch of masses
 
         dyn_feat = self.domain_spe(mass) # compute dynamics features
+        self.feat_vect = dyn_feat
 
         # Make actor prediction
         mu = self.actor(obs, dyn_feat)
@@ -277,38 +281,27 @@ class SacSSAgent(object):
         return mu, pred_action, actor_loss + inv_loss
 
 
-    def update_actor(self, pred, gt, L = None, step=None):
-    
-        actor_loss = F.mse_loss(pred, gt)
+    def update_inv(self, obs, next_obs, action, L=None, step=None):
 
-        if L is not None:
-            L.log('train_actor/loss', actor_loss, step)
+        # TODO perform update with the feat vect
+        assert obs.shape[-1] == 84 and next_obs.shape[-1] == 84
 
-        # optimize the actor and the domain specific module
-        self.actor_optimizer.zero_grad()
-        self.domain_spe_optimizer.zero_grad()
-        actor_loss.backward()
-        self.actor_optimizer.step()
-        self.domain_spe_optimizer.step()
+        h = self.ss_encoder(obs)
+        h_next = self.ss_encoder(next_obs)
 
-
-    def update_inv(self, pred, gt, L=None, step=None):
-
-        inv_loss = F.mse_loss(pred, gt)
+        pred_action = self.inv(h, h_next, self.feat_vect)
+        inv_loss = F.mse_loss(pred_action, action)
 
         self.encoder_optimizer.zero_grad()
         self.inv_optimizer.zero_grad()
-        self.domain_spe_optimizer.zero_grad()
+
         inv_loss.backward()
 
         self.encoder_optimizer.step()
         self.inv_optimizer.step()
-        self.domain_spe_optimizer.step()
 
         if L is not None:
             L.log('train_inv/inv_loss', inv_loss, step)
-
-        return inv_loss.item()
 
     
     def update(self):
@@ -333,7 +326,8 @@ class SacSSAgent(object):
 
     def extract_feat_vect(self, mass):
         """Extract dynamics feature vector to check if stays constant"""
-        return self.domain_spe(mass)
+        mass = torch.as_tensor(mass).float().unsqueeze(0).cuda()
+        return self.domain_spe(mass).cpu().data.numpy().flatten()
 
     def save(self, model_dir, step):
         torch.save(
