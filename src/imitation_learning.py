@@ -19,7 +19,7 @@ def evaluate_agent(agent, env, args, buffer=None, step=None, L=None): # OK
     """Evaluate agent on env, storing obses, actions and next obses in buffer if any"""
 
     ep_rewards = []
-    obses, actions, next_obses = [], [], []
+    obses, actions = [], []
 
     for i in range(args.num_rollouts):
         obs = env.reset()
@@ -27,9 +27,11 @@ def evaluate_agent(agent, env, args, buffer=None, step=None, L=None): # OK
         episode_reward = 0
         step = 0
         rewards = []
+
         agent.train()
 
         while not done:
+
             # Take a step
             mass = env.get_masses()
             with utils.eval_mode(agent):
@@ -38,20 +40,18 @@ def evaluate_agent(agent, env, args, buffer=None, step=None, L=None): # OK
             episode_reward += reward
             if L and step:
                 L.log('eval/episode_reward', episode_reward, step)
-            # Save data into replay buffer
-            if buffer:
-                buffer.add(obs, action, next_obs)
             obses.append(obs)
             actions.append(action)
-            next_obses.append(next_obs)
             obs = next_obs
             step += 1
+
+        obses.append(obs)
         ep_rewards.append(episode_reward)
 
     if L and step:
         L.dump(step)
 
-    return np.array(ep_rewards), obses, actions, next_obses
+    return np.array(ep_rewards), obses, actions
 
 
 def collect_expert_samples(agent, env, args, label): # OK
@@ -70,7 +70,8 @@ def collect_expert_samples(agent, env, args, label): # OK
         label=label
     )
 
-    ep_rewards, _, _, _ = evaluate_agent(agent, env, args, buffer)
+    ep_rewards, obses, actions = evaluate_agent(agent, env, args)
+    buffer.add_path(obses, actions)
     return buffer, ep_rewards.mean(), ep_rewards.std()
 
 def relabel(obses, expert): # OK
@@ -173,7 +174,7 @@ def main(args):
 
             # Forward pass sequentially for all agents
             for agent, buffer, mass, L in zip(il_agents, buffers, masses, loggers):
-                obs, action, next_obs = buffer.sample() # sample a batch
+                obs, action, next_obs, _ = buffer.sample() # sample a batch
                 action_pred, action_inv, loss = agent.predict_action(obs, next_obs, mass, action, L=L, step=step)
 
                 preds.append(action_pred) # Action from actor network
@@ -190,37 +191,30 @@ def main(args):
         # Evaluate - Perform IL agent policy rollouts
         print("\n\n********** Evaluation and relabeling %i ************" % it)
         for agent, expert, logger, env, buffer, mass in zip(il_agents, experts, loggers, envs, buffers, labels):
-            rewards, obses, actions, next_obses = evaluate_agent(agent, env, args, L=logger, step=step) # evaluate agent on environment
+            rewards, obses, actions = evaluate_agent(agent, env, args, L=logger, step=step) # evaluate agent on environment
             stats_il[mass].append([rewards.mean(), rewards.std()]) # save intermediary score
             print(f'Performance of agent on mass {mass} : {rewards.mean()} +/- {rewards.std()}')
             actions_new = relabel(obses, expert)
-            buffer.add_batch(obses, actions_new, next_obses)
+            buffer.add_path(obses, actions_new)
 
 
         # Save partial model
-        if it % 3 == 0 :
+        if it % 5 == 0 :
             for agent, label in zip(il_agents, labels):
                 save_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
                 agent.save(save_dir, it)
 
 
-    # Evaluate IL agents on environments
+    # Save IL agents
     for agent, label in zip(il_agents, labels):
         save_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
         agent.save(save_dir, "final")
 
-    # Baseline agent -> PAD
-    pad_agent, _ = load_agent("", envs[0].action_space.shape, args)
-    pad_stats = dict()
 
-    for env, label in zip(envs, labels) :
-        rewards, _, _, _ = evaluate_agent(pad_agent, env, args)
-        pad_stats[label] = [rewards.mean(), rewards.std()]
-
+    # Evaluate expert vs IL
     for label in labels :
         print("-"*60)
         print(f'Mass of {label}')
-        print(f'Baseline performance: {pad_stats[label][0]} +/- {pad_stats[label][1]}')
         print(f'Expert performance : {stats_expert[label][0]} +/- {stats_expert[label][1]}')
         print(f'Imitation learning agent with dagger performance : {stats_il[label][-1][0]} +/- {stats_il[label][-1][1]}')
 
@@ -292,7 +286,7 @@ def test_agents(args):
 
     for env, label, il_agent in zip(envs, labels, il_agents):
         rewards_avg, rewards_std = evaluate(pad_agent, env, args, video, recorder, adapt=True)
-        rewards_il, _, _, _ = evaluate_agent(il_agent, env, args)
+        rewards_il, _, _ = evaluate_agent(il_agent, env, args)
         pad_stats[label] = [rewards_avg, rewards_std]
         stats_il[label] = [rewards_il.mean(), rewards_il.std()]
 
