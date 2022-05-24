@@ -35,7 +35,7 @@ def main(args):
     # 1. Load agent
 
     # Load environment
-    env = init_env(args, 0.35) # tried with out of range value
+    env = init_env(args, 0.5) # tried with out of range value
     mass = env.get_masses()
 
     # Load IL agent
@@ -49,7 +49,7 @@ def main(args):
     il_agent.load(load_dir, "12")
 
     # Initialize feature vector
-    il_agent.init_feat_vect(il_agent.extract_feat_vect(mass))
+    il_agent.init_feat_vect(np.random.rand(args.dynamics_output_shape)) #il_agent.extract_feat_vect(mass))
 
     # 2. Prepare test time evaluation
     model_dir = utils.make_dir(os.path.join(args.work_dir, 'model'))
