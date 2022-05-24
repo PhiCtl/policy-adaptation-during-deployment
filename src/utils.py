@@ -123,6 +123,10 @@ def make_dir(dir_path):
     return dir_path
 
 class SimpleBuffer(object):
+    """Stores data from an environment in 5 arrays
+       we want at some point to retrieve a successive sequence of observations and actions
+       that's why observations and actions are stored this way
+    """
 
     def __init__(self, obs_shape, action_shape, capacity, batch_size, label=None):
         self.capacity = capacity
@@ -182,10 +186,10 @@ class SimpleBuffer(object):
     def sample_traj(self):
         "Sample single trajectory -> so we need to create a 1 sample batch with unsqueeze"
         ix = np.random.randint(0, self.capacity if self.full else self.idx, size=1)
-        obs = torch.as_tensor(self.obses[ix]).float().unsqueeze(0).cuda()
-        act = torch.as_tensor(self.actions[ix]).float().unsqueeze(0).cuda()
-        next_obs = torch.as_tensor(self.next_obses[ix]).float().unsqueeze(0).cuda()
-        next_act = torch.as_tensor(self.next_actions[ix]).float().unsqueeze(0).cuda()
+        obs = torch.as_tensor(self.obses[ix]).float().cuda()
+        act = torch.as_tensor(self.actions[ix]).float().cuda()
+        next_obs = torch.as_tensor(self.next_obses[ix]).float().cuda()
+        next_act = torch.as_tensor(self.next_actions[ix]).float().cuda()
         next_next_obs = torch.as_tensor(self.next_next_obses[ix]).float().unsqueeze(0).cuda()
 
         return [obs, act, next_obs, next_act, next_next_obs]
