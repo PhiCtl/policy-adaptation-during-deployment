@@ -100,7 +100,6 @@ def moving_average_reward(rewards, current_ep=None, wind_lgth=15):
         assert current_ep >= 0
         return avg[current_ep]
 
-
 def soft_update_params(net, target_net, tau):
     for param, target_param in zip(net.parameters(), target_net.parameters()):
         target_param.data.copy_(
@@ -135,23 +134,33 @@ class SimpleBuffer(object):
         self.obses = np.empty((capacity, *obs_shape), dtype=obs_dtype)
         self.actions = np.empty((capacity, *action_shape), dtype=np.float32)
         self.next_obses = np.empty((capacity, *obs_shape), dtype=obs_dtype)
+        self.next_actions = np.empty((capacity, *action_shape), dtype=np.float32)
+        self.next_next_obses = np.empty((capacity, *obs_shape), dtype=obs_dtype)
 
         # Save label, ie. domain specificity
         self.label = label
         self.idx = 0
         self.full = False
 
-    def add(self, obs, action, next_obs):
+    def add(self, obs, action, next_obs, next_action, next_next_obs):
         np.copyto(self.obses[self.idx], obs)
         np.copyto(self.actions[self.idx], action)
         np.copyto(self.next_obses[self.idx], next_obs)
+        np.copyto(self.next_actions[self.idx], next_action)
+        np.copyto(self.next_next_obses[self.idx], next_next_obs)
 
         self.idx = (self.idx + 1) % self.capacity
         self.full = self.full or self.idx == 0
 
-    def add_batch(self, obses, actions, next_obses):
-        for obs, action, next_obs in zip(obses, actions, next_obses):
-            self.add(obs, action, next_obs)
+    def add_path(self, obses, actions):
+        # TODO ugly...
+        obs1 = obses[:-2]
+        act1 = actions[:-1]
+        obs2 = obses[1:-1]
+        act2 = actions[1:]
+        obs3 = obses[2:]
+        for obs, action, next_obs, next_action, next_next_obs in zip(obs1, act1, obs2, act2, obs3):
+            self.add(obs, action, next_obs, next_action, next_next_obs)
 
     def sample(self):
         idxs = np.random.randint(
@@ -161,41 +170,53 @@ class SimpleBuffer(object):
         obses = torch.as_tensor(self.obses[idxs]).float().cuda()
         actions = torch.as_tensor(self.actions[idxs]).cuda()
         next_obses = torch.as_tensor(self.next_obses[idxs]).float().cuda()
+        next_actions = torch.as_tensor(self.next_actions[idxs]).float().cuda()
+        next_next_obses = torch.as_tensor(self.next_next_obses[idxs]).float().cuda()
 
         obses = random_crop(obses)
         next_obses = random_crop(next_obses)
+        next_next_obses = random_crop(next_next_obses)
 
-        return obses, actions, next_obses
+        return obses, actions, next_obses, [obses, actions, next_obses, next_actions, next_next_obses]
 
-    # def sample_recent(self):
-    #     obses = torch.as_tensor(self.obses[-self.batch_size:]).float().cuda()
-    #     actions = torch.as_tensor(self.actions[-self.batch_size:]).cuda()
-    #     next_obses = torch.as_tensor(self.next_obses[-self.batch_size:]).float().cuda()
-    #
-    #     obses = random_crop(obses)
-    #     next_obses = random_crop(next_obses)
-    #
-    #     return obses, actions, next_obses
+    def sample_traj(self):
+
+        _, _, _, traj = self.sample()
+
+        return traj
 
 
-class ReplayBuffer(SimpleBuffer):
+
+
+class ReplayBuffer(object):
     """Buffer to store environment transitions"""
 
     def __init__(self, obs_shape, action_shape, capacity, batch_size, label=None):
-        super().__init__(obs_shape, action_shape, capacity, batch_size, label)
+        self.capacity = capacity
+        self.batch_size = batch_size
 
+        # the proprioceptive obs is stored as float32, pixels obs as uint8
+        obs_dtype = np.float32 if len(obs_shape) == 1 else np.uint8
+
+        self.obses = np.empty((capacity, *obs_shape), dtype=obs_dtype)
+        self.actions = np.empty((capacity, *action_shape), dtype=np.float32)
+        self.next_obses = np.empty((capacity, *obs_shape), dtype=obs_dtype)
         self.rewards = np.empty((capacity, 1), dtype=np.float32)
         self.not_dones = np.empty((capacity, 1), dtype=np.float32)
 
+        self.idx = 0
+        self.full = False
+
     def add(self, obs, action, reward, next_obs, done):
+        np.copyto(self.obses[self.idx], obs)
+        np.copyto(self.actions[self.idx], action)
+        np.copyto(self.next_obses[self.idx], next_obs)
         np.copyto(self.rewards[self.idx], reward)
         np.copyto(self.not_dones[self.idx], not done)
-        # idx is incremented in the super class
-        super().add(obs, action, next_obs)
 
-    def add_batch(self, obses, actions, rewards, next_obses, dones):
-        for obs, action, reward, next_obs, done in zip(obses, actions, rewards, next_obses, dones):
-            self.add(obs, action, reward, next_obs, done)
+        self.idx = (self.idx + 1) % self.capacity
+        self.full = self.full or self.idx == 0
+
 
     def sample(self):
         idxs = np.random.randint(
@@ -213,17 +234,6 @@ class ReplayBuffer(SimpleBuffer):
 
         return obses, actions, rewards, next_obses, not_dones
 
-    def sample_recent(self):
-        obses = torch.as_tensor(self.obses[-self.batch_size:]).float().cuda()
-        actions = torch.as_tensor(self.actions[-self.batch_size:]).cuda()
-        rewards = torch.as_tensor(self.rewards[-self.batch_size:]).cuda()
-        next_obses = torch.as_tensor(self.next_obses[-self.batch_size:]).float().cuda()
-        not_dones = torch.as_tensor(self.not_dones[-self.batch_size:]).cuda()
-
-        obses = random_crop(obses)
-        next_obses = random_crop(next_obses)
-
-        return obses, actions, rewards, next_obses, not_dones
 
     def sample_curl(self):
         idxs = np.random.randint(
@@ -247,36 +257,6 @@ class ReplayBuffer(SimpleBuffer):
 
         return obses, actions, rewards, next_obses, not_dones, curl_kwargs
 
-class DynamicsBuffer(SimpleBuffer):
-
-    def __init__(self, obs_shape, action_shape, dynamics_input_shape, capacity, batch_size, label=None):
-
-        super().__init__(obs_shape, action_shape, capacity, batch_size, label)
-        self.dynamics = np.empty((capacity, dynamics_input_shape), dtype=np.float32)
-
-    def add(self, obs, action, next_obs, dynamics):
-        np.copyto(self.dynamics[self.idx], dynamics)
-        # idx is incremented in the super class
-        super().add(obs, action, next_obs)
-
-    def add_batch(self, obses, actions, next_obses, dynamics):
-        for obs, action, next_obs, d in zip(obses, actions, next_obses, dynamics):
-            self.add(obs, action, next_obs, d)
-
-    def sample(self):
-        idxs = np.random.randint(
-            0, self.capacity if self.full else self.idx, size=self.batch_size
-        )
-
-        obses = torch.as_tensor(self.obses[idxs]).float().cuda()
-        actions = torch.as_tensor(self.actions[idxs]).cuda()
-        next_obses = torch.as_tensor(self.next_obses[idxs]).float().cuda()
-        dynamics = torch.as_tensor(self.dynamics[idxs]).float().cuda()
-
-        obses = random_crop(obses)
-        next_obses = random_crop(next_obses)
-
-        return obses, actions, next_obses, dynamics
 
 
 def get_curl_pos_neg(obs, replay_buffer):
