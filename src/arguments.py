@@ -38,6 +38,7 @@ def parse_args():
 	parser.add_argument('--num_rollouts', default=100, type=int)
 	parser.add_argument('--n_iter', default=10, type=int)
 	parser.add_argument('--il_steps', default=5000, type=int)
+	parser.add_argument('--dynamics_output_shape', default=10, type=int)
 
 	# critic
 	parser.add_argument('--critic_lr', default=1e-3, type=float)

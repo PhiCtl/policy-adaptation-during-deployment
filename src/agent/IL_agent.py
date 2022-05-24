@@ -13,12 +13,12 @@ def tie_weights(src, trg):
     trg.bias = src.bias
 
 
-def make_il_agent(obs_shape, action_shape, args, dynamics_input_shape, dynamics_output_shape=10):
+def make_il_agent(obs_shape, action_shape, args, dynamics_input_shape):
     return SacSSAgent(
         obs_shape=obs_shape,
         action_shape=action_shape,
         dynamics_input_shape=dynamics_input_shape,
-        dynamics_output_shape=dynamics_output_shape,
+        dynamics_output_shape=args.dynamics_output_shape,
         hidden_dim=args.hidden_dim,
         actor_lr=args.actor_lr,
         encoder_feature_dim=args.encoder_feature_dim,
@@ -185,7 +185,9 @@ class SacSSAgent(object):
 
         # Domain specific part
         self.domain_spe = DomainSpecific(dynamics_input_shape, dynamics_output_shape).cuda()
-        self.feat_vect = torch.as_tensor(np.random.rand((dynamics_output_shape,)), requires_grad=True)
+        # Initialize feat_vect
+        self.dynamics_output_shape = dynamics_output_shape
+        self.feat_vect = None
         
         # Self-supervision
         self.ss_encoder = make_encoder(
@@ -206,12 +208,17 @@ class SacSSAgent(object):
         self.domain_spe_optimizer = torch.optim.Adam(
             self.domain_spe.parameters(), lr=ss_lr
         )
-        self.feat
             
         # ss optimizers
         self.init_ss_optimizers(encoder_lr, ss_lr)
 
         self.train()
+
+    def init_feat_vect(self, init_value):
+        self.feat_vect = torch.tensor(init_value, requires_grad=True).unsqueeze(0)
+        self.feat_vect_optimizer = torch.optim.Adam(
+            self.feat_vect, lr=1e-3
+        )
 
     def init_ss_optimizers(self, encoder_lr=1e-3, ss_lr=1e-3):
         
@@ -231,15 +238,17 @@ class SacSSAgent(object):
         if self.inv is not None:
             self.inv.train(training)
 
-    def select_action(self, obs, mass):
+    def select_action(self, obs, mass=None):
         with torch.no_grad():
                 if isinstance(obs, np.ndarray):
                     obs = torch.FloatTensor(obs).cuda()
                 obs = obs.unsqueeze(0)
-                mass = torch.FloatTensor(mass).cuda()
-                mass = mass.unsqueeze(0)
-                dyn_feat = self.domain_spe(mass)
-                self.feat_vect = dyn_feat
+                if mass : # If we're in the training phase
+                    mass = torch.FloatTensor(mass).cuda()
+                    mass = mass.unsqueeze(0)
+                    dyn_feat = self.domain_spe(mass)
+                else : # If we're at test phase
+                    dyn_feat = self.feat_vect
                 mu  = self.actor(obs, dyn_feat)
                 return mu.cpu().data.numpy().flatten()
 
@@ -261,7 +270,6 @@ class SacSSAgent(object):
         mass = mass.repeat(obs.shape[0], 1) # create a batch of masses
 
         dyn_feat = self.domain_spe(mass) # compute dynamics features
-        self.feat_vect = dyn_feat
 
         # Make actor prediction
         mu = self.actor(obs, dyn_feat)
@@ -283,25 +291,29 @@ class SacSSAgent(object):
 
     def update_inv(self, obs, next_obs, action, L=None, step=None):
 
-        # TODO perform update with the feat vect
         assert obs.shape[-1] == 84 and next_obs.shape[-1] == 84
+        assert self.feat_vect # Assert we can use this member
 
         h = self.ss_encoder(obs)
         h_next = self.ss_encoder(next_obs)
-
         pred_action = self.inv(h, h_next, self.feat_vect)
+
         inv_loss = F.mse_loss(pred_action, action)
 
         self.encoder_optimizer.zero_grad()
         self.inv_optimizer.zero_grad()
+        self.feat_vect_optimizer.zero_grad()
 
         inv_loss.backward()
 
         self.encoder_optimizer.step()
         self.inv_optimizer.step()
+        self.feat_vect_optimizer.step()
 
         if L is not None:
             L.log('train_inv/inv_loss', inv_loss, step)
+
+        return inv_loss.item()
 
     
     def update(self):
