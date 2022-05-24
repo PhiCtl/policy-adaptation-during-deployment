@@ -15,11 +15,11 @@ from eval import init_env, evaluate
 from logger import Logger
 
 
-def evaluate_agent(agent, env, args, buffer=None, step=None, L=None): # OK
+def evaluate_agent(agent, env, args, buffer=None, feat_analysis=False, step=None, L=None): # OK
     """Evaluate agent on env, storing obses, actions and next obses in buffer if any"""
 
     ep_rewards = []
-    obses, actions = [], []
+    obses, actions, feat_vects = [], [], []
 
     for i in range(args.num_rollouts):
         obs = env.reset()
@@ -42,6 +42,7 @@ def evaluate_agent(agent, env, args, buffer=None, step=None, L=None): # OK
                 L.log('eval/episode_reward', episode_reward, step)
             obses.append(obs)
             actions.append(action)
+            feat_vects.append(agent.extract_feat_vect(mass))
             obs = next_obs
             step += 1
 
@@ -51,6 +52,8 @@ def evaluate_agent(agent, env, args, buffer=None, step=None, L=None): # OK
     if L and step:
         L.dump(step)
 
+    if feat_analysis:
+        return np.array(ep_rewards), obses, actions, feat_vects
     return np.array(ep_rewards), obses, actions
 
 
