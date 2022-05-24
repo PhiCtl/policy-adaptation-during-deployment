@@ -172,7 +172,7 @@ class SimpleBuffer(object):
         )
 
         obses = torch.as_tensor(self.obses[idxs]).float().cuda()
-        actions = torch.as_tensor(self.actions[idxs]).cuda()
+        actions = torch.as_tensor(self.actions[idxs]).float().cuda()
         next_obses = torch.as_tensor(self.next_obses[idxs]).float().cuda()
         next_actions = torch.as_tensor(self.next_actions[idxs]).float().cuda()
         next_next_obses = torch.as_tensor(self.next_next_obses[idxs]).float().cuda()
@@ -190,7 +190,7 @@ class SimpleBuffer(object):
         act = torch.as_tensor(self.actions[ix]).float().cuda()
         next_obs = torch.as_tensor(self.next_obses[ix]).float().cuda()
         next_act = torch.as_tensor(self.next_actions[ix]).float().cuda()
-        next_next_obs = torch.as_tensor(self.next_next_obses[ix]).float().unsqueeze(0).cuda()
+        next_next_obs = torch.as_tensor(self.next_next_obses[ix]).float().cuda()
 
         return [obs, act, next_obs, next_act, next_next_obs]
 
