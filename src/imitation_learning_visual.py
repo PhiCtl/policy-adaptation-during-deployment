@@ -170,26 +170,26 @@ def main(args):
         print("\n\n********** Training %i ************"%it)
 
         # Train 4 Il agents policies
-        for step in range(args.il_steps):
-
-            # Sample data
-            preds, pred_invs, gts, losses = [], [], [], 0
-
-            # Forward pass sequentially for all agents
-            for agent, buffer, mass, L in zip(il_agents, buffers, masses, loggers):
-                obs, action, next_obs, traj = buffer.sample() # sample a batch
-                action_pred, action_inv, loss = agent.predict_action(obs, next_obs, traj, action, L=L, step=step)
-
-                preds.append(action_pred) # Action from actor network
-                pred_invs.append(action_inv) # Action from SS head
-                gts.append(action)
-                losses += loss
-
-            # Backward pass
-            losses.backward()
-
-            for agent in il_agents:
-                agent.update()
+        # for step in range(args.il_steps):
+        #
+        #     # Sample data
+        #     preds, pred_invs, gts, losses = [], [], [], 0
+        #
+        #     # Forward pass sequentially for all agents
+        #     for agent, buffer, mass, L in zip(il_agents, buffers, masses, loggers):
+        #         obs, action, next_obs, traj = buffer.sample() # sample a batch
+        #         action_pred, action_inv, loss = agent.predict_action(obs, next_obs, traj, action, L=L, step=step)
+        #
+        #         preds.append(action_pred) # Action from actor network
+        #         pred_invs.append(action_inv) # Action from SS head
+        #         gts.append(action)
+        #         losses += loss
+        #
+        #     # Backward pass
+        #     losses.backward()
+        #
+        #     for agent in il_agents:
+        #         agent.update()
 
         # Evaluate - Perform IL agent policy rollouts
         print("\n\n********** Evaluation and relabeling %i ************" % it)
