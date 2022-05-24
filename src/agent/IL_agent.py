@@ -9,6 +9,7 @@ LOG_FREQ = 10000
 
 def tie_weights(src, trg):
     assert type(src) == type(trg)
+    print("tie weights")
     trg.weight = src.weight
     trg.bias = src.bias
 
