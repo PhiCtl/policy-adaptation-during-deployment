@@ -298,7 +298,35 @@ def test_agents(args):
         print(
             f'Imitation learning agent with dagger performance : {stats_il[label][0]} +/- {stats_il[label][1]}')
 
+def test_tie_correct(args):
+
+    labels = ["_0_4", "_0_2", "_0_25", "_0_3"]
+    # Define 4 envts
+    print("-" * 60)
+    print("Define environment")
+    envs = []
+    masses = []
+    for mass in [0.4, 0.2, 0.25, 0.3]:
+        env = init_env(args, mass)
+        masses.append(env.get_masses())
+        print(masses[-1])  # debug
+        envs.append(env)
+
+    cropped_obs_shape = (3 * args.frame_stack, 84, 84)
+
+    il_agents = []
+    for mass in masses:
+        il_agent = make_il_agent(
+            obs_shape=cropped_obs_shape,
+            action_shape=envs[0].action_space.shape,
+            dynamics_input_shape=mass.shape[0],
+            args=args)
+        il_agents.append(il_agent)
+
+    # Share domain generic part between agents
+    for il_agent in il_agents[1:]:
+        il_agent.tie_agent_from(il_agents[0])
 
 if __name__ == '__main__':
     args = parse_args()
-    test_agents(args)
+    test_tie_correct(args)
