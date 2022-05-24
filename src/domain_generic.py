@@ -140,7 +140,8 @@ def main(args):
         capacity=args.train_steps,
         batch_size=args.batch_size
     ) 
-    for expert, env in zip(experts, actions):
+
+    for expert, env in zip(experts, envs):
         rewards, obses, actions = evaluate_agent(expert, env, args)
         buffer.add_path(obses, actions) 
         stats_expert.append([rewards.mean(), rewards.std()]) #performance of the expert agent in its domain
