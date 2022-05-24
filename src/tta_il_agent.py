@@ -70,4 +70,4 @@ def main(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    stays_constant(args)
+    main(args)
