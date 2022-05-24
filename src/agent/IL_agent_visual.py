@@ -124,7 +124,7 @@ class DomainSpecificVisual(nn.Module):
             num_filters, num_shared_layers
         )
 
-        input_feature_dim = 3 * encoder_feature_dim + 2 * action_shape
+        input_feature_dim = 3 * encoder_feature_dim + 2 * action_shape[0]
 
         self.specific = nn.Sequential(nn.Linear(input_feature_dim, hidden_dim), nn.ReLU(),
                                       nn.Linear(hidden_dim, hidden_dim), nn.ReLU(),
