@@ -13,7 +13,7 @@ from agent.agent import make_agent
 from utils import get_curl_pos_neg, AdaptRecorder
 
 
-def evaluate(env, agent, args, video, recorder, adapt=False, reload=False, exp_type=""):
+def evaluate(env, agent, args, video=None, recorder=None, adapt=False, reload=False, exp_type=""):
     """Evaluate an agent, optionally adapt using PAD"""
     episode_rewards = []
 
@@ -27,7 +27,8 @@ def evaluate(env, agent, args, video, recorder, adapt=False, reload=False, exp_t
                 capacity=args.train_steps,
                 batch_size=args.pad_batch_size
             )
-        video.init(enabled=True)
+            
+        if video: video.init(enabled=True)
         obs = env.reset()
         done = False
         episode_reward = 0
@@ -42,7 +43,7 @@ def evaluate(env, agent, args, video, recorder, adapt=False, reload=False, exp_t
                 action = ep_agent.select_action(obs)
             next_obs, reward, done, info, change, has_changed = env.step(action, rewards)
             episode_reward += reward
-            recorder.update(change, reward)
+            if recorder : recorder.update(change, reward)
 
             # Make self-supervised update if flag is true
             if adapt:
@@ -78,18 +79,18 @@ def evaluate(env, agent, args, video, recorder, adapt=False, reload=False, exp_t
                     # Adapt using CURL
                     losses.append(ep_agent.update_curl(obs_anchor, obs_pos, ema=True))
 
-            video.record(env, losses)
+            if video: video.record(env, losses)
             obs = next_obs
             step += 1
 
             if has_changed and reload:
                 ep_agent = deepcopy(agent)
 
-        video.save(f'{args.mode}_pad_{i}.mp4' if adapt else f'{args.mode}_eval_{i}.mp4')
+        if video: video.save(f'{args.mode}_pad_{i}.mp4' if adapt else f'{args.mode}_eval_{i}.mp4')
         episode_rewards.append(episode_reward)
-        recorder.end_episode()
+        if recorder: recorder.end_episode()
 
-    recorder.save("performance_"+ exp_type, adapt)
+    if recorder: recorder.save("performance_"+ exp_type, adapt)
     return np.mean(episode_rewards), np.std(episode_rewards)
 
 
