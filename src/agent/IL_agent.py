@@ -9,7 +9,6 @@ LOG_FREQ = 10000
 
 def tie_weights(src, trg):
     assert type(src) == type(trg)
-    print("tie weights")
     trg.weight = src.weight
     trg.bias = src.bias
 
@@ -331,6 +330,10 @@ class SacSSAgent(object):
         self.actor.tie_actor_from(source.actor)
         # Tie inv
         self.inv.tie_inv_from(source.inv)
+
+    def extract_feat_vect(self, mass):
+        """Extract dynamics feature vector to check if stays constant"""
+        return self.domain_spe(mass)
 
     def save(self, model_dir, step):
         torch.save(
