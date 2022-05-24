@@ -140,7 +140,8 @@ def main(args):
         capacity=args.train_steps,
         batch_size=args.batch_size
     ) 
-    for expert, env in zip(experts, actions):
+
+    for expert, env in zip(experts, envs):
         rewards, obses, actions = evaluate_agent(expert, env, args)
         buffer.add_path(obses, actions) 
         stats_expert.append([rewards.mean(), rewards.std()]) #performance of the expert agent in its domain
@@ -169,7 +170,7 @@ def main(args):
 
             # Forward pass for the domain generic agent for all domains (?)
             
-            obs, action, next_obs = buffer.sample() # sample a batch
+            obs, action, next_obs, _ = buffer.sample() # sample a batch
             action_pred, action_inv, loss = domain_generic_agent.predict_action(obs, next_obs, action)
 
             preds.append(action_pred) # Action from actor network
