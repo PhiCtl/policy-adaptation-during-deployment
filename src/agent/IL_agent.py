@@ -293,7 +293,7 @@ class SacSSAgent(object):
     def update_inv(self, obs, next_obs, action, L=None, step=None):
 
         assert obs.shape[-1] == 84 and next_obs.shape[-1] == 84
-        assert self.feat_vect # Assert we can use this member
+        assert self.feat_vect is not None # Assert we can use this member
 
         h = self.ss_encoder(obs)
         h_next = self.ss_encoder(next_obs)
