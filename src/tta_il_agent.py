@@ -49,7 +49,7 @@ def main(args):
     il_agent.load(load_dir, "12")
 
     # Initialize feature vector
-    il_agent.init_feat_vect(il_agent.extract_feat_vect(0.35))
+    il_agent.init_feat_vect(il_agent.extract_feat_vect(mass))
 
     # 2. Prepare test time evaluation
     model_dir = utils.make_dir(os.path.join(args.work_dir, 'model'))
