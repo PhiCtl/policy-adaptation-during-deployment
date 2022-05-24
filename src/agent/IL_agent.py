@@ -297,7 +297,8 @@ class SacSSAgent(object):
 
         h = self.ss_encoder(obs)
         h_next = self.ss_encoder(next_obs)
-        pred_action = self.inv(h, h_next, self.feat_vect)
+        feats = self.feat_vect.repeat(obs.shape[0], 1)
+        pred_action = self.inv(h, h_next, feats)
 
         inv_loss = F.mse_loss(pred_action, action)
 
