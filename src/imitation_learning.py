@@ -236,14 +236,14 @@ def main(args):
 
 def tie_weights(args):
     # TODO better practise than lists
-    labels = ["_0_4", "_0_2", "_0_25"]  # TODO change labels with forces directory labels
+    labels = ["_0_4", "_0_2"]  # TODO change labels with forces directory labels
 
     # 1. Define 4 envts
     print("-" * 60)
     print("Define environment")
     envs = []
     masses = []  # TODO change to forces
-    for mass in [0.4, 0.2, 0.25, 0.3]:
+    for mass in [0.4, 0.2]:
         env = init_env(args, mass)
         masses.append(env.get_masses())  # TODO env.get_forces()
         envs.append(env)
@@ -288,10 +288,7 @@ def tie_weights(args):
         il_agents_tied.append(il_agent)
 
     for il_agent in il_agents_tied:
-        print(il_agent.inv.state_dict())
-
-    print(il_agents_tied[0].ss_encoder.state_dict())
-    print(il_agents_tied[0].actor.encoder.state_dict())
+        print(il_agent.ss_encoder.state_dict())
 
 
 if __name__ == '__main__':
