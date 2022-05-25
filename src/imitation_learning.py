@@ -290,7 +290,10 @@ def tie_weights(args):
     for il_agent in il_agents_tied:
         print(il_agent.inv.state_dict())
 
+    print(il_agents_tied[0].ss_encoder.state_dict())
+    print(il_agents_tied[0].actor.encoder.state_dict())
+
 
 if __name__ == '__main__':
     args = parse_args()
-    main(args)
+    tie_weights(args)
