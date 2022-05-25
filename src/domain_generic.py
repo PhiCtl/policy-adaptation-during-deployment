@@ -131,8 +131,8 @@ def main(args):
     print("-" * 60)
     print("Fill in buffer")
 
-    stats_expert = []
-    stats_domain_generic_agent = [] # save score of domain generic agent
+    stats_expert = dict()
+    stats_domain_generic_agent = dict() # save score of domain generic agent
             
     buffer = utils.SimpleBuffer(
         obs_shape=envs[0].observation_space.shape,
@@ -141,10 +141,10 @@ def main(args):
         batch_size=args.batch_size
     ) 
 
-    for expert, env in zip(experts, envs):
+    for expert, env, mass in zip(experts, envs,labels):
         rewards, obses, actions = evaluate_agent(expert, env, args)
         buffer.add_path(obses, actions) 
-        stats_expert.append([rewards.mean(), rewards.std()]) #performance of the expert agent in its domain
+        stats_expert[mass].append([rewards.mean(), rewards.std()]) #performance of the expert agent in its domain
 
     print("-" * 60)
     print("Create domain generic agent")
@@ -186,9 +186,9 @@ def main(args):
 
         #Evaluate - Perform domain-generic agent
         print("\n\n********** Evaluation and relabeling %i ************" % it)
-        for expert, env in zip(experts, envs):
+        for expert, env, mass in zip(experts, envs, labels):
             rewards, obses, actions = evaluate_agent(domain_generic_agent, env, args)
-            stats_domain_generic_agent.append([rewards.mean(), rewards.std()])
+            stats_domain_generic_agent[mass].append([rewards.mean(), rewards.std()])
             print(f'Performance of domain generic agent: {rewards.mean()} +/- {rewards.std()}') 
             actions_new = relabel(obses, expert)
             buffer.add_path(obses, actions_new)
@@ -199,14 +199,14 @@ def main(args):
             domain_generic_agent.save(save_dir, it)
 
     # Evaluate domain_generic_agent on environments=different domains
-    
     save_dir = utils.make_dir(os.path.join(args.save_dir, "", 'model'))
     domain_generic_agent.save(save_dir, "final")
 
-    print("-"*60)
-    #print(f'Baseline performance: {pad_stats[label][0]} +/- {pad_stats[label][1]}')
-    print(f'Expert performance : {stats_expert[0]} +/- {stats_expert[1]}')
-    print(f'Imitation learning agent with dagger performance : {stats_domain_generic_agent[0]} +/- {stats_domain_generic_agent[1]}')
+    for label in labels:
+        print("-"*60)
+        #print(f'Baseline performance: {pad_stats[label][0]} +/- {pad_stats[label][1]}')
+        print(f'Expert performance : {stats_expert[label][0]} +/- {stats_expert[label][1]}')
+        print(f'Imitation learning agent with dagger performance : {stats_domain_generic_agent[label][0]} +/- {stats_domain_generic_agent[label][1]}')
 
 
 if __name__ == '__main__':
