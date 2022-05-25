@@ -52,7 +52,7 @@ def evaluate_agent(agent, env, args, feat_analysis=False, step=None, L=None): # 
                 L.log('eval/episode_reward', episode_reward, step)
             obses.append(obs)
             actions.append(action)
-            feat_vects.append(agent.extract_feat_vect(mass)) # You can comment it if it raises errors but it should not
+            #feat_vects.append(agent.extract_feat_vect(mass)) # You can comment it if it raises errors but it should not
             obs = next_obs
             step += 1
 
