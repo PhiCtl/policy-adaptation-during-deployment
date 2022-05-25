@@ -91,6 +91,7 @@ class PixelEncoder(nn.Module):
 		self.copy_conv_weights_from(source)
 		# Copy linear layer
 		tie_weights(self.fc, source.fc)
+		print("tie encoder")
 
 
 

@@ -107,6 +107,7 @@ class Actor(nn.Module):
         # Copy linear layers
         for tgt, src in zip(self.trunk, source.trunk):
             if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
+                print("tie actor")
                 tie_weights(tgt, src)
 
 
@@ -144,6 +145,7 @@ class InvFunction(nn.Module):
         # Copy linear layers
         for tgt, src in zip(self.trunk, source.trunk):
             if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
+                print("tie inv")
                 tie_weights(tgt, src)
 
 
