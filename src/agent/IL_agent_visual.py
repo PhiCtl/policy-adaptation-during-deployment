@@ -131,7 +131,7 @@ class DomainSpecificVisual(nn.Module):
                                       nn.Linear(hidden_dim, dynamics_output_shape))
 
     def forward(self, obs1, act1, obs2, act2, obs3):
-        print(obs1.shape, obs2.shape, obs3.shape)
+        # TODO : maybe try with longer sequence
         obs1 = self.encoder(obs1)
         obs2 = self.encoder(obs2)
         obs3 = self.encoder(obs3)
@@ -255,7 +255,7 @@ class SacSSAgent(object):
                 obs = torch.FloatTensor(obs).cuda()
             obs = obs.unsqueeze(0)
 
-            dyn_feat = self.domain_spe(*traj)
+            dyn_feat = self.domain_spe(*traj) # *traj is equivalent to obs1, act1, obs2, act2, obs3
             mu = self.actor(obs, dyn_feat)
             return mu.cpu().data.numpy().flatten()
 
@@ -307,6 +307,8 @@ class SacSSAgent(object):
         self.domain_spe_optimizer.step()
 
     def update_inv(self, pred, gt, L=None, step=None):
+        """Would only be used at test-time for test time adaptation"""
+        # TODO refine for test-time adaptation
 
         inv_loss = F.mse_loss(pred, gt)
 
