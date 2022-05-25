@@ -44,7 +44,7 @@ def main(args):
         action_shape=env.action_space.shape,
         dynamics_input_shape=mass.shape[0],
         args=args)
-    load_dir = utils.make_dir(os.path.join(args.save_dir, "_0_4", 'model'))
+    load_dir = utils.make_dir(os.path.join(args.save_dir, "_0_2", 'model'))
     il_agent.load(load_dir, "12")
 
     # Initialize feature vector
