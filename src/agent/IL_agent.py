@@ -302,14 +302,14 @@ class SacSSAgent(object):
 
         inv_loss = F.mse_loss(pred_action, action)
 
-        self.encoder_optimizer.zero_grad()
-        self.inv_optimizer.zero_grad()
+        #self.encoder_optimizer.zero_grad()
+        #self.inv_optimizer.zero_grad()
         self.feat_vect_optimizer.zero_grad()
 
         inv_loss.backward()
 
-        self.encoder_optimizer.step()
-        self.inv_optimizer.step()
+        #self.encoder_optimizer.step()
+        #self.inv_optimizer.step()
         self.feat_vect_optimizer.step()
 
         if L is not None:
