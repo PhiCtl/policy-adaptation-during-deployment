@@ -37,7 +37,6 @@ def main(args):
     # Load environment
     env = init_env(args, 0.5) # tried with out of range value
     mass = env.get_masses()
-
     # Load IL agent
     cropped_obs_shape = (3 * args.frame_stack, 84, 84)
     il_agent = make_il_agent(
@@ -45,7 +44,7 @@ def main(args):
         action_shape=env.action_space.shape,
         dynamics_input_shape=mass.shape[0],
         args=args)
-    load_dir = utils.make_dir(os.path.join(args.save_dir, "_0_3", 'model'))
+    load_dir = utils.make_dir(os.path.join(args.save_dir, "_0_4", 'model'))
     il_agent.load(load_dir, "12")
 
     # Initialize feature vector
@@ -62,7 +61,7 @@ def main(args):
     print('non adapting reward:', int(reward), ' +/- ', int(std))
 
     # 4 . Adapting agent
-    env = init_env(args, 0.35)
+    env = init_env(args, 0.5)
     print(f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
     pad_reward, std = evaluate(env, il_agent, args, video, recorder, adapt=True, exp_type="il_adapt")
     print('pad reward:', int(pad_reward), ' +/- ', int(std))
