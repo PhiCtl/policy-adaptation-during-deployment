@@ -3,8 +3,8 @@
 #SBATCH --nodes 1
 #SBATCH --ntasks 1
 #SBATCH --cpus-per-task 1
-#SBATCH --mem 80G
-#SBATCH --time 11:00:00
+#SBATCH --mem 100G
+#SBATCH --time 1-00:00:00
 #SBATCH --gres gpu:1
 
 python3 src/domain_generic.py \
