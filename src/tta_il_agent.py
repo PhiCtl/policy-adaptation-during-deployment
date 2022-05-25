@@ -8,28 +8,6 @@ from agent.IL_agent import make_il_agent
 from eval import init_env, evaluate
 from imitation_learning import evaluate_agent
 
-def stays_constant(args):
-
-    # 1. test whether feature vector is constant for inference
-
-    # Load env for a give mass
-    env = init_env(args, 0.3)
-    mass = env.get_masses()
-
-    # Load IL agent
-    cropped_obs_shape = (3 * args.frame_stack, 84, 84)
-    il_agent = make_il_agent(
-        obs_shape=cropped_obs_shape,
-        action_shape=env.action_space.shape,
-        dynamics_input_shape=mass.shape[0],
-        args=args)
-    load_dir = utils.make_dir(os.path.join(args.save_dir, "_0_3", 'model'))
-    il_agent.load(load_dir, "12")
-
-    rewards, _, _, feat_vects = evaluate_agent(il_agent, env, args, feat_analysis=True)
-    feat_vects = np.array(feat_vects)
-    print("Overall stats : {} +/- {}".format(feat_vects.mean(axis=0), feat_vects.std(0)))
-
 def verify_weights(args):
     # Load env for a give mass
     envs = []
@@ -53,15 +31,16 @@ def verify_weights(args):
         il_agents.append(il_agent)
 
     for agt in il_agents:
-        print(agt.inv.state_dict())
+        print(agt.inv.trunk[0].state_dict())
 
 
 def main(args):
+    """Performs IL agent test time adaptation"""
 
     # 1. Load agent
 
     # Load environment
-    env = init_env(args, 0.22) # tried with out of range value
+    env = init_env(args, 0.22) # Env mass value
     mass = env.get_masses()
     # Load IL agent
     cropped_obs_shape = (3 * args.frame_stack, 84, 84)
@@ -70,10 +49,10 @@ def main(args):
         action_shape=env.action_space.shape,
         dynamics_input_shape=mass.shape[0],
         args=args)
-    load_dir = utils.make_dir(os.path.join(args.save_dir, "_0_2", 'model'))
-    il_agent.load(load_dir, "12")
+    load_dir = utils.make_dir(os.path.join(args.save_dir, "_0_2", 'model')) # Il agent trained on specific domain
+    il_agent.load(load_dir, "12") # model checkpoint (12 / 15 / 19 / 21 dagger iterations)
 
-    # Initialize feature vector
+    # Initialize feature vector either at random either with domain_specific feature vector
     il_agent.init_feat_vect(np.random.rand(args.dynamics_output_shape)) #il_agent.extract_feat_vect(mass))
 
     # 2. Prepare test time evaluation
