@@ -15,7 +15,7 @@ from eval import init_env, evaluate
 from logger import Logger
 
 
-def evaluate_agent(agent, env, args, buffer=None, feat_analysis=False, step=None, L=None): # OK
+def evaluate_agent(agent, env, args, feat_analysis=False, step=None, L=None): # OK
     """Evaluate agent on env, storing obses, actions and next obses in buffer if any"""
 
     ep_rewards = []

@@ -215,7 +215,7 @@ class SacSSAgent(object):
         self.train()
 
     def init_feat_vect(self, init_value):
-        self.feat_vect = torch.tensor(init_value).unsqueeze(0).cuda()
+        self.feat_vect = torch.tensor(init_value).unsqueeze(0).float().cuda()
         self.feat_vect.requires_grad = True
         self.feat_vect_optimizer = torch.optim.Adam(
             [self.feat_vect], lr=1e-3
@@ -293,11 +293,12 @@ class SacSSAgent(object):
     def update_inv(self, obs, next_obs, action, L=None, step=None):
 
         assert obs.shape[-1] == 84 and next_obs.shape[-1] == 84
-        assert self.feat_vect # Assert we can use this member
+        assert self.feat_vect is not None # Assert we can use this member
 
         h = self.ss_encoder(obs)
         h_next = self.ss_encoder(next_obs)
-        pred_action = self.inv(h, h_next, self.feat_vect)
+        feats = self.feat_vect.repeat(obs.shape[0], 1)
+        pred_action = self.inv(h, h_next, feats)
 
         inv_loss = F.mse_loss(pred_action, action)
 
