@@ -31,7 +31,8 @@ def verify_weights(args):
         il_agents.append(il_agent)
 
     for agt in il_agents:
-        print(agt.inv.trunk[0].state_dict())
+        print(agt.actor.convs[0].state_dict())
+        print(agt.ss_encoder.convs[0].state_dict())
 
 
 def main(args):
