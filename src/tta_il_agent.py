@@ -30,12 +30,38 @@ def stays_constant(args):
     feat_vects = np.array(feat_vects)
     print("Overall stats : {} +/- {}".format(feat_vects.mean(axis=0), feat_vects.std(0)))
 
+def verify_weights(args):
+    # Load env for a give mass
+    envs = []
+    masses = []
+    for label in [0.3, 0.2]:
+        env = init_env(args, label)
+        masses.append(env.get_masses())
+        envs.append(env)
+
+    il_agents = []
+    for label, mass in zip(["_0_3", "_0_2"], masses):
+        # Load IL agent
+        cropped_obs_shape = (3 * args.frame_stack, 84, 84)
+        il_agent = make_il_agent(
+            obs_shape=cropped_obs_shape,
+            action_shape=envs[0].action_space.shape,
+            dynamics_input_shape=mass.shape[0],
+            args=args)
+        load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
+        il_agent.load(load_dir, "12")
+        il_agents.append(il_agent)
+
+    for agt in il_agents:
+        print(agt.inv.state_dict())
+
+
 def main(args):
 
     # 1. Load agent
 
     # Load environment
-    env = init_env(args, 0.1) # tried with out of range value
+    env = init_env(args, 0.22) # tried with out of range value
     mass = env.get_masses()
     # Load IL agent
     cropped_obs_shape = (3 * args.frame_stack, 84, 84)
@@ -61,7 +87,7 @@ def main(args):
     print('non adapting reward:', int(reward), ' +/- ', int(std))
 
     # 4 . Adapting agent
-    env = init_env(args, 0.1)
+    env = init_env(args, 0.22)
     print(f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
     pad_reward, std = evaluate(env, il_agent, args, video, recorder, adapt=True, exp_type="il_adapt")
     print('pad reward:', int(pad_reward), ' +/- ', int(std))
@@ -69,4 +95,4 @@ def main(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    main(args)
+    verify_weights(args)
