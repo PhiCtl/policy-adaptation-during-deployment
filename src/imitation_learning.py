@@ -14,9 +14,19 @@ import utils
 from eval import init_env, evaluate
 from logger import Logger
 
+"""
+This script trains Imitation learning agents from RL experts trained on different domains (different by their dynamics
+parameters, either the mass or the force).
+Those IL agents have a shared domain generic module, which has the same architecture as the original "PAD" agent we've
+explored so far. They have their own domain specific module, which takes as input the groundtruth (ie. actual)
+dynamics value, eg. the mass of the system. The output of this module is concatenated with the output from
+shared encoder, as input to SS and actor heads
+"""
 
 def evaluate_agent(agent, env, args, feat_analysis=False, step=None, L=None): # OK
-    """Evaluate agent on env, storing obses, actions and next obses in buffer if any"""
+    """Evaluate agent on env, storing obses, actions and next obses
+       if feat_analysis, then we also return the feature vector (output of the domain
+       specific module)"""
 
     ep_rewards = []
     obses, actions, feat_vects = [], [], []
@@ -33,7 +43,7 @@ def evaluate_agent(agent, env, args, feat_analysis=False, step=None, L=None): # 
         while not done:
 
             # Take a step
-            mass = env.get_masses()
+            mass = env.get_masses() # TODO change to env.get_forces()
             with utils.eval_mode(agent):
                 action = agent.select_action(obs, mass)
             next_obs, reward, done, info, _, _ = env.step(action, rewards)
@@ -42,7 +52,7 @@ def evaluate_agent(agent, env, args, feat_analysis=False, step=None, L=None): # 
                 L.log('eval/episode_reward', episode_reward, step)
             obses.append(obs)
             actions.append(action)
-            feat_vects.append(agent.extract_feat_vect(mass))
+            feat_vects.append(agent.extract_feat_vect(mass)) # You can comment it if it raises errors but it should not
             obs = next_obs
             step += 1
 
@@ -74,11 +84,11 @@ def collect_expert_samples(agent, env, args, label): # OK
     )
 
     ep_rewards, obses, actions = evaluate_agent(agent, env, args)
-    buffer.add_path(obses, actions)
+    buffer.add_path(obses, actions) # Save policy rollout
     return buffer, ep_rewards.mean(), ep_rewards.std()
 
 def relabel(obses, expert): # OK
-    """Relabel observations with expert agent"""
+    """Relabel observations with expert agent according to DAgger algorithm"""
     with utils.eval_mode(expert):
         actions_new = []
         for obs in obses:
@@ -86,11 +96,11 @@ def relabel(obses, expert): # OK
     return actions_new
 
 def load_agent(label, action_shape, args): # OK
-    """Load model from directory"""
+    """Load rL expert model from directory"""
 
-    work_dir = args.work_dir + label
+    work_dir = args.work_dir + label # example : logs/cartpole_swingup + "_0_3"
     L = Logger(work_dir, use_tb=True, config='il')
-    model_dir = os.path.join(work_dir, 'inv', '0', 'model')
+    model_dir = os.path.join(work_dir, 'inv', '0', 'model') # logs/cartpole_swingup_0_3/inv/0/model
     print(f'Load agent from {work_dir}')
 
     # Prepare agent
@@ -109,19 +119,19 @@ def main(args):
 
 
     # TODO better practise than lists
-    labels = ["_0_4", "_0_2", "_0_25", "_0_3"]
-    # Define 4 envts
+    labels = ["_0_4", "_0_2", "_0_25", "_0_3"] # TODO change labels with forces directory labels
+
+    # 1. Define 4 envts
     print("-"*60)
     print("Define environment")
     envs = []
-    masses = []
+    masses = [] # TODO change to forces
     for mass in [0.4, 0.2, 0.25, 0.3]:
         env = init_env(args, mass)
-        masses.append(env.get_masses())
-        print(masses[-1]) # debug
+        masses.append(env.get_masses()) # TODO env.get_forces()
         envs.append(env)
 
-    # Load expert agents
+    # 2. Load expert agents
     print("-" * 60)
     print("Load experts")
     experts = []
@@ -132,7 +142,7 @@ def main(args):
         experts.append(agent)
         loggers.append(logger)
 
-    # Collect samples from 4 RL agents
+    # 3. Collect samples from 4 RL agents
     print("-" * 60)
     print("Fill in buffers")
     buffers = [] # save data for IL
@@ -140,21 +150,22 @@ def main(args):
     stats_il = {k:[] for k in labels} # save score of Il agents
 
     # Initialize buffers by collecting experts data and collect their performance in the meantime
-    for expert, mass, env in zip(experts, labels, envs) :
+    for expert, mass, env in zip(experts, labels, envs) : # TODO change mass to forces
         buffer, mean, std = collect_expert_samples(expert, env, args, mass)
         buffers.append(buffer)
         stats_expert[mass] = [mean, std]
 
+    # 4. Create IL agents
     print("-" * 60)
     print("Create IL agents")
     il_agents = []
     cropped_obs_shape = (3 * args.frame_stack, 84, 84)
 
-    for mass in masses:
+    for mass in masses: # TODO replace with forces
         il_agent = make_il_agent(
             obs_shape=cropped_obs_shape,
             action_shape=envs[0].action_space.shape,
-            dynamics_input_shape=mass.shape[0],
+            dynamics_input_shape=mass.shape[0], # replace with force
             args=args)
         il_agents.append(il_agent)
 
@@ -162,7 +173,7 @@ def main(args):
     for il_agent in il_agents[1:]:
         il_agent.tie_agent_from(il_agents[0])
 
-    # Train the four IL agents with DAgger algorithm
+    # 5. Train the four IL agents with DAgger algorithm
     print("-" * 60)
     print("Train IL agents")
 
@@ -172,11 +183,11 @@ def main(args):
         # Train 4 Il agents policies
         for step in range(args.il_steps):
 
-            # Sample data
+            # Save data
             preds, pred_invs, gts, losses = [], [], [], 0
 
             # Forward pass sequentially for all agents
-            for agent, buffer, mass, L in zip(il_agents, buffers, masses, loggers):
+            for agent, buffer, mass, L in zip(il_agents, buffers, masses, loggers): # TODO change to forces
                 obs, action, next_obs, _ = buffer.sample() # sample a batch
                 action_pred, action_inv, loss = agent.predict_action(obs, next_obs, mass, action, L=L, step=step)
 
@@ -208,128 +219,20 @@ def main(args):
                 agent.save(save_dir, it)
 
 
-    # Save IL agents
+    # 6. Save IL agents
     for agent, label in zip(il_agents, labels):
         save_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
         agent.save(save_dir, "final")
 
 
-    # Evaluate expert vs IL
+    # 7. Evaluate expert vs IL
     for label in labels :
         print("-"*60)
         print(f'Mass of {label}')
         print(f'Expert performance : {stats_expert[label][0]} +/- {stats_expert[label][1]}')
         print(f'Imitation learning agent with dagger performance : {stats_il[label][-1][0]} +/- {stats_il[label][-1][1]}')
 
-def test_agents(args):
-
-    labels = ["_0_4", "_0_2", "_0_25", "_0_3"]
-    video_dir = utils.make_dir(os.path.join(args.work_dir, 'video'))
-    video = VideoRecorder(video_dir if args.save_video else None, height=448, width=448)
-    recorder = utils.AdaptRecorder(args.work_dir, args.mode)
-
-    # Define 2 envts
-    print("-" * 60)
-    print("Define environment")
-    envs = []
-    masses = []
-    for mass in [0.4, 0.2, 0.25, 0.3]:
-        env = init_env(args, mass)
-        masses.append(env.get_masses())
-        print(masses[-1])  # debug
-        envs.append(env)
-    cropped_obs_shape = (3 * args.frame_stack, 84, 84)
-
-    # Load expert agents
-    print("-" * 60)
-    print("Load experts")
-    experts = []
-    loggers = []
-    for label in labels:
-        # All envs have should have the same action space shape
-        agent, logger = load_agent(label, envs[0].action_space.shape, args)
-        experts.append(agent)
-        loggers.append(logger)
-
-    # Collect samples from 4 RL agents
-    print("-" * 60)
-    print("Fill in buffers")
-    buffers = []  # save data for IL
-    stats_expert = dict()  # save score of trained RL agents on corresponding environments
-    stats_il = {k: [] for k in labels}  # save score of Il agents
-
-    # Initialize buffers by collecting experts data and collect their performance in the meantime
-    for expert, mass, env in zip(experts, labels, envs):
-        buffer, mean, std = collect_expert_samples(expert, env, args, mass)
-        buffers.append(buffer)
-        stats_expert[mass] = [mean, std]
-
-    il_agents = []
-    print("Load agents")
-    for label, mass in zip(labels, masses):
-        load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
-        il_agent = make_il_agent(
-            obs_shape=cropped_obs_shape,
-            action_shape=envs[0].action_space.shape,
-            dynamics_input_shape=mass.shape[0],
-            args=args)
-        il_agent.load(load_dir, "12")
-        il_agents.append(il_agent)
-
-    # Baseline agent -> PADcropped_obs_shape = (3 * args.frame_stack, 84, 84)
-    pad_agent = make_agent(
-        obs_shape=cropped_obs_shape,
-        action_shape=envs[0].action_space.shape,
-        args=args
-    )
-    work_dir = args.work_dir + ""
-    model_dir = os.path.join(work_dir, 'inv', '0', 'model')
-    pad_agent.load(model_dir, args.pad_checkpoint)
-    pad_stats = dict()
-
-    for env, label, il_agent in zip(envs, labels, il_agents):
-        rewards_avg, rewards_std = evaluate(pad_agent, env, args, video, recorder, adapt=True)
-        rewards_il, _, _ = evaluate_agent(il_agent, env, args)
-        pad_stats[label] = [rewards_avg, rewards_std]
-        stats_il[label] = [rewards_il.mean(), rewards_il.std()]
-
-    for label in labels:
-        print("-" * 60)
-        print(f'Mass of {label}')
-        print(f'Baseline performance: {pad_stats[label][0]} +/- {pad_stats[label][1]}')
-        print(f'Expert performance : {stats_expert[label][0]} +/- {stats_expert[label][1]}')
-        print(
-            f'Imitation learning agent with dagger performance : {stats_il[label][0]} +/- {stats_il[label][1]}')
-
-def test_tie_correct(args):
-
-    labels = ["_0_4", "_0_2", "_0_25", "_0_3"]
-    # Define 4 envts
-    print("-" * 60)
-    print("Define environment")
-    envs = []
-    masses = []
-    for mass in [0.4, 0.2, 0.25, 0.3]:
-        env = init_env(args, mass)
-        masses.append(env.get_masses())
-        print(masses[-1])  # debug
-        envs.append(env)
-
-    cropped_obs_shape = (3 * args.frame_stack, 84, 84)
-
-    il_agents = []
-    for mass in masses:
-        il_agent = make_il_agent(
-            obs_shape=cropped_obs_shape,
-            action_shape=envs[0].action_space.shape,
-            dynamics_input_shape=mass.shape[0],
-            args=args)
-        il_agents.append(il_agent)
-
-    # Share domain generic part between agents
-    for il_agent in il_agents[1:]:
-        il_agent.tie_agent_from(il_agents[0])
 
 if __name__ == '__main__':
     args = parse_args()
-    test_tie_correct(args)
+    main(args)
