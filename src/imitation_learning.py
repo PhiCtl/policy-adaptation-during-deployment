@@ -288,7 +288,7 @@ def tie_weights(args):
         il_agents_tied.append(il_agent)
 
     for il_agent in il_agents_tied:
-        print(il_agent.ss_encoder.state_dict())
+        print(il_agent.actor.trunk[0].state_dict())
 
 
 if __name__ == '__main__':
