@@ -234,6 +234,62 @@ def main(args):
         print(f'Expert performance : {stats_expert[label][0]} +/- {stats_expert[label][1]}')
         print(f'Imitation learning agent with dagger performance : {stats_il[label][-1][0]} +/- {stats_il[label][-1][1]}')
 
+def tie_weights(args):
+    # TODO better practise than lists
+    labels = ["_0_4", "_0_2", "_0_25"]  # TODO change labels with forces directory labels
+
+    # 1. Define 4 envts
+    print("-" * 60)
+    print("Define environment")
+    envs = []
+    masses = []  # TODO change to forces
+    for mass in [0.4, 0.2, 0.25, 0.3]:
+        env = init_env(args, mass)
+        masses.append(env.get_masses())  # TODO env.get_forces()
+        envs.append(env)
+
+    # 2. Load expert agents
+    print("-" * 60)
+    print("Load experts")
+    experts = []
+    loggers = []
+    for label in labels:
+        # All envs have should have the same action space shape
+        agent, logger = load_agent(label, envs[0].action_space.shape, args)
+        experts.append(agent)
+        loggers.append(logger)
+
+    # 3. Collect samples from 4 RL agents
+    print("-" * 60)
+    print("Fill in buffers")
+    buffers = []  # save data for IL
+    stats_expert = dict()  # save score of trained RL agents on corresponding environments
+    stats_il = {k: [] for k in labels}  # save score of Il agents
+
+
+    # 4. Create IL agents
+    print("-" * 60)
+    print("Create IL agents")
+    il_agents = []
+    cropped_obs_shape = (3 * args.frame_stack, 84, 84)
+
+    for mass in masses:  # TODO replace with forces
+        il_agent = make_il_agent(
+            obs_shape=cropped_obs_shape,
+            action_shape=envs[0].action_space.shape,
+            dynamics_input_shape=mass.shape[0],  # replace with force
+            args=args)
+        il_agents.append(il_agent)
+
+    # Share domain generic part between agents
+    il_agents_tied = [il_agents[0]]
+    for il_agent in il_agents[1:]:
+        il_agent.tie_agent_from(il_agents[0])
+        il_agents_tied.append(il_agent)
+
+    for il_agent in il_agents_tied:
+        print(il_agent.inv.state_dict())
+
 
 if __name__ == '__main__':
     args = parse_args()
