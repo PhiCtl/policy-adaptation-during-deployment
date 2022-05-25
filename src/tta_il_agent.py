@@ -35,7 +35,7 @@ def main(args):
     # 1. Load agent
 
     # Load environment
-    env = init_env(args, 1) # tried with out of range value
+    env = init_env(args, 0.1) # tried with out of range value
     mass = env.get_masses()
     # Load IL agent
     cropped_obs_shape = (3 * args.frame_stack, 84, 84)
@@ -61,7 +61,7 @@ def main(args):
     print('non adapting reward:', int(reward), ' +/- ', int(std))
 
     # 4 . Adapting agent
-    env = init_env(args, 1)
+    env = init_env(args, 0.1)
     print(f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
     pad_reward, std = evaluate(env, il_agent, args, video, recorder, adapt=True, exp_type="il_adapt")
     print('pad reward:', int(pad_reward), ' +/- ', int(std))
