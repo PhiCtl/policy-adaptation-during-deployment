@@ -12,6 +12,7 @@ python3 src/train.py \
     --task_name walk \
     --action_repeat 4 \
     --mode train \
+    --predictor force_walker \
     --use_inv \
     --num_shared_layers 8 \
     --seed 0 \
