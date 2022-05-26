@@ -174,8 +174,10 @@ def main(args):
         il_agents.append(il_agent)
 
     # Share domain generic part between agents
+    il_agents_tied = [il_agents[0]]
     for il_agent in il_agents[1:]:
         il_agent.tie_agent_from(il_agents[0])
+        il_agents_tied.append(il_agent)
 
     # 6. Train the four IL agents with DAgger algorithm
     print("-" * 60)
@@ -191,7 +193,7 @@ def main(args):
             preds, pred_invs, gts, losses = [], [], [], 0
 
             # Forward pass sequentially for all agents
-            for agent, buffer, mass, L in zip(il_agents, buffers, masses, loggers): # TODO replace with forces
+            for agent, buffer, mass, L in zip(il_agents_tied, buffers, masses, loggers): # TODO replace with forces
                 # sample a batch of obs, action, next_obs and [obs1, act1, obs2, act2, obs3]
                 obs, action, next_obs, traj = buffer.sample()
                 action_pred, action_inv, loss = agent.predict_action(obs, next_obs, traj, action, L=L, step=step)
@@ -204,13 +206,13 @@ def main(args):
             # Backward pass
             losses.backward()
 
-            for agent in il_agents:
+            for agent in il_agents_tied:
                 agent.update()
 
         # b. Evaluate - Perform IL agent policy rollouts
         print("\n\n********** Evaluation and relabeling %i ************" % it)
         # TODO replace mass labels with force labels
-        for agent, expert, logger, env, buffer, mass in zip(il_agents, experts, loggers, envs, buffers, labels):
+        for agent, expert, logger, env, buffer, mass in zip(il_agents_tied, experts, loggers, envs, buffers, labels):
             rewards, obses, actions = evaluate_agent(agent, env, args, buffer, L=logger, step=it) # evaluate agent on environment
             stats_il[mass].append([rewards.mean(), rewards.std()]) # save intermediary score
             print(f'Performance of agent on mass {mass} : {rewards.mean()} +/- {rewards.std()}')
@@ -220,13 +222,13 @@ def main(args):
 
         # c. Save partial model
         if it % 5 == 0 :
-            for agent, label in zip(il_agents, labels):
+            for agent, label in zip(il_agents_tied, labels):
                 save_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
                 agent.save(save_dir, it)
 
 
     # 7. Save IL agents
-    for agent, label in zip(il_agents, labels):
+    for agent, label in zip(il_agents_tied, labels):
         save_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
         agent.save(save_dir, "final")
 

@@ -90,7 +90,7 @@ class PixelEncoder(nn.Module):
 		# Copy convolutional layers
 		self.copy_conv_weights_from(source)
 		# Copy linear layer
-		tie_weights(self.fc, source.fc)
+		tie_weights(trg=self.fc, src=source.fc)
 
 
 

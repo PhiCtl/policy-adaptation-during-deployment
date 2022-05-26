@@ -29,16 +29,14 @@ def parse_args():
 	parser.add_argument('--eval_freq', default=100000, type=int)
 	parser.add_argument('--eval_episodes', default=10, type=int)
 
-	# predictor
-	parser.add_argument('--latent_dim', default=50, type=int)
-	parser.add_argument('--predictor', default='cart_mass', type=str)
-	parser.add_argument('--dynamics_shape', default=100, type=int)
-
 	# imitation learning
 	parser.add_argument('--num_rollouts', default=100, type=int)
 	parser.add_argument('--n_iter', default=10, type=int)
 	parser.add_argument('--il_steps', default=5000, type=int)
 	parser.add_argument('--dynamics_output_shape', default=10, type=int)
+	parser.add_argument('--domain_test', default=0.35, type=float)
+	parser.add_argument('--label', default="_0_3", type=str)
+	parser.add_argument('--rd', default=True, action='store_true')
 
 	# critic
 	parser.add_argument('--critic_lr', default=1e-3, type=float)
