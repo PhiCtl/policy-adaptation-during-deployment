@@ -107,7 +107,7 @@ class Actor(nn.Module):
         # Copy linear layers
         for tgt, src in zip(self.trunk, source.trunk):
             if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
-                tie_weights(tgt, src)
+                tie_weights(src=src, trg=tgt)
 
 
 class DomainSpecific(nn.Module):
@@ -144,7 +144,7 @@ class InvFunction(nn.Module):
         # Copy linear layers
         for tgt, src in zip(self.trunk, source.trunk):
             if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
-                tie_weights(tgt, src)
+                tie_weights(src=src, trg=tgt)
 
 
 class SacSSAgent(object):
@@ -302,14 +302,14 @@ class SacSSAgent(object):
 
         inv_loss = F.mse_loss(pred_action, action)
 
-        self.encoder_optimizer.zero_grad()
-        self.inv_optimizer.zero_grad()
+        #self.encoder_optimizer.zero_grad()
+        #self.inv_optimizer.zero_grad()
         self.feat_vect_optimizer.zero_grad()
 
         inv_loss.backward()
 
-        self.encoder_optimizer.step()
-        self.inv_optimizer.step()
+        #self.encoder_optimizer.step()
+        #self.inv_optimizer.step()
         self.feat_vect_optimizer.step()
 
         if L is not None:
