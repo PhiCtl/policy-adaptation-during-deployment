@@ -41,7 +41,6 @@ def main(args):
 		episode_length=args.episode_length,
 		action_repeat=args.action_repeat,
 		mode=args.mode,
-		predictor = args.predictor,
 		#mass=args.cart_mass, # for domain difference during training
 		force=args.force_walker
 	)
