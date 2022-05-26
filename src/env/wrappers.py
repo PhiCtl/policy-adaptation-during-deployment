@@ -104,7 +104,7 @@ class ColorWrapper(gym.Wrapper):
         if self.force :
             _env.physics.model.opt.gravity[:2] = -self.force
         # print(_env.physics.model.body_mass[1]) # TODO remove when it is ok
-        #print(_env.physics.model.opt.gravity[:2])
+        print(_env.physics.model.opt.gravity[:2])
         return self.env.reset()
 
     def step(self, action, rewards=None):
