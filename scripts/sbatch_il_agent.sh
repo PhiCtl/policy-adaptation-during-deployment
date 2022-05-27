@@ -8,13 +8,13 @@
 #SBATCH --gres gpu:1
 
 python3 src/imitation_learning.py \
-    --domain_name cartpole \
-    --task_name swingup \
-    --action_repeat 8 \
+    --domain_name walker \
+    --task_name walk \
+    --action_repeat 4 \
     --mode train \
     --use_inv \
     --num_shared_layers 8 \
-    --pad_checkpoint 500k \
+    --pad_checkpoint 400k \
     --seed 0 \
-    --work_dir logs/cartpole_swingup \
-    --save_dir logs/IL/cartpole_swingup 
+    --work_dir logs/walker_walk \
+    --save_dir logs/IL/walker_walk 

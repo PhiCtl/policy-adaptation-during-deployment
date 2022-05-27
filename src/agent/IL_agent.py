@@ -239,7 +239,7 @@ class SacSSAgent(object):
         if self.inv is not None:
             self.inv.train(training)
 
-    def select_action(self, obs, mass=None):
+    def select_action(self, obs, mass=None, force = None):
         with torch.no_grad():
                 if isinstance(obs, np.ndarray):
                     obs = torch.FloatTensor(obs).cuda()
@@ -248,12 +248,16 @@ class SacSSAgent(object):
                     mass = torch.FloatTensor(mass).cuda()
                     mass = mass.unsqueeze(0)
                     dyn_feat = self.domain_spe(mass)
-                else : # If we're at test phase
+                elif force is not None:
+                    force = torch.FloatTensor(force).cuda()
+                    force = force.unsqueeze(0)
+                    dyn_feat = self.domain_spe(force)
+                else: # If we're at test phase
                     dyn_feat = self.feat_vect
                 mu  = self.actor(obs, dyn_feat)
                 return mu.cpu().data.numpy().flatten()
 
-    def predict_action(self, obs, next_obs, mass, gt, L=None, step=None):
+    def predict_action(self, obs, next_obs, gt, force = None, mass = None, L=None, step=None):
         """Make the forward pass for actor, domain specific and ss head"""
 
         # 1. Reset gradients
@@ -267,10 +271,17 @@ class SacSSAgent(object):
             obs = obs.unsqueeze(0)
         # TODO should we move obs to cuda ?
 
-        mass = torch.FloatTensor(mass).cuda()
-        mass = mass.repeat(obs.shape[0], 1) # create a batch of masses
+        if (mass is not None) or (force is not None):
+            mass = torch.FloatTensor(mass).cuda()
+            mass = mass.repeat(obs.shape[0], 1) # create a batch of masses
 
-        dyn_feat = self.domain_spe(mass) # compute dynamics features
+            dyn_feat = self.domain_spe(mass) # compute dynamics features
+            
+            force = torch.FloatTensor(force).cuda()
+            force = force.repeat(obs.shape[0], 1) # create a batch of forces
+            
+            dyn_feat = self.domain_spe(force) # compute dynamics features
+            
 
         # Make actor prediction
         mu = self.actor(obs, dyn_feat)
@@ -338,10 +349,14 @@ class SacSSAgent(object):
         # Tie inv
         self.inv.tie_inv_from(source.inv)
 
-    def extract_feat_vect(self, mass):
+    def extract_feat_vect(self, mass= None, force = None):
         """Extract dynamics feature vector to check if stays constant"""
-        mass = torch.as_tensor(mass).float().unsqueeze(0).cuda()
-        return self.domain_spe(mass).cpu().data.numpy().flatten()
+        if mass is not None:
+            mass = torch.as_tensor(mass).float().unsqueeze(0).cuda()
+            return self.domain_spe(mass).cpu().data.numpy().flatten()
+        else:
+            force = torch.as_tensor(force).float().unsqueeze(0).cuda()
+            return self.domain_spe(force).cpu().data.numpy().flatten()
 
     def save(self, model_dir, step):
         torch.save(

@@ -104,7 +104,7 @@ class ColorWrapper(gym.Wrapper):
         if self.force :
             _env.physics.model.opt.gravity[:2] = -self.force
         # print(_env.physics.model.body_mass[1]) # TODO remove when it is ok
-        print(_env.physics.model.opt.gravity[:2])
+        #print(_env.physics.model.opt.gravity[:2])
         return self.env.reset()
 
     def step(self, action, rewards=None):
@@ -200,6 +200,10 @@ class ColorWrapper(gym.Wrapper):
         _env = self._get_dmc_wrapper()
         # We're not interested in the env mass, which is 0 at index 0 so we skip it
         return np.copy(_env.physics.model.body_mass[1:])
+    
+    def get_forces(self):
+        _env = self._get_dmc_wrapper()
+        return np.copy(_env.physics.model.opt.gravity[:2])
 
 
 class FrameStack(gym.Wrapper):
