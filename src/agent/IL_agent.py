@@ -271,17 +271,17 @@ class SacSSAgent(object):
             obs = obs.unsqueeze(0)
         # TODO should we move obs to cuda ?
 
-        if (mass is not None) or (force is not None):
+        if mass is not None:
             mass = torch.FloatTensor(mass).cuda()
             mass = mass.repeat(obs.shape[0], 1) # create a batch of masses
 
             dyn_feat = self.domain_spe(mass) # compute dynamics features
-            
+        
+        elif force is not None:
             force = torch.FloatTensor(force).cuda()
             force = force.repeat(obs.shape[0], 1) # create a batch of forces
             
             dyn_feat = self.domain_spe(force) # compute dynamics features
-            
 
         # Make actor prediction
         mu = self.actor(obs, dyn_feat)
