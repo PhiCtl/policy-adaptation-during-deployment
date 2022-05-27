@@ -190,7 +190,7 @@ def main(args):
 
             # Forward pass sequentially for all agents
             for agent, buffer, mass, L in zip(il_agents_tied, buffers, masses, loggers): # TODO change to forces
-                obs, action, next_obs, _ = buffer.sample() # sample a batch
+                obs, action, next_obs = buffer.sample() # sample a batch
                 action_pred, action_inv, loss = agent.predict_action(obs, next_obs, mass, action, L=L, step=step)
 
                 preds.append(action_pred) # Action from actor network
