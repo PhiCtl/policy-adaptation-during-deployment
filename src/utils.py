@@ -190,48 +190,115 @@ class TrajectoryBuffer(SimpleBuffer):
         # the proprioceptive obs is stored as float32, pixels obs as uint8
         obs_dtype = np.float32 if len(obs_shape) == 1 else np.uint8
 
-        self.next_actions = np.empty((capacity, *action_shape), dtype=np.float32)
-        self.next_next_obses = np.empty((capacity, *obs_shape), dtype=obs_dtype)
+        self.actions_1 = np.empty((capacity, *action_shape), dtype=np.float32)
+        self.obses_2 = np.empty((capacity, *obs_shape), dtype=obs_dtype)
 
-    def add(self, obs, action, next_obs, next_action, next_next_obs):
 
-        np.copyto(self.next_actions[self.idx], next_action)
-        np.copyto(self.next_next_obses[self.idx], next_next_obs)
-        super().add(obs, action, next_obs)  # Take care of increments
+    def add(self, obs_0, action_0, obs_1, action_1, obs_2):
+
+        np.copyto(self.actions_1[self.idx], action_1)
+        np.copyto(self.obses_2[self.idx], obs_2)
+
+        super().add(obs_0, action_0, obs_1)  # Take care of increments
 
     def add_path(self, obses, actions):
-        obs1 = obses[:-2]
-        act1 = actions[:-1]
-        obs2 = obses[1:-1]
-        act2 = actions[1:]
-        obs3 = obses[2:]
-        for obs, action, next_obs, next_action, next_next_obs in zip(obs1, act1, obs2, act2, obs3):
-            self.add(obs, action, next_obs, next_action, next_next_obs)
+        obs0s = obses[:-2]
+        act0s = actions[:-1]
+        obs1s = obses[1:-1]
+        act1s = actions[1:]
+        obs2s = obses[2:]
+        for obs_0, action_0, obs_1, action_1, obs_2 in zip(obs0s, act0s, obs1s, act1s, obs2s):
+            self.add(obs_0, action_0, obs_1, action_1, obs_2)
 
-    def sample(self):
+    def sample(self, idxs=None):
 
-        idxs = np.random.randint(
-            0, self.capacity if self.full else self.idx, size=self.batch_size
-        )
-        obses, actions, next_obses = super().sample(idxs = idxs)
-        next_actions = torch.as_tensor(self.next_actions[idxs]).float().cuda()
-        next_next_obses = torch.as_tensor(self.next_next_obses[idxs]).float().cuda()
+        if idxs is None :
+            idxs = np.random.randint(
+                0, self.capacity if self.full else self.idx, size=self.batch_size
+            )
+        obses_0, actions_0, obses_1 = super().sample(idxs = idxs)
+        actions_1 = torch.as_tensor(self.actions_1[idxs]).float().cuda()
+        obses_2 = torch.as_tensor(self.obses_2[idxs]).float().cuda()
 
-        next_next_obses = random_crop(next_next_obses)
+        obses_2 = random_crop(obses_2)
 
-        return [obses, actions, next_obses, next_actions, next_next_obses]
+        return [obses_0, actions_0, obses_1, actions_1, obses_2]
 
     def sample_traj(self):
         """Sample single trajectory"""
 
         ix = np.random.randint(0, self.capacity if self.full else self.idx, size=1)
-        obs, act, next_obs = super().sample(idxs=ix)
-        next_act = torch.as_tensor(self.next_actions[ix]).float().cuda()
-        next_next_obs = torch.as_tensor(self.next_next_obses[ix]).float().cuda()
+        obs_0, action_0, obs_1 = super().sample(idxs=ix)
+        action_1 = torch.as_tensor(self.actions_1[ix]).float().cuda()
+        obs_2 = torch.as_tensor(self.obses_2[ix]).float().cuda()
 
-        return [obs, act, next_obs, next_act, next_next_obs]
+        obs_2 = random_crop(obs_2)
+
+        return [obs_0, action_0, obs_1, action_1, obs_2]
+
+class ExtendedTrajectoryBuffer(TrajectoryBuffer):
+    """Stores data from an environment in 7 arrays
+           we want at some point to retrieve a successive sequence of observations and actions
+           that's why observations and actions are stored this way
+        """
+
+    def __init__(self, obs_shape, action_shape, capacity, batch_size, label=None):
+        self.capacity = capacity
+        self.batch_size = batch_size
+
+        super().__init__(obs_shape, action_shape, capacity, batch_size, label=label)
+
+        # the proprioceptive obs is stored as float32, pixels obs as uint8
+        obs_dtype = np.float32 if len(obs_shape) == 1 else np.uint8
 
 
+        self.actions_2 = np.empty((capacity, *action_shape), dtype=np.floaz32)
+        self.obses_3 = np.empty((capacity, *obs_shape), dtype=obs_dtype)
+
+    def add(self, obs_0, action_0, obs_1, action_1, obs_2, action_2, obs_3):
+
+        np.copyto(self.actions_2[self.idx], action_2)
+        np.copyto(self.obses_3[self.idx], obs_3)
+        super().add(obs_0, action_0, obs_1, action_1, obs_2)  # Take care of increments
+
+    def add_path(self, obses, actions):
+        obs0s = obses[:-3]
+        act0s = actions[:-2]
+        obs1s = obses[1:-2]
+        act1s = actions[1:-1]
+        obs2s = obses[2:-1]
+        act2s = actions[2:]
+        obs3s = obses[3:]
+        for obs_0, action_0, obs_1, action_1, obs_2, action_2, obs_3 in zip(obs0s, act0s, obs1s, act1s, obs2s, act2s,
+                                                                            obs3s):
+            self.add(obs_0, action_0, obs_1, action_1, obs_2, action_2, obs_3)
+
+    def sample(self, idxs=None):
+
+        if idxs is None :
+            idxs = np.random.randint(
+                0, self.capacity if self.full else self.idx, size=self.batch_size
+            )
+
+        obses_0, actions_0, obses_1, actions_1, obses_2 = super().sample(idxs = idxs)
+        actions_2 = torch.as_tensor(self.actions_2[idxs]).float().cuda()
+        obses_3 = torch.as_tensor(self.obses_3[idxs]).float().cuda()
+
+        obses_3 = random_crop(obses_3)
+
+        return obses_0, actions_0, obses_1, [obses_0, actions_0, obses_1, actions_1, obses_2, actions_2, obses_3 ]
+
+    def sample_traj(self):
+        """Sample single trajectory"""
+
+        ix = np.random.randint(0, self.capacity if self.full else self.idx, size=1)
+        obs_0, action_0, obs_1, action_1, obs_2 = super().sample(idxs=ix)
+        action_2 = torch.as_tensor(self.actions_2[ix]).float().cuda()
+        obs_3 = torch.as_tensor(self.obses_3[ix]).float().cuda()
+
+        obs_3 = random_crop(obs_3)
+
+        return [obs_0, action_0, obs_1, action_1, obs_2, action_2, obs_3]
 
 class ReplayBuffer(object):
     """Buffer to store environment transitions"""

@@ -91,7 +91,7 @@ def collect_expert_samples(agent, env, args, label): # OK
               - label : env specificity, eg. the cartmass
        """
     # Create replay buffer with label
-    buffer = utils.SimpleBuffer(
+    buffer = utils.ExtendedTrajectoryBuffer(
         obs_shape=env.observation_space.shape,
         action_shape=env.action_space.shape,
         capacity=args.train_steps,
@@ -159,7 +159,7 @@ def main(args):
         experts.append(agent)
         loggers.append(logger)
     # Load reference agent
-    ref_expert, _ = load_agent("", envs[0].action_space.shape, args)
+    # ref_expert, _ = load_agent("", envs[0].action_space.shape, args)
 
 
     # 3. Collect samples from 4 RL agents
@@ -178,9 +178,9 @@ def main(args):
         stats_expert[mass] = [mean, std]
 
     # 4.b Collect trajectories from ref RL agent on different domains
-    trajs_buffers = []
-    for env in envs:
-        trajs_buffers.append(collect_trajectory(ref_expert, env, args))
+    # trajs_buffers = []
+    # for env in envs:
+    #     trajs_buffers.append(collect_trajectory(ref_expert, env, args))
 
     # 5. Create IL agents
     print("-" * 60)
@@ -216,10 +216,13 @@ def main(args):
             preds, pred_invs, gts, losses = [], [], [], 0
 
             # Forward pass sequentially for all agents
-            for agent, buffer, traj_buffer, mass, L in zip(il_agents_tied, buffers, trajs_buffers, masses, loggers): # TODO replace with forces
+            #for agent, buffer, traj_buffer, mass, L in zip(il_agents_tied, buffers, trajs_buffers, masses, loggers): # TODO replace with forces
+            for agent, buffer, mass, L in zip(il_agents_tied, buffers, masses,
+                                                               loggers):
+
                 # sample a batch of obs, action, next_obs and traj = [obs1, act1, obs2, act2, obs3]
-                obs, action, next_obs = buffer.sample()
-                traj = traj_buffer.sample()
+                obs, action, next_obs, traj = buffer.sample() # change again without traj
+                #traj = traj_buffer.sample()
                 action_pred, action_inv, loss = agent.predict_action(obs, next_obs, traj, action, L=L, step=step)
 
                 preds.append(action_pred) # Action from actor network
@@ -236,9 +239,12 @@ def main(args):
         # b. Evaluate - Perform IL agent policy rollouts
         print("\n\n********** Evaluation and relabeling %i ************" % it)
         # TODO replace mass labels with force labels
-        for agent, expert, logger, env, buffer, traj_buffer, mass in zip(il_agents_tied, experts, loggers, envs, buffers, trajs_buffers, labels):
+        #for agent, expert, logger, env, buffer, traj_buffer, mass in zip(il_agents_tied, experts, loggers, envs, buffers, trajs_buffers, labels):
+        for agent, expert, logger, env, buffer, mass in zip(il_agents_tied, experts, loggers, envs,
+                                                                             buffers, labels):
+
             # Evaluate agent on envt
-            rewards, obses, actions = evaluate_agent(agent, env, args, traj_buffer, L=logger, step=it)
+            rewards, obses, actions = evaluate_agent(agent, env, args, buffer, L=logger, step=it) # change to traj_buffer
             # Save itermediary score
             stats_il[mass].append([rewards.mean(), rewards.std()])
             print(f'Performance of agent on mass {mass} : {rewards.mean()} +/- {rewards.std()}')
