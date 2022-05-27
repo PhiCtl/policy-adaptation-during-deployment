@@ -62,7 +62,7 @@ def main(args):
     if rd :
         init = np.random.rand(args.dynamics_output_shape)
     else :
-        init = il_agent.extract_feat_vect(0.3)
+        init = il_agent.extract_feat_vect([0.3, 0.1])
     il_agent.init_feat_vect(init)
 
     # 2. Prepare test time evaluation
