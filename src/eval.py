@@ -113,11 +113,11 @@ def init_env(args, mass=None):
 def main(args):
     # Initialize environment
     env = init_env(args)
-    _env = env._get_dmc_wrapper()
-    print(_env.physics.model.body_mass[1])
+
     model_dir = utils.make_dir(os.path.join(args.work_dir, 'model'))
     video_dir = utils.make_dir(os.path.join(args.work_dir, 'video'))
     video = VideoRecorder(video_dir if args.save_video else None, height=448, width=448)
+    recorder = AdaptRecorder(args.work_dir, args.mode)
 
     # Prepare agent
     assert torch.cuda.is_available(), 'must have cuda enabled'
@@ -129,13 +129,11 @@ def main(args):
     )
     agent.load(model_dir, args.pad_checkpoint)
 
-    # Recorder
-    recorder = AdaptRecorder(args.work_dir, args.mode)
 
     # Evaluate agent without PAD
-    # print(f'Evaluating {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-    # eval_reward, std = evaluate(env, agent, args, video, recorder)
-    # print('eval reward:', int(eval_reward), ' +/- ', int(std))
+    print(f'Evaluating {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
+    eval_reward, std = evaluate(env, agent, args, video, recorder)
+    print('eval reward:', int(eval_reward), ' +/- ', int(std))
 
     # Evaluate agent with PAD (if applicable)
     pad_reward = None
