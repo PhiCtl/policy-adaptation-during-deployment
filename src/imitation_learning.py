@@ -1,3 +1,4 @@
+from multiprocessing.context import ForkServerProcess
 from turtle import forward
 import torch
 import os
@@ -43,9 +44,10 @@ def evaluate_agent(agent, env, args, feat_analysis=False, step=None, L=None): # 
         while not done:
 
             # Take a step
-            mass = env.get_masses() # TODO change to env.get_forces()
+            #mass = env.get_masses() # TODO change to env.get_forces()
+            force = env.get_forces()
             with utils.eval_mode(agent):
-                action = agent.select_action(obs, mass)
+                action = agent.select_action(obs, force)
             next_obs, reward, done, info, _, _ = env.step(action, rewards)
             episode_reward += reward
             if L and step:
@@ -119,16 +121,19 @@ def main(args):
 
 
     # TODO better practise than lists
-    labels = ["_0_4", "_0_2", "_0_25", "_0_3"] # TODO change labels with forces directory labels
-
+    #labels = ["_0_4", "_0_2", "_0_25", "_0_3"] # TODO change labels with forces directory labels
+    labels = ["_0_-1", "_0_-2", "_0_-3"] #labels for the walker_walk
+    
     # 1. Define 4 envts
     print("-"*60)
     print("Define environment")
     envs = []
-    masses = [] # TODO change to forces
-    for mass in [0.4, 0.2, 0.25, 0.3]:
-        env = init_env(args, mass)
-        masses.append(env.get_masses()) # TODO env.get_forces()
+    #masses = [] # TODO change to forces
+    forces = []
+    #for mass in [0.4, 0.2, 0.25, 0.3]:
+    for force in [-1, -2, -3]:
+        env = init_env(args, force)
+        forces.append(env.get_forces()) # TODO env.get_forces()
         envs.append(env)
 
     # 2. Load expert agents
@@ -150,10 +155,10 @@ def main(args):
     stats_il = {k:[] for k in labels} # save score of Il agents
 
     # Initialize buffers by collecting experts data and collect their performance in the meantime
-    for expert, mass, env in zip(experts, labels, envs) : # TODO change mass to forces
-        buffer, mean, std = collect_expert_samples(expert, env, args, mass)
+    for expert, force, env in zip(experts, labels, envs) : # TODO change mass to forces
+        buffer, mean, std = collect_expert_samples(expert, env, args, force)
         buffers.append(buffer)
-        stats_expert[mass] = [mean, std]
+        stats_expert[force] = [mean, std]
 
     # 4. Create IL agents
     print("-" * 60)
@@ -161,11 +166,11 @@ def main(args):
     il_agents = []
     cropped_obs_shape = (3 * args.frame_stack, 84, 84)
 
-    for mass in masses: # TODO replace with forces
+    for force in forces: # TODO replace with forces
         il_agent = make_il_agent(
             obs_shape=cropped_obs_shape,
             action_shape=envs[0].action_space.shape,
-            dynamics_input_shape=mass.shape[0], # replace with force
+            dynamics_input_shape=force.shape[0], # replace with force
             args=args)
         il_agents.append(il_agent)
 
@@ -189,9 +194,9 @@ def main(args):
             preds, pred_invs, gts, losses = [], [], [], 0
 
             # Forward pass sequentially for all agents
-            for agent, buffer, mass, L in zip(il_agents_tied, buffers, masses, loggers): # TODO change to forces
+            for agent, buffer, force, L in zip(il_agents_tied, buffers, forces, loggers): # TODO change to forces
                 obs, action, next_obs = buffer.sample() # sample a batch
-                action_pred, action_inv, loss = agent.predict_action(obs, next_obs, mass, action, L=L, step=step)
+                action_pred, action_inv, loss = agent.predict_action(obs, next_obs, action, force, L=L, step=step)
 
                 preds.append(action_pred) # Action from actor network
                 pred_invs.append(action_inv) # Action from SS head
@@ -206,10 +211,10 @@ def main(args):
 
         # Evaluate - Perform IL agent policy rollouts
         print("\n\n********** Evaluation and relabeling %i ************" % it)
-        for agent, expert, logger, env, buffer, mass in zip(il_agents_tied, experts, loggers, envs, buffers, labels):
+        for agent, expert, logger, env, buffer, force in zip(il_agents_tied, experts, loggers, envs, buffers, labels):
             rewards, obses, actions = evaluate_agent(agent, env, args, L=logger, step=step) # evaluate agent on environment
-            stats_il[mass].append([rewards.mean(), rewards.std()]) # save intermediary score
-            print(f'Performance of agent on mass {mass} : {rewards.mean()} +/- {rewards.std()}')
+            stats_il[force].append([rewards.mean(), rewards.std()]) # save intermediary score
+            print(f'Performance of agent on mass {force} : {rewards.mean()} +/- {rewards.std()}')
             actions_new = relabel(obses, expert)
             buffer.add_path(obses, actions_new)
 
@@ -230,22 +235,27 @@ def main(args):
     # 7. Evaluate expert vs IL
     for label in labels :
         print("-"*60)
-        print(f'Mass of {label}')
+        #print(f'Mass of {label}')
+        print(f'Force of {label}')
         print(f'Expert performance : {stats_expert[label][0]} +/- {stats_expert[label][1]}')
         print(f'Imitation learning agent with dagger performance : {stats_il[label][-1][0]} +/- {stats_il[label][-1][1]}')
 
 def tie_weights(args):
     # TODO better practise than lists
-    labels = ["_0_4", "_0_2"]  # TODO change labels with forces directory labels
+    #labels = ["_0_4", "_0_2"]  # TODO change labels with forces directory labels
+    labels = ["_0_-1", "_0_-2", "_0_-3"] #force labels
 
     # 1. Define 4 envts
     print("-" * 60)
     print("Define environment")
     envs = []
     masses = []  # TODO change to forces
-    for mass in [0.4, 0.2]:
-        env = init_env(args, mass)
-        masses.append(env.get_masses())  # TODO env.get_forces()
+    forces = []
+    #for mass in [0.4, 0.2]:
+    for force in [-1,-2,-3]:
+        env = init_env(args, force)
+        #masses.append(env.get_masses())  # TODO env.get_forces()
+        forces.append(env.get_forces())
         envs.append(env)
 
     # 2. Load expert agents
@@ -273,11 +283,12 @@ def tie_weights(args):
     il_agents = []
     cropped_obs_shape = (3 * args.frame_stack, 84, 84)
 
-    for mass in masses:  # TODO replace with forces
+    #for mass in masses:  # TODO replace with forces
+    for force in forces:
         il_agent = make_il_agent(
             obs_shape=cropped_obs_shape,
             action_shape=envs[0].action_space.shape,
-            dynamics_input_shape=mass.shape[0],  # replace with force
+            dynamics_input_shape=force.shape[0],  # replace with force
             args=args)
         il_agents.append(il_agent)
 
