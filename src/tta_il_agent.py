@@ -39,6 +39,7 @@ def main(args):
     domain = args.domain_test
     label = args.label
     rd = args.rd
+    print(f'domain {domain} label {label} at random' if rd else f'domain {domain} label {label}')
 
     """Performs IL agent test time adaptation"""
 
