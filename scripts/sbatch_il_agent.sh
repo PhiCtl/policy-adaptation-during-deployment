@@ -1,5 +1,4 @@
 #!/bin/bash
-#SBATCH --exclude=i[20,24-25,27-28,36-40,53-57,65]
 #SBATCH --nodes 1
 #SBATCH --ntasks 1
 #SBATCH --cpus-per-task 1
