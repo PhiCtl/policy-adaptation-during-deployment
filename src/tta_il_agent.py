@@ -27,7 +27,7 @@ def verify_weights(args):
             dynamics_input_shape=mass.shape[0],
             args=args)
         load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
-        il_agent.load(load_dir, "0")
+        il_agent.load(load_dir, "final")
         il_agents.append(il_agent)
 
     for agt in il_agents:
@@ -39,6 +39,7 @@ def main(args):
     domain = args.domain_test
     label = args.label
     rd = args.rd
+    print(f'domain {domain} label {label} at random' if rd else f'domain {domain} label {label}')
 
     """Performs IL agent test time adaptation"""
 
