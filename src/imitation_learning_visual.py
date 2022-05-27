@@ -67,6 +67,21 @@ def evaluate_agent(agent, env, args, buffer=None, step=None, L=None): # OK
 
     return np.array(ep_rewards), obses, actions
 
+def collect_trajectory(RL_reference, env, args):
+    """Collect trajectory on domain with a reference RL agent
+    which has not been trained on the given domain"""
+
+    buffer = utils.TrajectoryBuffer(
+        obs_shape=env.observation_space.shape,
+        action_shape=env.action_space.shape,
+        capacity=args.train_steps,
+        batch_size=args.batch_size
+    )
+    _, obses, actions = evaluate_agent(RL_reference, env, args)
+    buffer.add_path(obses, actions)
+
+    return buffer
+
 
 def collect_expert_samples(agent, env, args, label): # OK
     """Collect data samples for Imitation learning training
@@ -131,10 +146,9 @@ def main(args):
     for mass in [0.4, 0.2, 0.25, 0.3]: # TODO replace with forces values
         env = init_env(args, mass)
         masses.append(env.get_masses()) # TODO env.get_forces()
-        print(masses[-1]) # debug
         envs.append(env)
 
-    # 2. Load expert agents
+    # 2. Load expert agents + reference agent
     print("-" * 60)
     print("Load experts")
     experts = []
@@ -144,6 +158,9 @@ def main(args):
         agent, logger = load_agent(label, envs[0].action_space.shape, args)
         experts.append(agent)
         loggers.append(logger)
+    # Load reference agent
+    ref_expert, _ = load_agent("", envs[0].action_space.shape, args)
+
 
     # 3. Collect samples from 4 RL agents
     print("-" * 60)
@@ -153,11 +170,17 @@ def main(args):
     stats_il = {k:[] for k in labels} # save score of Il agents
 
     # 4. Initialize buffers by collecting experts data and collect their performance in the meantime
-    # We have 1 buffer per (env, RL_expert)
+
+    # 4.a We have 1 buffer per (env, RL_expert)
     for expert, mass, env in zip(experts, labels, envs) : # TODO replace mass with force labels
         buffer, mean, std = collect_expert_samples(expert, env, args, mass)
         buffers.append(buffer)
         stats_expert[mass] = [mean, std]
+
+    # 4.b Collect trajectories from ref RL agent on different domains
+    trajs_buffers = []
+    for env in envs:
+        trajs_buffers.append(collect_trajectory(ref_expert, env, args))
 
     # 5. Create IL agents
     print("-" * 60)
@@ -193,9 +216,10 @@ def main(args):
             preds, pred_invs, gts, losses = [], [], [], 0
 
             # Forward pass sequentially for all agents
-            for agent, buffer, mass, L in zip(il_agents_tied, buffers, masses, loggers): # TODO replace with forces
-                # sample a batch of obs, action, next_obs and [obs1, act1, obs2, act2, obs3]
-                obs, action, next_obs, traj = buffer.sample()
+            for agent, buffer, traj_buffer, mass, L in zip(il_agents_tied, buffers, trajs_buffers, masses, loggers): # TODO replace with forces
+                # sample a batch of obs, action, next_obs and traj = [obs1, act1, obs2, act2, obs3]
+                obs, action, next_obs = buffer.sample()
+                traj = traj_buffer.sample()
                 action_pred, action_inv, loss = agent.predict_action(obs, next_obs, traj, action, L=L, step=step)
 
                 preds.append(action_pred) # Action from actor network
@@ -212,11 +236,15 @@ def main(args):
         # b. Evaluate - Perform IL agent policy rollouts
         print("\n\n********** Evaluation and relabeling %i ************" % it)
         # TODO replace mass labels with force labels
-        for agent, expert, logger, env, buffer, mass in zip(il_agents_tied, experts, loggers, envs, buffers, labels):
-            rewards, obses, actions = evaluate_agent(agent, env, args, buffer, L=logger, step=it) # evaluate agent on environment
-            stats_il[mass].append([rewards.mean(), rewards.std()]) # save intermediary score
+        for agent, expert, logger, env, buffer, traj_buffer, mass in zip(il_agents_tied, experts, loggers, envs, buffers, trajs_buffers, labels):
+            # Evaluate agent on envt
+            rewards, obses, actions = evaluate_agent(agent, env, args, traj_buffer, L=logger, step=it)
+            # Save itermediary score
+            stats_il[mass].append([rewards.mean(), rewards.std()])
             print(f'Performance of agent on mass {mass} : {rewards.mean()} +/- {rewards.std()}')
+            # Relabel actions -> using DAgger algorithm
             actions_new = relabel(obses, expert)
+            # Add trajectory to training buffer
             buffer.add_path(obses, actions_new)
 
 
