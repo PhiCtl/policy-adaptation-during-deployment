@@ -74,7 +74,7 @@ def collect_trajectory(RL_reference, env, args):
     buffer = utils.TrajectoryBuffer(
         obs_shape=env.observation_space.shape,
         action_shape=env.action_space.shape,
-        capacity=args.train_steps,
+        capacity=10000,
         batch_size=args.batch_size
     )
     _, obses, actions = evaluate_agent(RL_reference, env, args)
