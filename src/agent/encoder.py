@@ -110,14 +110,10 @@ class TemporalEncoder(nn.Module):
 	def forward(self, dynamics):
 
 		conv = torch.relu(self.conv1(dynamics))
-		print(conv.shape)
 		pooled = self.pool1(conv)
-		print(pooled.shape)
 		conv = self.conv2(pooled)
-		print(conv.shape)
 
 		h = conv.view(conv.size(0), -1)
-		print(h.shape)
 		output = self.fc(h)
 		return output
 

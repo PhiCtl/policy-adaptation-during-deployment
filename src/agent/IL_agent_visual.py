@@ -177,8 +177,9 @@ class DomainSpecificTemporal(nn.Module):
         obs3 = self.encoder(obs3)
         obs4 = self.encoder(obs4)
         joint_input = prepare_input(obs1, act1, obs2, act2, obs3, act3, obs4)
-        res = self.specific(joint_input)
-        return res
+        res = self.preprocess(joint_input)
+        out = self.specific(res)
+        return out
 
 
 
