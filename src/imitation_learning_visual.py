@@ -115,7 +115,7 @@ def load_agent(label, action_shape, args): # OK
     """Load RL agent model from directory"""
 
     work_dir = args.work_dir + label # example : logs/cartpole_swingup + "_0_3"
-    L = Logger(work_dir, use_tb=False, config='il')
+    L = Logger(args.save_dir + label, use_tb=True, config='il')
     model_dir = os.path.join(work_dir, 'inv', '0', 'model') # logs/cartpole_swingup_0_3/inv/0/model
     print(f'Load agent from {work_dir}')
 
