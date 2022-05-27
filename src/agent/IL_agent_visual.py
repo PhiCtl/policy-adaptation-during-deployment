@@ -3,9 +3,17 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import utils
-from agent.encoder import make_encoder
+from agent.encoder import make_encoder, make_temp_encoder
 
 LOG_FREQ = 10000
+
+def prepare_input(obs1, act1, obs2, act2, obs3, act3, obs4):
+    tr1 = torch.cat([obs1, act1, obs2], dim=1).unsqueeze(0)
+    tr2 = torch.cat([obs2, act2, obs3], dim=1).unsqueeze(0)
+    tr3 = torch.cat([obs3, act3, obs4], dim=1).unsqueeze(0)
+    input = torch.cat([tr1, tr2, tr3]) # 3 x N x (2 * obs shape + action shape)
+    input = torch.moveaxis(input, 0,1) # N x 3 x (2 * obs shape + action shape)
+    return input
 
 
 def tie_weights(src, trg):
@@ -140,6 +148,39 @@ class DomainSpecificVisual(nn.Module):
         res = self.specific(joint_input)
         return res
 
+class DomainSpecificTemporal(nn.Module):
+
+    def __init__(self, obs_shape, action_shape, encoder_feature_dim,
+                 num_layers, num_filters, num_shared_layers,
+                 dynamics_output_shape, temp_output_dim=228, hidden_dim=20):
+        super().__init__()
+
+        self.encoder = make_encoder(
+            obs_shape, encoder_feature_dim, num_layers,
+            num_filters, num_shared_layers
+        )
+
+        # TODO temporal encoder
+        self.preprocess = make_temp_encoder(
+             2 * encoder_feature_dim + action_shape[0],
+            temp_output_dim
+        )
+
+        self.specific = nn.Sequential(nn.Linear(temp_output_dim, hidden_dim), nn.ReLU(),
+                                      nn.Linear(hidden_dim, hidden_dim), nn.ReLU(),
+                                      nn.Linear(hidden_dim, dynamics_output_shape))
+
+    def forward(self, obs1, act1, obs2, act2, obs3, act3, obs4):
+
+        obs1 = self.encoder(obs1)
+        obs2 = self.encoder(obs2)
+        obs3 = self.encoder(obs3)
+        obs4 = self.encoder(obs4)
+        joint_input = prepare_input(obs1, act1, obs2, act2, obs3, act3, obs4)
+        res = self.specific(joint_input)
+        return res
+
+
 
 class InvFunction(nn.Module):
     """MLP for inverse dynamics model."""
@@ -202,7 +243,7 @@ class SacSSAgent(object):
         ).cuda()
 
         # Domain specific part
-        self.domain_spe = DomainSpecificVisual(obs_shape, action_shape, encoder_feature_dim,
+        self.domain_spe = DomainSpecificTemporal(obs_shape, action_shape, encoder_feature_dim,
                                                num_layers, num_filters, num_shared_layers,
                                                dynamics_output_shape).cuda()
         self.domain_spe.encoder.copy_conv_weights_from(self.actor.encoder, num_shared_layers)

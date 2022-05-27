@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 OUT_DIM = {2: 39, 4: 35, 6: 31, 8: 27, 10: 23, 11: 21, 12: 19}
-OUT_LATENT_DIM = {100: 55}
+OUT_LATENT_DIM = {201: 23 * 5}
 
 
 def tie_weights(src, trg):
@@ -94,27 +94,24 @@ class PixelEncoder(nn.Module):
 
 
 
-class LatentEncoder(nn.Module):
+class TemporalEncoder(nn.Module):
 	"""1D Convolutional encoder for time series feature extraction"""
-	#TODO: check num_layers and num_filters (maybe 50)
-	def __init__(self, dynamics_shape, latent_dim, num_filters=32):
+
+	def __init__(self, input_dim, output_dim, num_channels, num_filters):
 		super().__init__()
 
-		#TODO: think about an process part
-		#self.process =
 
-		self.conv1 = nn.Conv1d(1, num_filters, kernel_size=5, stride=2)
-		self.pool1 = nn.MaxPool1d(2)
-		self.conv2 = nn.Conv1d(num_filters, num_filters, kernel_size=5, stride =2)
+		self.conv1 = nn.Conv1d(num_channels, num_filters, 6) # (input - kernel + 1) / stride + 1
+		self.pool1 = nn.MaxPool1d(4)
+		self.conv2 = nn.Conv1d(num_filters, num_filters, 5, stride=2)
 
-		self.fc = nn.Linear(OUT_LATENT_DIM[dynamics_shape], latent_dim)
+		self.fc = nn.Linear(OUT_LATENT_DIM[input_dim], output_dim)
 
-	def forward(self, dynamics, detach=False):
-		# TODO should we detach only the first one or all the followings ?
-		print(dynamics.shape)
-		conv = torch.relu(self.conv1(dynamics)).detach() if detach else torch.relu(self.conv1(dynamics))
+	def forward(self, dynamics):
+
+		conv = torch.relu(self.conv1(dynamics))
 		pooled = self.pool1(conv)
-		conv = torch.relu(self.conv2(pooled))
+		conv = self.conv2(pooled)
 
 		h = conv.view(conv.size(0), -1)
 		output = self.fc(h)
@@ -139,7 +136,7 @@ def make_encoder(
 		obs_shape, feature_dim, num_layers, num_filters, num_shared_layers
 	)
 
-def make_latent_encoder(
-		dynamics_shape, latent_dim
+def make_temp_encoder(
+		input_dim, output_dim, num_channels=3, num_filters=5
 ):
-	return LatentEncoder(dynamics_shape, latent_dim)
+	return TemporalEncoder(input_dim, output_dim, num_channels, num_filters)
