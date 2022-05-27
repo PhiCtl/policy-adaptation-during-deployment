@@ -123,10 +123,6 @@ def make_dir(dir_path):
     return dir_path
 
 class SimpleBuffer(object):
-    """Stores data from an environment in 5 arrays
-       we want at some point to retrieve a successive sequence of observations and actions
-       that's why observations and actions are stored this way
-    """
 
     def __init__(self, obs_shape, action_shape, capacity, batch_size, label=None):
         self.capacity = capacity
@@ -138,20 +134,17 @@ class SimpleBuffer(object):
         self.obses = np.empty((capacity, *obs_shape), dtype=obs_dtype)
         self.actions = np.empty((capacity, *action_shape), dtype=np.float32)
         self.next_obses = np.empty((capacity, *obs_shape), dtype=obs_dtype)
-        self.next_actions = np.empty((capacity, *action_shape), dtype=np.float32)
-        self.next_next_obses = np.empty((capacity, *obs_shape), dtype=obs_dtype)
+
 
         # Save label, ie. domain specificity
         self.label = label
         self.idx = 0
         self.full = False
 
-    def add(self, obs, action, next_obs, next_action, next_next_obs):
+    def add(self, obs, action, next_obs):
         np.copyto(self.obses[self.idx], obs)
         np.copyto(self.actions[self.idx], action)
         np.copyto(self.next_obses[self.idx], next_obs)
-        np.copyto(self.next_actions[self.idx], next_action)
-        np.copyto(self.next_next_obses[self.idx], next_next_obs)
 
         self.idx = (self.idx + 1) % self.capacity
         self.full = self.full or self.idx == 0
@@ -161,34 +154,78 @@ class SimpleBuffer(object):
         obs1 = obses[:-2]
         act1 = actions[:-1]
         obs2 = obses[1:-1]
+
+        for obs, action, next_obs in zip(obs1, act1, obs2):
+            self.add(obs, action, next_obs)
+
+    def sample(self, idxs=None):
+
+        if idxs is None :
+            idxs = np.random.randint(
+                0, self.capacity if self.full else self.idx, size=self.batch_size
+            )
+
+        obses = torch.as_tensor(self.obses[idxs]).float().cuda()
+        actions = torch.as_tensor(self.actions[idxs]).float().cuda()
+        next_obses = torch.as_tensor(self.next_obses[idxs]).float().cuda()
+
+        obses = random_crop(obses)
+        next_obses = random_crop(next_obses)
+
+        return obses, actions, next_obses
+
+
+class TrajectoryBuffer(SimpleBuffer):
+    """Stores data from an environment in 5 arrays
+       we want at some point to retrieve a successive sequence of observations and actions
+       that's why observations and actions are stored this way
+    """
+
+    def __init__(self, obs_shape, action_shape, capacity, batch_size, label=None):
+        self.capacity = capacity
+        self.batch_size = batch_size
+
+        super().__init__(obs_shape, action_shape, capacity, batch_size, label=label)
+
+        # the proprioceptive obs is stored as float32, pixels obs as uint8
+        obs_dtype = np.float32 if len(obs_shape) == 1 else np.uint8
+
+        self.next_actions = np.empty((capacity, *action_shape), dtype=np.float32)
+        self.next_next_obses = np.empty((capacity, *obs_shape), dtype=obs_dtype)
+
+    def add(self, obs, action, next_obs, next_action, next_next_obs):
+
+        np.copyto(self.next_actions[self.idx], next_action)
+        np.copyto(self.next_next_obses[self.idx], next_next_obs)
+        super().add(obs, action, next_obs)  # Take care of increments
+
+    def add_path(self, obses, actions):
+        obs1 = obses[:-2]
+        act1 = actions[:-1]
+        obs2 = obses[1:-1]
         act2 = actions[1:]
         obs3 = obses[2:]
         for obs, action, next_obs, next_action, next_next_obs in zip(obs1, act1, obs2, act2, obs3):
             self.add(obs, action, next_obs, next_action, next_next_obs)
 
     def sample(self):
+
         idxs = np.random.randint(
             0, self.capacity if self.full else self.idx, size=self.batch_size
         )
-
-        obses = torch.as_tensor(self.obses[idxs]).float().cuda()
-        actions = torch.as_tensor(self.actions[idxs]).float().cuda()
-        next_obses = torch.as_tensor(self.next_obses[idxs]).float().cuda()
+        obses, actions, next_obses = super().sample(idxs = idxs)
         next_actions = torch.as_tensor(self.next_actions[idxs]).float().cuda()
         next_next_obses = torch.as_tensor(self.next_next_obses[idxs]).float().cuda()
 
-        obses = random_crop(obses)
-        next_obses = random_crop(next_obses)
         next_next_obses = random_crop(next_next_obses)
 
-        return obses, actions, next_obses, [obses, actions, next_obses, next_actions, next_next_obses]
+        return [obses, actions, next_obses, next_actions, next_next_obses]
 
     def sample_traj(self):
-        "Sample single trajectory -> so we need to create a 1 sample batch with unsqueeze"
+        """Sample single trajectory"""
+
         ix = np.random.randint(0, self.capacity if self.full else self.idx, size=1)
-        obs = torch.as_tensor(self.obses[ix]).float().cuda()
-        act = torch.as_tensor(self.actions[ix]).float().cuda()
-        next_obs = torch.as_tensor(self.next_obses[ix]).float().cuda()
+        obs, act, next_obs = super().sample(idxs=ix)
         next_act = torch.as_tensor(self.next_actions[ix]).float().cuda()
         next_next_obs = torch.as_tensor(self.next_next_obses[ix]).float().cuda()
 
