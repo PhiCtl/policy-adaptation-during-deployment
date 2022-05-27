@@ -252,7 +252,7 @@ class ExtendedTrajectoryBuffer(TrajectoryBuffer):
         obs_dtype = np.float32 if len(obs_shape) == 1 else np.uint8
 
 
-        self.actions_2 = np.empty((capacity, *action_shape), dtype=np.floaz32)
+        self.actions_2 = np.empty((capacity, *action_shape), dtype=np.float32)
         self.obses_3 = np.empty((capacity, *obs_shape), dtype=obs_dtype)
 
     def add(self, obs_0, action_0, obs_1, action_1, obs_2, action_2, obs_3):
