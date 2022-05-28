@@ -1,27 +1,38 @@
 import os
+
+import matplotlib.pyplot as plt
 import numpy as np
 
-import utils as utils
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+
+import utils
 from video import VideoRecorder
 from arguments import parse_args
 from agent.IL_agent_visual import make_il_agent_visual
 from eval import init_env, evaluate
-from il.imitation_learning import evaluate_agent
+from il.imitation_learning_visual import evaluate_agent, collect_trajectory, load_agent
+from agent.IL_agent import make_il_agent
 
-def verify_weights(args):
-    # Load env for a give mass
+def setup(args, domains, labels):
+
+    """Load IL agents and corresponding envs for testing"""
+
+    # TODO generalize to non visual and use it in the below functions
+    # TODO generalize to forces
+
     envs = []
     masses = []
-    for label in [0.3, 0.2]:
+    for label in domains:
         env = init_env(args, label)
         masses.append(env.get_masses())
         envs.append(env)
 
     il_agents = []
-    for label, mass in zip(["_0_3", "_0_2"], masses):
+    for label, mass in zip(labels, masses):
         # Load IL agent
         cropped_obs_shape = (3 * args.frame_stack, 84, 84)
-        il_agent = make_il_agent_visual(
+        il_agent = make_il_agent_visual( # TODO modify for non visual based
             obs_shape=cropped_obs_shape,
             action_shape=envs[0].action_space.shape,
             args=args)
@@ -29,33 +40,79 @@ def verify_weights(args):
         il_agent.load(load_dir, "final")
         il_agents.append(il_agent)
 
+    return envs, masses, il_agents
+
+
+def verify_weights(args):
+    """Verify if agents indeed share weights"""
+
+    envs, masses, il_agents = setup(args, [0.3, 0.2], ["_0_3", "_0_2"])
+
     for agt in il_agents:
         print(agt.actor.encoder.fc.state_dict())
         print(agt.ss_encoder.fc.state_dict())
 
+def PCA_decomposition(groups):
+
+    """Perform PCA decomposition into 2 principal components
+    of each group in groups and plot the result (in 2D)"""
+
+    pca_decomposition = dict()
+
+    # Perform PCA decomposition
+    for domain in groups.keys():
+        std_data = StandardScaler().fit_transform(groups[domain])
+        pca = PCA(n_components=2)
+        pca_decomposition[domain] = pca.fit_transform(std_data)
+
+    # Plot
+    plt.figure()
+    plt.xlabel('Principal Component 1', fontsize=15)
+    plt.ylabel('Principal Component 2', fontsize=15)
+    plt.title('2 component PCA', fontsize=20)
+
+    for domain, vect in pca_decomposition.items():
+        plt.scatter(vect[:,0], vect[:,1], label=domain)
+
+    plt.legend()
+    plt.grid()
+    plt.savefig("images/pca_decomp.jpeg")
+
+
+def feature_vector_analysis(args):
+
+    # Load envs and agents
+    envs, masses, il_agents = setup(args, [0.3, 0.2, 0.25, 0.4], ["_0_3", "_0_2", "_0_25", "_0_4"] )
+
+    # Build traj buffers
+    traj_buffers = []
+    ref_expert, _ = load_agent("", envs[0].action_space.shape, args)
+    for env in envs:
+        traj_buffers.append(collect_trajectory(ref_expert, env, args))
+
+    # Extract feat vects from Il agents
+    features = dict()
+    for label, env, buffer, il_agent in zip(["_0_3", "_0_2", "_0_25", "_0_4"], envs, traj_buffers, il_agents):
+        _, _, _, feat_vects = evaluate_agent(il_agent, env, args, feat_analysis=True, buffer=buffer)
+        features[label] = np.array(feat_vects)
+
+    # Perform PCA analysis
+    PCA_decomposition(features)
 
 def main(args):
-    domain = args.domain_test
-    label = args.label
+
+    """Try test time adaption of IL agents"""
+
+    domain = [args.domain_test]
+    label = [args.label]
     rd = args.rd
     print(f'domain {domain} label {label} at random' if rd else f'domain {domain} label {label}')
-
-    """Performs IL agent test time adaptation"""
 
     # 1. Load agent
 
     # Load environment
-    env = init_env(args, domain) # domain is target cart mass value
-    mass = env.get_masses()
-    # Load IL agent
-    cropped_obs_shape = (3 * args.frame_stack, 84, 84)
-    il_agent = make_il_agent(
-        obs_shape=cropped_obs_shape,
-        action_shape=env.action_space.shape,
-        dynamics_input_shape=mass.shape[0],
-        args=args)
-    load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model')) # Il agent trained on specific domain
-    il_agent.load(load_dir, "final") # model checkpoint (5 / final = 10 dagger iterations)
+    envs, masses, il_agents = setup(args, domain, label)
+    il_agent, env = il_agents[0], envs[0]
 
     # Initialize feature vector either at random either with domain_specific feature vector
     if rd :
@@ -68,6 +125,7 @@ def main(args):
     recorder = utils.AdaptRecorder(args.work_dir, args.mode)
 
     # 3. Non adapting agent
+    # TODO adapt visual non visual !!
     reward, std = evaluate(env, il_agent, args, video=None, recorder=recorder, adapt=False, exp_type="il")
     print('non adapting reward:', int(reward), ' +/- ', int(std))
 
@@ -80,5 +138,5 @@ def main(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    verify_weights(args)
+    feature_vector_analysis(args)
     
