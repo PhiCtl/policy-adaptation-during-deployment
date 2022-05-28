@@ -249,7 +249,7 @@ class SacSSAgent(object):
         #                                        num_layers, num_filters, num_shared_layers,
         #                                        dynamics_output_shape).cuda()
         self.domain_spe = DomainSpecificVisual(obs_shape, action_shape, encoder_feature_dim,
-                                               num_layers, num_filters, num_shared_layers, dynamics_output_shape)
+                                               num_layers, num_filters, num_shared_layers, dynamics_output_shape).cuda()
         self.domain_spe.encoder.copy_conv_weights_from(self.actor.encoder, num_shared_layers)
 
         # Self-supervision
