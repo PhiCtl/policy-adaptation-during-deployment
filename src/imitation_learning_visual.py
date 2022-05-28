@@ -273,6 +273,35 @@ def main(args):
         print(f'Expert performance : {stats_expert[label][0]} +/- {stats_expert[label][1]}')
         print(f'Imitation learning agent with dagger performance : {stats_il[label][-1][0]} +/- {stats_il[label][-1][1]}')
 
+def test_agents(args):
+
+    # Load env for a given mass
+    envs = []
+    masses = []
+    for label in [0.3, 0.2, 0.25, 0.4]:
+        env = init_env(args, label)
+        masses.append(env.get_masses())
+        envs.append(env)
+
+    # Build traj buffers
+    traj_buffers = []
+    ref_expert, _ = load_agent("", envs[0].action_space.shape, args)
+    for env in envs:
+        traj_buffers.append(collect_trajectory(ref_expert, env, args))
+
+    for label, mass, traj_buffer in zip(["_0_3", "_0_2", "_0_25", "_0_4"], masses, traj_buffers):
+        # Load IL agent
+        cropped_obs_shape = (3 * args.frame_stack, 84, 84)
+        il_agent = make_il_agent_visual(
+            obs_shape=cropped_obs_shape,
+            action_shape=envs[0].action_space.shape,
+            args=args)
+        load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
+        il_agent.load(load_dir, "final")
+        # Evaluate agent
+        reward, std = evaluate_agent(il_agent, env, args, buffer=traj_buffer)
+        print('non adapting reward:', int(reward), ' +/- ', int(std), ' for label ', label)
+
 if __name__ == '__main__':
     args = parse_args()
-    main(args)
+    test_agents(args)
