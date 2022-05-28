@@ -66,7 +66,7 @@ def PCA_decomposition(groups):
         pca_decomposition[domain] = pca.fit_transform(std_data)
 
     # Plot
-    plt.figure()
+    plt.figure(figsize=(20,20))
     plt.xlabel('Principal Component 1', fontsize=15)
     plt.ylabel('Principal Component 2', fontsize=15)
     plt.title('2 component PCA', fontsize=20)
