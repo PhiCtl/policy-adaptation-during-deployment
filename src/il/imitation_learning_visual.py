@@ -24,7 +24,8 @@ shared encoder, as input to SS and actor heads
 """
 
 
-def evaluate_agent(agent, env, args, buffer=None, step=None, feat_analysis=False, L=None): # OK
+def evaluate_agent(agent, env, args, exp_type="", buffer=None, step=None, adapt=False,
+                   feat_analysis=False, L=None, video=None, recorder=None): # OK
     """Evaluate agent on env, storing obses, actions and next obses
     Params : - agent : IL agent
              - env : env to evaluate this agent in
@@ -35,36 +36,61 @@ def evaluate_agent(agent, env, args, buffer=None, step=None, feat_analysis=False
     obses, actions, feat_vects = [], [], []
 
     for i in range(args.num_rollouts):
+        agent = deepcopy(agent)
+        if video: video.init(enabled=True)
         obs = env.reset()
         done = False
         episode_reward = 0
         step = 0
-        rewards = []
+        rewards, losses = [], []
 
         agent.train()
 
         while not done:
 
             # Take a step
+
             # Trajectory : (obs, act, obs, act, obs)
             traj = None if buffer is None else buffer.sample_traj()
             if feat_analysis :  feat_vects.append(agent.extract_feat_vect(traj))
+
             with utils.eval_mode(agent):
                 action = agent.select_action(obs, traj)
-            next_obs, reward, done, info, _, _ = env.step(action, rewards)
+            next_obs, reward, done, info, change, _ = env.step(action, rewards)
+
+
+            # Adaptation
+            if adapt:
+                batch_obs = utils.batch_from_obs(torch.Tensor(obs).cuda(), batch_size=args.pad_batch_size)
+                batch_next_obs = utils.batch_from_obs(torch.Tensor(next_obs).cuda(), batch_size=args.pad_batch_size)
+                batch_action = torch.Tensor(action).cuda().unsqueeze(0).repeat(args.pad_batch_size, 1)
+
+                # Adapt using inverse dynamics prediction
+                losses.append(agent.update_inv(utils.random_crop(batch_obs), utils.random_crop(batch_next_obs),
+                                                  batch_action))
+
+
+            # Save data
             episode_reward += reward
-            if L and step:
-                L.log('eval/episode_reward', episode_reward, step)
             obses.append(obs)
             actions.append(action)
+
+            if video: video.record(env, losses)
+            if recorder: recorder.update(change, reward)
+            if L and step:
+                L.log('eval/episode_reward', episode_reward, step)
+
             obs = next_obs
             step += 1
 
-        obses.append(obs)
+        obses.append(obs) # Save last next obs
         ep_rewards.append(episode_reward)
+        if video: video.save(f'{args.mode}_pad_{i}.mp4' if adapt else f'{args.mode}_eval_{i}.mp4')
+        if recorder: recorder.end_episode()
 
     if L and step:
         L.dump(step)
+    if recorder: recorder.save("performance_" + exp_type, adapt)
 
     if feat_analysis :
         return np.array(ep_rewards), obses, actions, feat_vects

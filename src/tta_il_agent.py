@@ -119,28 +119,29 @@ def main(args):
     il_agent, env = il_agents[0], envs[0]
 
     # Initialize feature vector either at random either with domain_specific feature vector
-    if rd :
-        init = np.random.rand(args.dynamics_output_shape)
-    else :
-        init = il_agent.extract_feat_vect([0.3, 0.1])
-    il_agent.init_feat_vect(init)
+    # if rd :
+    #     init = np.random.rand(args.dynamics_output_shape)
+    # else :
+    #     init = il_agent.extract_feat_vect([0.3, 0.1])
+    # il_agent.init_feat_vect(init)
 
     # 2. Prepare test time evaluation
-    recorder = utils.AdaptRecorder(args.work_dir, args.mode)
+    # Build traj buffers
+    ref_expert, _ = load_agent("", env.action_space.shape, args)
+    traj_buffer = collect_trajectory(ref_expert, env, args)
 
     # 3. Non adapting agent
-    # TODO adapt visual non visual !!
-    reward, std = evaluate(env, il_agent, args, video=None, recorder=recorder, adapt=False, exp_type="il")
-    print('non adapting reward:', int(reward), ' +/- ', int(std))
+    reward, _, _ = evaluate_agent(env, il_agent, args, buffer=traj_buffer, adapt=False)
+    print('non adapting reward:', int(reward.mean()), ' +/- ', int(reward.std()))
 
     # 4 . Adapting agent
     env = init_env(args, domain)
     print(f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-    pad_reward, std = evaluate(env, il_agent, args, video=None, recorder=recorder, adapt=True, exp_type="il_adapt")
-    print('pad reward:', int(pad_reward), ' +/- ', int(std))
+    pad_reward, _, _ = evaluate_agent(env, il_agent, args, buffer=traj_buffer, adapt=True)
+    print('pad reward:', int(pad_reward.mean()), ' +/- ', int(pad_reward.std()))
 
 
 if __name__ == "__main__":
     args = parse_args()
-    feature_vector_analysis(args)
+    main(args)
     
