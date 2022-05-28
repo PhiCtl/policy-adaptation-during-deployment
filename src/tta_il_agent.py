@@ -131,14 +131,14 @@ def main(args):
     traj_buffer = collect_trajectory(ref_expert, env, args)
 
     # 3. Non adapting agent
-    reward, _, _ = evaluate_agent(env, il_agent, args, buffer=traj_buffer, adapt=False)
-    print('non adapting reward:', int(reward.mean()), ' +/- ', int(reward.std()))
+    mean, std = evaluate(env, il_agent, args, buffer=traj_buffer, adapt=False)
+    print('non adapting reward:', int(mean), ' +/- ', int(std))
 
     # 4 . Adapting agent
     env = init_env(args, domain)
     print(f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-    pad_reward, _, _ = evaluate_agent(env, il_agent, args, buffer=traj_buffer, adapt=True)
-    print('pad reward:', int(pad_reward.mean()), ' +/- ', int(pad_reward.std()))
+    mean, std = evaluate(env, il_agent, args, buffer=traj_buffer, adapt=True)
+    print('pad reward:', int(mean), ' +/- ', int(std))
 
 
 if __name__ == "__main__":
