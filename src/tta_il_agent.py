@@ -60,7 +60,7 @@ def PCA_decomposition(groups):
     pca_decomposition = dict()
 
     # Perform PCA decomposition
-    for domain in groups.keys():
+    for domain, vect in groups.items():
         std_data = StandardScaler().fit_transform(groups[domain])
         pca = PCA(n_components=2)
         pca_decomposition[domain] = pca.fit_transform(std_data)
@@ -71,10 +71,10 @@ def PCA_decomposition(groups):
     plt.ylabel('Principal Component 2', fontsize=15)
     plt.title('2 component PCA', fontsize=20)
 
-    for domain, vect in pca_decomposition.items():
-        plt.scatter(vect[:,0], vect[:,1], label=domain)
+    for _, vect in pca_decomposition.items():
+        plt.scatter(vect[:,0], vect[:,1])
 
-    plt.legend()
+    plt.legend([domain for domain in pca_decomposition.keys()])
     plt.grid()
     plt.savefig("images/pca_decomp.jpeg")
 
