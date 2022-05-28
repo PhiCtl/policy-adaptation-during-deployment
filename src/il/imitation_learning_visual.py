@@ -48,7 +48,7 @@ def evaluate_agent(agent, env, args, buffer=None, step=None, feat_analysis=False
             # Take a step
             # Trajectory : (obs, act, obs, act, obs)
             traj = None if buffer is None else buffer.sample_traj()
-            feat_vects.append(agent.extract_feat_vect(traj))
+            if feat_analysis :  feat_vects.append(agent.extract_feat_vect(traj))
             with utils.eval_mode(agent):
                 action = agent.select_action(obs, traj)
             next_obs, reward, done, info, _, _ = env.step(action, rewards)
