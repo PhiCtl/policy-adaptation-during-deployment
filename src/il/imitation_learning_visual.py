@@ -24,7 +24,7 @@ shared encoder, as input to SS and actor heads
 """
 
 
-def evaluate_agent(agent, env, args, buffer=None, step=None, L=None): # OK
+def evaluate_agent(agent, env, args, buffer=None, step=None, feat_analysis=False, L=None): # OK
     """Evaluate agent on env, storing obses, actions and next obses
     Params : - agent : IL agent
              - env : env to evaluate this agent in
@@ -32,7 +32,7 @@ def evaluate_agent(agent, env, args, buffer=None, step=None, L=None): # OK
              - buffer : needed to train IL agent with a trajectory as input to the domain specific module"""
 
     ep_rewards = []
-    obses, actions = [], []
+    obses, actions, feat_vects = [], [], []
 
     for i in range(args.num_rollouts):
         obs = env.reset()
@@ -48,6 +48,7 @@ def evaluate_agent(agent, env, args, buffer=None, step=None, L=None): # OK
             # Take a step
             # Trajectory : (obs, act, obs, act, obs)
             traj = None if buffer is None else buffer.sample_traj()
+            feat_vects.append(agent.extract_feat_vect(traj))
             with utils.eval_mode(agent):
                 action = agent.select_action(obs, traj)
             next_obs, reward, done, info, _, _ = env.step(action, rewards)
@@ -65,6 +66,8 @@ def evaluate_agent(agent, env, args, buffer=None, step=None, L=None): # OK
     if L and step:
         L.dump(step)
 
+    if feat_analysis :
+        return np.array(ep_rewards), obses, actions, feat_vects
     return np.array(ep_rewards), obses, actions
 
 def collect_trajectory(RL_reference, env, args):
