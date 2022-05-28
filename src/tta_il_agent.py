@@ -61,9 +61,9 @@ def PCA_decomposition(groups):
 
     # Perform PCA decomposition
     for domain, vect in groups.items():
-        std_data = StandardScaler().fit_transform(groups[domain])
+        #std_data = StandardScaler().fit_transform(groups[domain])
         pca = PCA(n_components=2)
-        pca_decomposition[domain] = pca.fit_transform(std_data)
+        pca_decomposition[domain] = pca.fit_transform(vect)
 
     # Plot
     plt.figure(figsize=(20,20))
@@ -71,10 +71,10 @@ def PCA_decomposition(groups):
     plt.ylabel('Principal Component 2', fontsize=15)
     plt.title('2 component PCA', fontsize=20)
 
-    for _, vect in pca_decomposition.items():
-        plt.scatter(vect[:,0], vect[:,1])
+    for domain, vect in pca_decomposition.items():
+        plt.scatter(vect[:,0], vect[:,1], label=domain)
 
-    plt.legend([domain for domain in pca_decomposition.keys()])
+    plt.legend()
     plt.grid()
     plt.savefig("images/pca_decomp.jpeg")
 
@@ -97,7 +97,7 @@ def feature_vector_analysis(args):
     features = dict()
     for label, env, buffer, il_agent in zip(["_0_3", "_0_2", "_0_25", "_0_4"], envs, traj_buffers, il_agents):
         _, _, _, feat_vects = evaluate_agent(il_agent, env, args, feat_analysis=True, buffer=buffer)
-        features[label] = np.array(feat_vects)
+        features[label[1:]] = np.array(feat_vects)
 
     print("perform PCA")
     # Perform PCA analysis
