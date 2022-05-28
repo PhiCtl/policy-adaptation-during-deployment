@@ -205,7 +205,7 @@ class InvFunction(nn.Module):
         # Copy linear layers
         for tgt, src in zip(self.trunk, source.trunk):
             if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
-                tie_weights(trg=tgt, src=src)
+                tie_weights(src=src, trg=tgt)
 
 
 class SacSSAgent(object):
@@ -213,7 +213,6 @@ class SacSSAgent(object):
     SAC with an auxiliary self-supervised task.
     Based on https://github.com/denisyarats/pytorch_sac_ae
     """
-
     def __init__(
             self,
             obs_shape,
@@ -352,18 +351,20 @@ class SacSSAgent(object):
         self.actor_optimizer.step()
         self.domain_spe_optimizer.step()
 
-    def update_inv(self, pred, gt, L=None, step=None):
-        """Would only be used at test-time for test time adaptation"""
+    def update_inv(self, obs, next_obs, action, L=None, step=None):
 
-        inv_loss = F.mse_loss(pred, gt)
+        assert obs.shape[-1] == 84 and next_obs.shape[-1] == 84
+        assert self.feat_vect is not None # Assert we can use this member
 
-        #self.encoder_optimizer.zero_grad()
-        #self.inv_optimizer.zero_grad()
+        h = self.ss_encoder(obs)
+        h_next = self.ss_encoder(next_obs)
+        feats = self.feat_vect.repeat(obs.shape[0], 1)
+        pred_action = self.inv(h, h_next, feats)
+
+        inv_loss = F.mse_loss(pred_action, action)
+
         self.domain_spe_optimizer.zero_grad()
         inv_loss.backward()
-
-        #self.encoder_optimizer.step()
-        #self.inv_optimizer.step()
         self.domain_spe_optimizer.step()
 
         if L is not None:
