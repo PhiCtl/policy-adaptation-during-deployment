@@ -299,8 +299,8 @@ def test_agents(args):
         load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
         il_agent.load(load_dir, "final")
         # Evaluate agent
-        reward, std = evaluate_agent(il_agent, env, args, buffer=traj_buffer)
-        print('non adapting reward:', int(reward), ' +/- ', int(std), ' for label ', label)
+        reward, _, _ = evaluate_agent(il_agent, env, args, buffer=traj_buffer)
+        print('non adapting reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
 
 if __name__ == '__main__':
     args = parse_args()
