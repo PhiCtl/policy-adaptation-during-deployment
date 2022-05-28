@@ -132,19 +132,20 @@ class DomainSpecificVisual(nn.Module):
             num_filters, num_shared_layers
         )
 
-        input_feature_dim = 4 * encoder_feature_dim + 3 * action_shape[0]
+        input_feature_dim = 3 * encoder_feature_dim + 2 * action_shape[0]
 
         self.specific = nn.Sequential(nn.Linear(input_feature_dim, hidden_dim), nn.ReLU(),
                                       nn.Linear(hidden_dim, hidden_dim), nn.ReLU(),
                                       nn.Linear(hidden_dim, dynamics_output_shape))
 
-    def forward(self, obs1, act1, obs2, act2, obs3, act3, obs4):
+    def forward(self, obs1, act1, obs2, act2, obs3 ):#, act3, obs4):
         # TODO : maybe try with longer sequence
         obs1 = self.encoder(obs1)
         obs2 = self.encoder(obs2)
         obs3 = self.encoder(obs3)
-        obs4 = self.encoder(obs4)
-        joint_input = torch.cat([obs1, act1, obs2, act2, obs3, act3, obs4], dim=1)
+        #obs4 = self.encoder(obs4)
+        joint_input = torch.cat([obs1, act1, obs2, act2, obs3], dim=1)
+        #joint_input = torch.cat([obs1, act1, obs2, act2, obs3, act3, obs4], dim=1)
         res = self.specific(joint_input)
         return res
 
@@ -244,9 +245,11 @@ class SacSSAgent(object):
         ).cuda()
 
         # Domain specific part
-        self.domain_spe = DomainSpecificTemporal(obs_shape, action_shape, encoder_feature_dim,
-                                               num_layers, num_filters, num_shared_layers,
-                                               dynamics_output_shape).cuda()
+        # self.domain_spe = DomainSpecificTemporal(obs_shape, action_shape, encoder_feature_dim,
+        #                                        num_layers, num_filters, num_shared_layers,
+        #                                        dynamics_output_shape).cuda()
+        self.domain_spe = DomainSpecificVisual(obs_shape, action_shape, encoder_feature_dim,
+                                               num_layers, num_filters, num_shared_layers, dynamics_output_shape)
         self.domain_spe.encoder.copy_conv_weights_from(self.actor.encoder, num_shared_layers)
 
         # Self-supervision
