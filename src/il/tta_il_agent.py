@@ -4,7 +4,7 @@ import numpy as np
 import utils
 from video import VideoRecorder
 from arguments import parse_args
-from agent.IL_agent import make_il_agent
+from agent.IL_agent_visual import make_il_agent_visual
 from eval import init_env, evaluate
 from imitation_learning import evaluate_agent
 
@@ -21,10 +21,9 @@ def verify_weights(args):
     for label, mass in zip(["_0_3", "_0_2"], masses):
         # Load IL agent
         cropped_obs_shape = (3 * args.frame_stack, 84, 84)
-        il_agent = make_il_agent(
+        il_agent = make_il_agent_visual(
             obs_shape=cropped_obs_shape,
             action_shape=envs[0].action_space.shape,
-            dynamics_input_shape=mass.shape[0],
             args=args)
         load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
         il_agent.load(load_dir, "final")
@@ -81,5 +80,5 @@ def main(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    main(args)
+    verify_weights(args)
     
