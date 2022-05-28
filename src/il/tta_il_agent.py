@@ -1,12 +1,12 @@
 import os
 import numpy as np
 
-import utils
-from video import VideoRecorder
-from arguments import parse_args
-from agent.IL_agent_visual import make_il_agent_visual
-from eval import init_env, evaluate
-from imitation_learning import evaluate_agent
+import src.utils as utils
+from src.video import VideoRecorder
+from src.arguments import parse_args
+from src.agent.IL_agent_visual import make_il_agent_visual
+from src.eval import init_env, evaluate
+from src.imitation_learning import evaluate_agent
 
 def verify_weights(args):
     # Load env for a give mass
