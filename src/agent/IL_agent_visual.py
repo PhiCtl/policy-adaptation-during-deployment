@@ -354,17 +354,16 @@ class SacSSAgent(object):
 
     def update_inv(self, pred, gt, L=None, step=None):
         """Would only be used at test-time for test time adaptation"""
-        # TODO refine for test-time adaptation
 
         inv_loss = F.mse_loss(pred, gt)
 
-        self.encoder_optimizer.zero_grad()
-        self.inv_optimizer.zero_grad()
+        #self.encoder_optimizer.zero_grad()
+        #self.inv_optimizer.zero_grad()
         self.domain_spe_optimizer.zero_grad()
         inv_loss.backward()
 
-        self.encoder_optimizer.step()
-        self.inv_optimizer.step()
+        #self.encoder_optimizer.step()
+        #self.inv_optimizer.step()
         self.domain_spe_optimizer.step()
 
         if L is not None:
@@ -390,6 +389,10 @@ class SacSSAgent(object):
         self.actor.tie_actor_from(source.actor)
         # Tie inv
         self.inv.tie_inv_from(source.inv)
+
+    def extract_feat_vect(self, traj):
+        """Extract dynamics feature vector"""
+        return self.domain_spe(*traj).cpu().data.numpy().flatten()
 
     def save(self, model_dir, step):
         torch.save(
