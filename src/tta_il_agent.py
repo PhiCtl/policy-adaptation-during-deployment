@@ -81,21 +81,25 @@ def PCA_decomposition(groups):
 
 def feature_vector_analysis(args):
 
+    print("load agents")
     # Load envs and agents
     envs, masses, il_agents = setup(args, [0.3, 0.2, 0.25, 0.4], ["_0_3", "_0_2", "_0_25", "_0_4"] )
 
+    print("load traj buffers")
     # Build traj buffers
     traj_buffers = []
     ref_expert, _ = load_agent("", envs[0].action_space.shape, args)
     for env in envs:
         traj_buffers.append(collect_trajectory(ref_expert, env, args))
 
+    print("extract features")
     # Extract feat vects from Il agents
     features = dict()
     for label, env, buffer, il_agent in zip(["_0_3", "_0_2", "_0_25", "_0_4"], envs, traj_buffers, il_agents):
         _, _, _, feat_vects = evaluate_agent(il_agent, env, args, feat_analysis=True, buffer=buffer)
         features[label] = np.array(feat_vects)
 
+    print("perform PCA")
     # Perform PCA analysis
     PCA_decomposition(features)
 
