@@ -13,7 +13,7 @@ from agent.agent import make_agent
 from utils import get_curl_pos_neg, AdaptRecorder
 
 
-def evaluate(env, agent, args, video=None, recorder=None, adapt=False, reload=False, exp_type=""):
+def evaluate(env, agent, args, buffer=None, video=None, recorder=None, adapt=False, reload=False, exp_type=""):
     """Evaluate an agent, optionally adapt using PAD"""
     episode_rewards = []
 
@@ -39,8 +39,9 @@ def evaluate(env, agent, args, video=None, recorder=None, adapt=False, reload=Fa
 
         while not done:
             # Take step
+            traj = None if buffer is None else buffer.sample_traj()
             with utils.eval_mode(ep_agent):
-                action = ep_agent.select_action(obs)
+                action = ep_agent.select_action(obs, traj)
             next_obs, reward, done, info, change, has_changed = env.step(action, rewards)
             episode_reward += reward
             if recorder : recorder.update(change, reward)
