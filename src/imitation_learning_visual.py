@@ -289,7 +289,7 @@ def test_agents(args):
     for env in envs:
         traj_buffers.append(collect_trajectory(ref_expert, env, args))
 
-    for label, mass, traj_buffer in zip(["_0_3", "_0_2", "_0_25", "_0_4"], masses, traj_buffers):
+    for label, mass, traj_buffer, env in zip(["_0_3", "_0_2", "_0_25", "_0_4"], masses, traj_buffers, envs):
         # Load IL agent
         cropped_obs_shape = (3 * args.frame_stack, 84, 84)
         il_agent = make_il_agent_visual(
