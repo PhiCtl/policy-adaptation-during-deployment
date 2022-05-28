@@ -36,7 +36,7 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, step=None, adapt=
     obses, actions, feat_vects = [], [], []
 
     for i in range(args.num_rollouts):
-        agent = deepcopy(agent)
+        ep_agent = deepcopy(agent)
         if video: video.init(enabled=True)
         obs = env.reset()
         done = False
@@ -44,7 +44,7 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, step=None, adapt=
         step = 0
         rewards, losses = [], []
 
-        agent.train()
+        ep_agent.train()
 
         while not done:
 
@@ -52,10 +52,10 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, step=None, adapt=
 
             # Trajectory : (obs, act, obs, act, obs)
             traj = None if buffer is None else buffer.sample_traj()
-            if feat_analysis :  feat_vects.append(agent.extract_feat_vect(traj))
+            if feat_analysis :  feat_vects.append(ep_agent.extract_feat_vect(traj))
 
-            with utils.eval_mode(agent):
-                action = agent.select_action(obs, traj)
+            with utils.eval_mode(ep_agent):
+                action = ep_agent.select_action(obs, traj)
             next_obs, reward, done, info, change, _ = env.step(action, rewards)
 
 
@@ -66,7 +66,7 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, step=None, adapt=
                 batch_action = torch.Tensor(action).cuda().unsqueeze(0).repeat(args.pad_batch_size, 1)
 
                 # Adapt using inverse dynamics prediction
-                losses.append(agent.update_inv(utils.random_crop(batch_obs), utils.random_crop(batch_next_obs),
+                losses.append(ep_agent.update_inv(utils.random_crop(batch_obs), utils.random_crop(batch_next_obs),
                                                   batch_action))
 
 
