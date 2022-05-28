@@ -143,5 +143,5 @@ def main(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    feature_vector_analysis(args)
+    main(args)
     
