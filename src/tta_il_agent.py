@@ -11,7 +11,7 @@ from video import VideoRecorder
 from arguments import parse_args
 from agent.IL_agent_visual import make_il_agent_visual
 from eval import init_env, evaluate
-from il.imitation_learning_visual import evaluate_agent, collect_trajectory, load_agent
+from src.imitation_learning_visual import evaluate_agent, collect_trajectory, load_agent
 from agent.IL_agent import make_il_agent
 
 def setup(args, domains, labels):
@@ -23,8 +23,8 @@ def setup(args, domains, labels):
 
     envs = []
     masses = []
-    for label in domains:
-        env = init_env(args, label)
+    for mass in domains:
+        env = init_env(args, mass)
         masses.append(env.get_masses())
         envs.append(env)
 
@@ -32,7 +32,7 @@ def setup(args, domains, labels):
     for label, mass in zip(labels, masses):
         # Load IL agent
         cropped_obs_shape = (3 * args.frame_stack, 84, 84)
-        il_agent = make_il_agent_visual( # TODO modify for non visual based
+        il_agent = make_il_agent_visual(
             obs_shape=cropped_obs_shape,
             action_shape=envs[0].action_space.shape,
             args=args)
