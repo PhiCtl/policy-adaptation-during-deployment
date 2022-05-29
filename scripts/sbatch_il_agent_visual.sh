@@ -6,7 +6,7 @@
 #SBATCH --time 11:00:00
 #SBATCH --gres gpu:1
 
-python3 src/il/imitation_learning_visual.py \
+python3 src/imitation_learning_visual.py \
     --domain_name walker \
     --task_name walk \
     --action_repeat 4 \
