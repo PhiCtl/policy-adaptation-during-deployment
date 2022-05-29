@@ -24,7 +24,7 @@ shared encoder, as input to SS and actor heads
 """
 
 
-def evaluate_agent(ep_agent, env, args, exp_type="", buffer=None, step=None, adapt=False,
+def evaluate_agent(agent, env, args, exp_type="", buffer=None, step=None, adapt=False,
                    feat_analysis=False, L=None, video=None, recorder=None): # OK
     """Evaluate agent on env, storing obses, actions and next obses
     Params : - agent : IL agent
@@ -63,6 +63,22 @@ def evaluate_agent(ep_agent, env, args, exp_type="", buffer=None, step=None, ada
             episode_reward += reward
             obses.append(obs)
             actions.append(action)
+
+            # Adapt
+            if adapt and buffer is not None :
+                # Prepare batch of observations
+                batch_obs = utils.batch_from_obs(torch.Tensor(obs).cuda(), batch_size=args.pad_batch_size)
+                batch_next_obs = utils.batch_from_obs(torch.Tensor(next_obs).cuda(), batch_size=args.pad_batch_size)
+                batch_action = torch.Tensor(action).cuda().unsqueeze(0).repeat(args.pad_batch_size, 1)
+
+                b_o1 = utils.batch_from_obs(traj[0], batch_size=args.pad_batch_size)
+                b_o2 = utils.batch_from_obs(traj[2], batch_size=args.pad_batch_size)
+                b_o3 = utils.batch_from_obs(traj[4], batch_size=args.pad_batch_size)
+                b_a1 = traj[1].repeat(args.pad_batch_size, 1)
+                b_a2 = traj[3].repeat(args.pad_batch_size, 1)
+                
+                losses.append(ep_agent.update_inv(utils.random_crop(batch_obs), utils.random_crop(batch_next_obs),
+                                                  batch_action, [b_o1, b_a1, b_o2, b_a2, b_o3]))
 
             if video: video.record(env, losses)
             if recorder: recorder.update(change, reward)
