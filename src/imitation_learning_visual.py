@@ -304,11 +304,12 @@ def test_agents(args):
 
     # Load env for a given mass
     envs = []
-    #masses = []
-    forces = []
-    for label in [-1,-2,-3]:
+    masses = []
+    #forces = []
+    for label in [0.25, 0.2, 0.3, 0.4] :#[-1,-2,-3]:
         env = init_env(args, label)
-        forces.append(env.get_forces())
+        #forces.append(env.get_forces())
+        masses.append(env.get_masses())
         envs.append(env)
 
     # Build traj buffers
@@ -317,7 +318,8 @@ def test_agents(args):
     for env in envs:
         traj_buffers.append(collect_trajectory(ref_expert, env, args))
 
-    for label, force, traj_buffer, env in zip(["_0_-1", "_0_-1", "_0_-3"], forces, traj_buffers, envs):
+    #for label, force, traj_buffer, env in zip(["_0_-1", "_0_-1", "_0_-3"], forces, traj_buffers, envs):
+    for label, mass, traj_buffer, env in zip(["_0_25", "_0_2", "_0_3", "_0_4"], masses, traj_buffers, envs):
         # Load IL agent
         cropped_obs_shape = (3 * args.frame_stack, 84, 84)
         il_agent = make_il_agent_visual(
