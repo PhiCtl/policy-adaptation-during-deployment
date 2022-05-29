@@ -11,7 +11,7 @@ from video import VideoRecorder
 from arguments import parse_args
 from agent.IL_agent_visual import make_il_agent_visual
 from eval import init_env, evaluate
-from src.imitation_learning_visual import evaluate_agent, collect_trajectory, load_agent
+from imitation_learning_visual import evaluate_agent, collect_trajectory, load_agent
 from agent.IL_agent import make_il_agent
 
 def setup(args, domains, labels):
