@@ -35,7 +35,7 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, step=None, adapt=
     ep_rewards = []
     obses, actions, feat_vects = [], [], []
 
-    for i in range(args.num_rollouts):
+    for i in tqdm(range(args.num_rollouts)):
         ep_agent = deepcopy(agent)
         if video: video.init(enabled=True)
         obs = env.reset()
