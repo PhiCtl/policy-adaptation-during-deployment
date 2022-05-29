@@ -135,14 +135,14 @@ def main(args):
     video = VideoRecorder(video_dir if args.save_video else None, height=448, width=448)
 
     # 3. Non adapting agent
-    mean, std = evaluate(env, il_agent, args, buffer=traj_buffer, adapt=False, video=video)
-    print('non adapting reward:', int(mean), ' +/- ', int(std))
+    reward, _, _ = evaluate_agent(il_agent, env, args, buffer=traj_buffer)
+    print('non adapting reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
 
     # 4 . Adapting agent
     env = init_env(args, domain[0])
     print(f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-    mean, std = evaluate(env, il_agent, args, buffer=traj_buffer, adapt=True)
-    print('pad reward:', int(mean), ' +/- ', int(std))
+    reward, _, _ = evaluate_agent(il_agent, env, args, buffer=traj_buffer, adapt=True)
+    print('non adapting reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
 
 
 if __name__ == "__main__":
