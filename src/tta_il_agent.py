@@ -46,7 +46,7 @@ def setup(args, domains, labels):
 def verify_weights(args):
     """Verify if agents indeed share weights"""
 
-    envs, masses, il_agents = setup(args, [0.3, 0.2], ["_0_3", "_0_2"])
+    envs, masses, il_agents = setup(args, [0.4, 0.2], ["_0_4", "_0_2"])
 
     for agt in il_agents:
         print(agt.actor.encoder.fc.state_dict())
