@@ -264,7 +264,7 @@ def main(args):
 
 
         # c. Save partial model
-        if it % 5 == 0 :
+        if it % 2 == 0 :
             for agent, label in zip(il_agents_tied, labels):
                 save_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
                 agent.save(save_dir, it)
