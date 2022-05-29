@@ -6,13 +6,13 @@ import torch.nn as nn
 import numpy as np
 from copy import deepcopy
 
-from video import VideoRecorder
-from arguments import parse_args
+from src.video import VideoRecorder
+from src.arguments import parse_args
 from agent.agent import make_agent
 from agent.IL_agent_visual import make_il_agent_visual
-import utils
-from eval import init_env, evaluate
-from logger import Logger
+import src.utils
+from src.eval import init_env, evaluate
+from src.logger import Logger
 
 """
 This script trains Imitation learning agents from RL experts trained on different domains (different by their dynamics
