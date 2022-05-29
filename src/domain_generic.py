@@ -103,16 +103,19 @@ def load_agent(label, action_shape, args): # OK
 def main(args):
 
     # TODO better practise than lists
-    labels = ["_0_4", "_0_2", "_0_25", "_0_3"]
+    #labels = ["_0_4", "_0_2", "_0_25", "_0_3"]
+    labels = ["_0_-1", "_0_-2", "_0_-3"]
+    
     # Define 4 envts
     print("-"*60)
     print("Define environment")
     #all the enviroments for different domains
     envs = []
-    masses = []
-    for mass in [0.4, 0.2, 0.25, 0.3]:
-        env = init_env(args, mass)
-        masses.append(env.get_masses())
+    #masses = []
+    forces = []
+    for force in [-1, -2, -3]:
+        env = init_env(args, force)
+        forces.append(env.get_forces())
         #print(masses[-1]) # debug
         envs.append(env)
 
@@ -142,10 +145,10 @@ def main(args):
         batch_size=args.batch_size
     ) 
 
-    for expert, env, mass in zip(experts, envs, labels):
+    for expert, env, label in zip(experts, envs, labels):
         rewards, obses, actions = evaluate_agent(expert, env, args)
         buffer.add_path(obses, actions) 
-        stats_expert[mass]= [rewards.mean(), rewards.std()] #performance of the expert agent in its domain
+        stats_expert[label]= [rewards.mean(), rewards.std()] #performance of the expert agent in its domain
 
     print("-" * 60)
     print("Create domain generic agent")
@@ -187,9 +190,9 @@ def main(args):
 
         #Evaluate - Perform domain-generic agent
         print("\n\n********** Evaluation and relabeling %i ************" % it)
-        for expert, env, mass in zip(experts, envs, labels):
+        for expert, env, label in zip(experts, envs, labels):
             rewards, obses, actions = evaluate_agent(domain_generic_agent, env, args)
-            stats_domain_generic_agent[mass].append([rewards.mean(), rewards.std()])
+            stats_domain_generic_agent[label].append([rewards.mean(), rewards.std()])
             print(f'Performance of domain generic agent: {rewards.mean()} +/- {rewards.std()}') 
             actions_new = relabel(obses, expert)
             buffer.add_path(obses, actions_new)
