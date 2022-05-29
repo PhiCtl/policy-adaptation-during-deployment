@@ -66,8 +66,9 @@ def evaluate(env, agent, args, buffer=None, video=None, recorder=None, adapt=Fal
 
                     # Adapt using inverse dynamics prediction
                     if buffer:
+                        batch_traj = torch.Tensor(traj).cuda().unsqueeze(0).repeat(args.pad_batch_size, 1)
                         losses.append(ep_agent.update_inv(utils.random_crop(batch_obs), utils.random_crop(batch_next_obs),
-                                                      batch_action, traj))
+                                                      batch_action, batch_traj))
                     else :
                         losses.append(ep_agent.update_inv(utils.random_crop(batch_obs), utils.random_crop(batch_next_obs),
                                                       batch_action))
