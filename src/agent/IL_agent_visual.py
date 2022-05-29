@@ -75,7 +75,7 @@ def weight_init(m):
         nn.init.orthogonal_(m.weight.data[:, :, mid, mid], gain)
 
 
-# IL agent is a regresson that want to predict the following actions
+# IL agent is a regressor that want to predict the following actions
 class Actor(nn.Module):
     """MLP actor network."""
 

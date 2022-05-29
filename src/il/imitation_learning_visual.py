@@ -58,7 +58,6 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, step=None, adapt=
                 action = ep_agent.select_action(obs, traj)
             next_obs, reward, done, info, change, _ = env.step(action, rewards)
 
-
             # Adaptation
             if adapt:
                 batch_obs = utils.batch_from_obs(torch.Tensor(obs).cuda(), batch_size=args.pad_batch_size)
@@ -68,7 +67,6 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, step=None, adapt=
                 # Adapt using inverse dynamics prediction
                 losses.append(ep_agent.update_inv(utils.random_crop(batch_obs), utils.random_crop(batch_next_obs),
                                                   batch_action))
-
 
             # Save data
             episode_reward += reward
@@ -117,7 +115,7 @@ def collect_expert_samples(agent, env, args, label): # OK
        Args : - agent : expert RL agent trained on env
               - env : dm_control environment
               - args
-              - label : env specificity, eg. the cartmass
+              - label : env specificity, eg. the cartmass, the opponent force 
        """
     # Create replay buffer with label
     buffer = utils.ExtendedTrajectoryBuffer(
@@ -162,19 +160,20 @@ def load_agent(label, action_shape, args): # OK
     
 def main(args):
 
-
     # TODO : change labels for force folders
-    labels = ["_0_4", "_0_2", "_0_25", "_0_3"]
+    #labels = ["_0_4", "_0_2", "_0_25", "_0_3"]
+    labels = ["_0_-1", "_0_-2", "_0_-3"]
 
     # 1. Define 4 envts : four different environments / domains that differ by the mass or the force
     print("-"*60)
     print("Define environment")
     envs = []
     # TODO replace with forces
-    masses = [] # eg. for cartpole [1, 0.1] : mass of the cart and mass of the pole
-    for mass in [0.4, 0.2, 0.25, 0.3]: # TODO replace with forces values
-        env = init_env(args, mass)
-        masses.append(env.get_masses()) # TODO env.get_forces()
+    #masses = [] # eg. for cartpole [1, 0.1] : mass of the cart and mass of the pole
+    forces = []
+    for force in [-1, -2, -3]: # TODO replace with forces values
+        env = init_env(args, force)
+        forces.append(env.get_forces()) # TODO env.get_forces()
         envs.append(env)
 
     # 2. Load expert agents + reference agent
@@ -190,7 +189,6 @@ def main(args):
     # Load reference agent
     # ref_expert, _ = load_agent("", envs[0].action_space.shape, args)
 
-
     # 3. Collect samples from 4 RL agents
     print("-" * 60)
     print("Fill in buffers")
@@ -201,10 +199,10 @@ def main(args):
     # 4. Initialize buffers by collecting experts data and collect their performance in the meantime
 
     # 4.a We have 1 buffer per (env, RL_expert)
-    for expert, mass, env in zip(experts, labels, envs) : # TODO replace mass with force labels
-        buffer, mean, std = collect_expert_samples(expert, env, args, mass)
+    for expert, force, env in zip(experts, labels, envs) : # TODO replace mass with force labels
+        buffer, mean, std = collect_expert_samples(expert, env, args, force)
         buffers.append(buffer)
-        stats_expert[mass] = [mean, std]
+        stats_expert[force] = [mean, std]
 
     # 4.b Collect trajectories from ref RL agent on different domains
     # trajs_buffers = []
@@ -218,7 +216,7 @@ def main(args):
     cropped_obs_shape = (3 * args.frame_stack, 84, 84)
 
     # TODO replace with force values
-    for mass in masses:
+    for force in forces:
         il_agent = make_il_agent_visual(
             obs_shape=cropped_obs_shape,
             action_shape=envs[0].action_space.shape,
@@ -246,7 +244,7 @@ def main(args):
 
             # Forward pass sequentially for all agents
             #for agent, buffer, traj_buffer, mass, L in zip(il_agents_tied, buffers, trajs_buffers, masses, loggers): # TODO replace with forces
-            for agent, buffer, mass, L in zip(il_agents_tied, buffers, masses,
+            for agent, buffer, force, L in zip(il_agents_tied, buffers, forces,
                                                                loggers):
 
                 # sample a batch of obs, action, next_obs and traj = [obs1, act1, obs2, act2, obs3]
@@ -269,14 +267,14 @@ def main(args):
         print("\n\n********** Evaluation and relabeling %i ************" % it)
         # TODO replace mass labels with force labels
         #for agent, expert, logger, env, buffer, traj_buffer, mass in zip(il_agents_tied, experts, loggers, envs, buffers, trajs_buffers, labels):
-        for agent, expert, logger, env, buffer, mass in zip(il_agents_tied, experts, loggers, envs,
+        for agent, expert, logger, env, buffer, force in zip(il_agents_tied, experts, loggers, envs,
                                                                              buffers, labels):
 
             # Evaluate agent on envt
             rewards, obses, actions = evaluate_agent(agent, env, args, buffer, L=logger, step=it) # change to traj_buffer
             # Save itermediary score
-            stats_il[mass].append([rewards.mean(), rewards.std()])
-            print(f'Performance of agent on mass {mass} : {rewards.mean()} +/- {rewards.std()}')
+            stats_il[force].append([rewards.mean(), rewards.std()])
+            print(f'Performance of agent on mass {force} : {rewards.mean()} +/- {rewards.std()}')
             # Relabel actions -> using DAgger algorithm
             actions_new = relabel(obses, expert)
             # Add trajectory to training buffer
@@ -298,7 +296,7 @@ def main(args):
     # 8. Evaluate expert vs IL
     for label in labels:
         print("-" * 60)
-        print(f'Mass of {label}')
+        print(f'Force of {label}')
         print(f'Expert performance : {stats_expert[label][0]} +/- {stats_expert[label][1]}')
         print(f'Imitation learning agent with dagger performance : {stats_il[label][-1][0]} +/- {stats_il[label][-1][1]}')
 
@@ -306,10 +304,11 @@ def test_agents(args):
 
     # Load env for a given mass
     envs = []
-    masses = []
-    for label in [0.3, 0.2, 0.25, 0.4]:
+    #masses = []
+    forces = []
+    for label in [-1,-2,-3]:
         env = init_env(args, label)
-        masses.append(env.get_masses())
+        forces.append(env.get_forces())
         envs.append(env)
 
     # Build traj buffers
@@ -318,7 +317,7 @@ def test_agents(args):
     for env in envs:
         traj_buffers.append(collect_trajectory(ref_expert, env, args))
 
-    for label, mass, traj_buffer, env in zip(["_0_3", "_0_2", "_0_25", "_0_4"], masses, traj_buffers, envs):
+    for label, force, traj_buffer, env in zip(["_0_-1", "_0_-1", "_0_-3"], forces, traj_buffers, envs):
         # Load IL agent
         cropped_obs_shape = (3 * args.frame_stack, 84, 84)
         il_agent = make_il_agent_visual(
