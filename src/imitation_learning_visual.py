@@ -235,11 +235,11 @@ def main(args):
     print("-" * 60)
     print("Train IL agents")
 
-    for it in range(args.n_iter): # number of dagger iterations
+    for it in tqdm(range(args.n_iter)): # number of dagger iterations
         print("\n\n********** Training %i ************"%it)
 
         # a. Train 4 Il agents policies
-        for step in range(args.il_steps):
+        for step in tqdm(range(args.il_steps)):
 
             # Store action predictions, gt, losses
             preds, pred_invs, gts, losses = [], [], [], 0
