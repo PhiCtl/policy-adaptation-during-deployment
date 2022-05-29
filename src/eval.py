@@ -65,7 +65,11 @@ def evaluate(env, agent, args, buffer=None, video=None, recorder=None, adapt=Fal
                     batch_action = torch.Tensor(action).cuda().unsqueeze(0).repeat(args.pad_batch_size, 1)
 
                     # Adapt using inverse dynamics prediction
-                    losses.append(ep_agent.update_inv(utils.random_crop(batch_obs), utils.random_crop(batch_next_obs),
+                    if buffer:
+                        losses.append(ep_agent.update_inv(utils.random_crop(batch_obs), utils.random_crop(batch_next_obs),
+                                                      batch_action, traj))
+                    else :
+                        losses.append(ep_agent.update_inv(utils.random_crop(batch_obs), utils.random_crop(batch_next_obs),
                                                       batch_action))
 
                 if args.use_curl:  # CURL

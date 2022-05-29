@@ -351,15 +351,14 @@ class SacSSAgent(object):
         self.actor_optimizer.step()
         self.domain_spe_optimizer.step()
 
-    def update_inv(self, obs, next_obs, action, L=None, step=None):
+    def update_inv(self, obs, next_obs, action, traj, L=None, step=None):
 
         assert obs.shape[-1] == 84 and next_obs.shape[-1] == 84
-        assert self.feat_vect is not None # Assert we can use this member
 
         h = self.ss_encoder(obs)
         h_next = self.ss_encoder(next_obs)
-        feats = self.feat_vect.repeat(obs.shape[0], 1)
-        pred_action = self.inv(h, h_next, feats)
+        dyn_feat = self.domain_spe(*traj)
+        pred_action = self.inv(h, h_next, dyn_feat)
 
         inv_loss = F.mse_loss(pred_action, action)
 
