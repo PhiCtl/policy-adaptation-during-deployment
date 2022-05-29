@@ -131,8 +131,11 @@ def main(args):
     ref_expert, _ = load_agent("", env.action_space.shape, args)
     traj_buffer = collect_trajectory(ref_expert, env, args)
 
+    video_dir = utils.make_dir(os.path.join(args.work_dir, 'video'))
+    video = VideoRecorder(video_dir if args.save_video else None, height=448, width=448)
+
     # 3. Non adapting agent
-    mean, std = evaluate(env, il_agent, args, buffer=traj_buffer, adapt=False)
+    mean, std = evaluate(env, il_agent, args, buffer=traj_buffer, adapt=False, video=video)
     print('non adapting reward:', int(mean), ' +/- ', int(std))
 
     # 4 . Adapting agent
