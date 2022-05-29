@@ -174,7 +174,7 @@ def main(args):
 
             # Forward pass for the domain generic agent for all domains (?)
             
-            obs, action, next_obs, _ = buffer.sample() # sample a batch
+            obs, action, next_obs = buffer.sample() # sample a batch
             action_pred, action_inv, loss = domain_generic_agent.predict_action(obs, next_obs, action)
 
             preds.append(action_pred) # Action from actor network

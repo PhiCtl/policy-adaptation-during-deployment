@@ -6,8 +6,7 @@ import torch.nn as nn
 import numpy as np
 from copy import deepcopy
 
-#from video import VideoRecorder
-import video
+from video import VideoRecorder
 from arguments import parse_args
 from agent.agent import make_agent
 from agent.IL_agent_visual import make_il_agent_visual
