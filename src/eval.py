@@ -69,8 +69,8 @@ def evaluate(env, agent, args, buffer=None, video=None, recorder=None, adapt=Fal
                         b_o1 = utils.batch_from_obs(traj[0], batch_size=args.pad_batch_size)
                         b_o2 = utils.batch_from_obs(traj[2], batch_size=args.pad_batch_size)
                         b_o3 = utils.batch_from_obs(traj[4], batch_size=args.pad_batch_size)
-                        b_a1 = traj[1].unsqueeze(0).repeat(args.pad_batch_size, 1)
-                        b_a2 = traj[3].unsqueeze(0).repeat(args.pad_batch_size, 1)
+                        b_a1 = traj[1].repeat(args.pad_batch_size, 1)
+                        b_a2 = traj[3].repeat(args.pad_batch_size, 1)
                         losses.append(ep_agent.update_inv(utils.random_crop(batch_obs), utils.random_crop(batch_next_obs),
                                                       batch_action, [b_o1, b_a1, b_o2, b_a2, b_o3]))
                     else :
