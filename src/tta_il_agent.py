@@ -97,6 +97,7 @@ def feature_vector_analysis(args):
     features = dict()
     for label, env, buffer, il_agent in zip(["_0_3", "_0_2", "_0_25", "_0_4"], envs, traj_buffers, il_agents):
         _, _, _, feat_vects = evaluate_agent(il_agent, env, args, feat_analysis=True, buffer=buffer)
+        print(feat_vects)
         features[label[1:]] = np.array(feat_vects)
 
     print("perform PCA")
@@ -143,5 +144,5 @@ def main(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    feature_vector_analysis(args)
+    main(args)
     
