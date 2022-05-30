@@ -269,7 +269,7 @@ def main(args):
         for agent, expert, logger, env, buffer, traj_buffer, mass in zip(il_agents_tied, experts, loggers, envs, buffers, trajs_buffers, labels):
 
             # Evaluate agent on envt
-            rewards, obses, actions = evaluate_agent(agent, env, args, buffer, L=logger, step=it) # change to traj_buffer
+            rewards, obses, actions = evaluate_agent(agent, env, args, buffer=traj_buffer, L=logger, step=it) # change to traj_buffer
             # Save intermediary score
             stats_il[mass].append([rewards.mean(), rewards.std()])
             print(f'Performance of agent on mass {mass} : {rewards.mean()} +/- {rewards.std()}')
