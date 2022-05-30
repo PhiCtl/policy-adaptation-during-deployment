@@ -152,6 +152,7 @@ def load_agent(label, action_shape, args): # OK
 def setup(args,
           labels=["_0_4", "_0_2", "_0_25", "_0_3"],
           domains=[0.4, 0.2, 0.25, 0.3],
+          checkpoint="final",
           type="mass",
           gt=False,
           train_IL=True):
@@ -236,7 +237,7 @@ def setup(args,
         # If test time, we load pre-trained agents
         if not train_IL:
             load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
-            il_agent.load(load_dir, "final")
+            il_agent.load(load_dir, checkpoint)
 
         il_agents.append(il_agent)
 

@@ -13,37 +13,37 @@ from arguments import parse_args
 from agent.IL_agent_visual import make_il_agent_visual
 from agent.IL_agent import make_il_agent
 from eval import init_env
-from utils_imitation_learning import evaluate_agent, collect_trajectory, load_agent
+from utils_imitation_learning import evaluate_agent, collect_trajectory, load_agent, setup
 
-def setup(args, domains, labels):
-
-    """Load IL agents and corresponding envs for testing"""
-
-    # TODO generalize to non visual and use it in the below functions
-    # TODO generalize to forces
-
-    envs = []
-    masses = []
-    for mass in domains:
-        env = init_env(args, mass)
-        masses.append(env.get_masses())
-        envs.append(env)
-
-    il_agents = []
-    for label, mass in zip(labels, masses):
-        # Load IL agent
-        cropped_obs_shape = (3 * args.frame_stack, 84, 84)
-        il_agent = make_il_agent(
-        #il_agent = make_il_agent_visual(
-            obs_shape=cropped_obs_shape,
-            action_shape=envs[0].action_space.shape,
-            dynamics_input_shape=mass.shape[0],
-            args=args)
-        load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
-        il_agent.load(load_dir, "final")
-        il_agents.append(il_agent)
-
-    return envs, masses, il_agents
+# def setup(args, domains, labels, checkpoint="final"):
+#
+#     """Load IL agents and corresponding envs for testing"""
+#
+#     # TODO generalize to non visual and use it in the below functions
+#     # TODO generalize to forces
+#
+#     envs = []
+#     masses = []
+#     for mass in domains:
+#         env = init_env(args, mass)
+#         masses.append(env.get_masses())
+#         envs.append(env)
+#
+#     il_agents = []
+#     for label, mass in zip(labels, masses):
+#         # Load IL agent
+#         cropped_obs_shape = (3 * args.frame_stack, 84, 84)
+#         #il_agent = make_il_agent(
+#         il_agent = make_il_agent_visual(
+#             obs_shape=cropped_obs_shape,
+#             action_shape=envs[0].action_space.shape,
+#             #dynamics_input_shape=mass.shape[0],
+#             args=args)
+#         load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
+#         il_agent.load(load_dir, checkpoint)
+#         il_agents.append(il_agent)
+#
+#     return envs, masses, il_agents
 
 
 def verify_weights(args):
@@ -64,9 +64,9 @@ def PCA_decomposition(groups):
 
     # Perform PCA decomposition
     for domain, vect in groups.items():
-        #std_data = StandardScaler().fit_transform(groups[domain])
+        std_data = StandardScaler().fit_transform(groups[domain])
         pca = PCA(n_components=2)
-        pca_decomposition[domain] = pca.fit_transform(vect)
+        pca_decomposition[domain] = pca.fit_transform(std_data)
 
     # Plot
     plt.figure(figsize=(20,20))
@@ -100,7 +100,6 @@ def feature_vector_analysis(args):
     features = dict()
     for label, env, il_agent in zip(["_0_3", "_0_2", "_0_25", "_0_4"], envs, il_agents):
         _, _, _, feat_vects = evaluate_agent(il_agent, env, args, feat_analysis=True, buffer=None)
-        print(feat_vects)
         features[label[1:]] = np.array(feat_vects)
 
     print("perform PCA")
@@ -148,7 +147,19 @@ def main(args):
     print('pad reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
 
 
+def test_agents(args):
+    il_agents_train, experts, envs, dynamics, buffers, trajs_buffers, stats_expert = setup(args,
+                                                                                           checkpoint="6")
+
+    for agent, env, traj, label in zip(il_agents_train, envs, trajs_buffers, ["_0_4", "_0_2", "_0_25", "_0_3"]):
+
+        rewards, _, _ = evaluate_agent(agent, env, args, buffer=traj)
+        print(f'For {label} agent : {rewards.mean()} +/- {rewards.std()}')
+
+
+
+
 if __name__ == "__main__":
     args = parse_args()
-    feature_vector_analysis(args)
+    test_agents(args)
     
