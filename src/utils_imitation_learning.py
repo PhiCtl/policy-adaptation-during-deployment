@@ -46,7 +46,7 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, adapt=False,
             if feat_analysis:  feat_vects.append(ep_agent.extract_feat_vect(mass))
 
             with utils.eval_mode(ep_agent):
-                action = ep_agent.select_action(obs, traj)
+                action = ep_agent.select_action(obs, mass)
             next_obs, reward, done, info, change, _ = env.step(action, rewards)
 
             # Save data
