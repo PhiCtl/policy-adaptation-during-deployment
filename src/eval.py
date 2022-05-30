@@ -10,7 +10,8 @@ from video import VideoRecorder
 from arguments import parse_args
 from env.wrappers import make_pad_env
 from agent.agent import make_agent
-from utils import get_curl_pos_neg, AdaptRecorder
+from utils import get_curl_pos_neg
+from recorder import AdaptRecorder
 
 
 def evaluate(env, agent, args, buffer=None, video=None, recorder=None, adapt=False, reload=False, exp_type=""):
@@ -104,7 +105,7 @@ def evaluate(env, agent, args, buffer=None, video=None, recorder=None, adapt=Fal
     return np.mean(episode_rewards), np.std(episode_rewards)
 
 
-def init_env(args, mass=None):
+def init_env(args, mass=None, force=None):
     utils.set_seed_everywhere(args.seed)
     return make_pad_env(
         domain_name=args.domain_name,
@@ -116,7 +117,8 @@ def init_env(args, mass=None):
         dependent=args.dependent,
         threshold=args.threshold,
         window=args.window,
-        mass= mass if mass else args.cart_mass
+        mass= mass if mass else args.cart_mass,
+        force=force if force else args.force_walker
     )
 
 
