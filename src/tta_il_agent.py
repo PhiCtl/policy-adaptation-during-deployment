@@ -7,12 +7,13 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 
 import utils
+from recorder import AdaptRecorder
 from video import VideoRecorder
 from arguments import parse_args
 from agent.IL_agent_visual import make_il_agent_visual
-from eval import init_env, evaluate
-from imitation_learning_visual import evaluate_agent, collect_trajectory, load_agent
 from agent.IL_agent import make_il_agent
+from eval import init_env
+from utils_imitation_learning import evaluate_agent, collect_trajectory, load_agent
 
 def setup(args, domains, labels):
 
@@ -32,9 +33,11 @@ def setup(args, domains, labels):
     for label, mass in zip(labels, masses):
         # Load IL agent
         cropped_obs_shape = (3 * args.frame_stack, 84, 84)
+        #il_agent = make_il_agent(
         il_agent = make_il_agent_visual(
             obs_shape=cropped_obs_shape,
             action_shape=envs[0].action_space.shape,
+            #dynamics_input_shape=mass.shape[0],
             args=args)
         load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
         il_agent.load(load_dir, "final")
@@ -49,8 +52,8 @@ def verify_weights(args):
     envs, masses, il_agents = setup(args, [0.4, 0.2], ["_0_4", "_0_2"])
 
     for agt in il_agents:
-        print(agt.actor.encoder.fc.state_dict())
-        print(agt.ss_encoder.fc.state_dict())
+        #print(agt.actor.encoder.fc.state_dict())
+        print(agt.domain_spe.encoder.fc.state_dict())
 
 def PCA_decomposition(groups):
 
@@ -88,15 +91,15 @@ def feature_vector_analysis(args):
     print("load traj buffers")
     # Build traj buffers
     traj_buffers = []
-    ref_expert, _ = load_agent("", envs[0].action_space.shape, args)
-    for env in envs:
-        traj_buffers.append(collect_trajectory(ref_expert, env, args))
+    # ref_expert, _ = load_agent("", envs[0].action_space.shape, args)
+    # for env in envs:
+    #     traj_buffers.append(collect_trajectory(ref_expert, env, args))
 
     print("extract features")
     # Extract feat vects from Il agents
     features = dict()
-    for label, env, buffer, il_agent in zip(["_0_3", "_0_2", "_0_25", "_0_4"], envs, traj_buffers, il_agents):
-        _, _, _, feat_vects = evaluate_agent(il_agent, env, args, feat_analysis=True, buffer=buffer)
+    for label, env, il_agent in zip(["_0_3", "_0_2", "_0_25", "_0_4"], envs, il_agents):
+        _, _, _, feat_vects = evaluate_agent(il_agent, env, args, feat_analysis=True, buffer=None)
         print(feat_vects)
         features[label[1:]] = np.array(feat_vects)
 
@@ -147,5 +150,5 @@ def main(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    main(args)
+    verify_weights(args)
     
