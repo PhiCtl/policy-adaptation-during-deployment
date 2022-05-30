@@ -33,11 +33,11 @@ def setup(args, domains, labels):
     for label, mass in zip(labels, masses):
         # Load IL agent
         cropped_obs_shape = (3 * args.frame_stack, 84, 84)
-        #il_agent = make_il_agent(
-        il_agent = make_il_agent_visual(
+        il_agent = make_il_agent(
+        #il_agent = make_il_agent_visual(
             obs_shape=cropped_obs_shape,
             action_shape=envs[0].action_space.shape,
-            #dynamics_input_shape=mass.shape[0],
+            dynamics_input_shape=mass.shape[0],
             args=args)
         load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
         il_agent.load(load_dir, "final")
@@ -88,7 +88,7 @@ def feature_vector_analysis(args):
     # Load envs and agents
     envs, masses, il_agents = setup(args, [0.3, 0.2, 0.25, 0.4], ["_0_3", "_0_2", "_0_25", "_0_4"] )
 
-    print("load traj buffers")
+    # print("load traj buffers")
     # Build traj buffers
     traj_buffers = []
     # ref_expert, _ = load_agent("", envs[0].action_space.shape, args)
@@ -150,5 +150,5 @@ def main(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    verify_weights(args)
+    feature_vector_analysis(args)
     
