@@ -15,35 +15,35 @@ from agent.IL_agent import make_il_agent
 from eval import init_env
 from utils_imitation_learning import evaluate_agent, collect_trajectory, load_agent#, setup
 
-def setup(args, domains, labels, checkpoint="final"):
-
-    """Load IL agents and corresponding envs for testing"""
-
-    # TODO generalize to non visual and use it in the below functions
-    # TODO generalize to forces
-
-    envs = []
-    masses = []
-    for mass in domains:
-        env = init_env(args, mass)
-        masses.append(env.get_masses())
-        envs.append(env)
-
-    il_agents = []
-    for label, mass in zip(labels, masses):
-        # Load IL agent
-        cropped_obs_shape = (3 * args.frame_stack, 84, 84)
-        #il_agent = make_il_agent(
-        il_agent = make_il_agent_visual(
-            obs_shape=cropped_obs_shape,
-            action_shape=envs[0].action_space.shape,
-            #dynamics_input_shape=mass.shape[0],
-            args=args)
-        load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
-        il_agent.load(load_dir, checkpoint)
-        il_agents.append(il_agent)
-
-    return envs, masses, il_agents
+# def setup(args, domains, labels, checkpoint="final"):
+#
+#     """Load IL agents and corresponding envs for testing"""
+#
+#     # TODO generalize to non visual and use it in the below functions
+#     # TODO generalize to forces
+#
+#     envs = []
+#     masses = []
+#     for mass in domains:
+#         env = init_env(args, mass)
+#         masses.append(env.get_masses())
+#         envs.append(env)
+#
+#     il_agents = []
+#     for label, mass in zip(labels, masses):
+#         # Load IL agent
+#         cropped_obs_shape = (3 * args.frame_stack, 84, 84)
+#         #il_agent = make_il_agent(
+#         il_agent = make_il_agent_visual(
+#             obs_shape=cropped_obs_shape,
+#             action_shape=envs[0].action_space.shape,
+#             #dynamics_input_shape=mass.shape[0],
+#             args=args)
+#         load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
+#         il_agent.load(load_dir, checkpoint)
+#         il_agents.append(il_agent)
+#
+#     return envs, masses, il_agents
 
 
 def verify_weights(args):
@@ -148,7 +148,7 @@ def main(args):
 
 
 def test_agents(args):
-    il_agents_train, experts, envs, dynamics, buffers, trajs_buffers, stats_expert = setup(args, train_IL=False, checkpoint="8")
+    il_agents_train, experts, envs, dynamics, buffers, trajs_buffers, stats_expert = setup(args, train_IL=False, checkpoint="8", dyn=False)
 
     # envs, masses, il_agents = setup(args,
     #                                 [0.4, 0.3, 0.25, 0.2],
