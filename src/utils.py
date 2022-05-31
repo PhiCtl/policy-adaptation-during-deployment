@@ -148,13 +148,11 @@ class TrajectoryBuffer(SimpleBuffer):
         for obs_0, action_0, obs_1, action_1, obs_2 in zip(obs0s, act0s, obs1s, act1s, obs2s):
             self.add(obs_0, action_0, obs_1, action_1, obs_2)
 
-    def sample(self, idxs=None, batch_size=None):
+    def sample(self, idxs=None):
 
-        if batch_size is None :
-            batch_size = self.batch_size
         if idxs is None :
             idxs = np.random.randint(
-                0, self.capacity if self.full else self.idx, size=batch_size
+                0, self.capacity if self.full else self.idx, size=self.batch_size
             )
         obses_0, actions_0, obses_1 = super().sample(idxs = idxs)
         actions_1 = torch.as_tensor(self.actions_1[idxs]).float().cuda()
