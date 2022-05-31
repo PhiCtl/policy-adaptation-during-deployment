@@ -13,7 +13,7 @@ from arguments import parse_args
 from agent.IL_agent_visual import make_il_agent_visual
 from agent.IL_agent import make_il_agent
 from eval import init_env
-from utils_imitation_learning import evaluate_agent, collect_trajectory, load_agent#, setup
+from utils_imitation_learning import evaluate_agent, collect_trajectory, load_agent, setup
 
 # def setup(args, domains, labels, checkpoint="final"):
 #
