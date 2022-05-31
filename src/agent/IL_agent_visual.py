@@ -130,10 +130,10 @@ class DomainSpecificVisual(nn.Module):
                                       nn.Linear(hidden_dim, hidden_dim), nn.ReLU(),
                                       nn.Linear(hidden_dim, dynamics_output_shape))
 
-    def forward(self, obs1, act1, obs2, act2, obs3):
-        obs1 = self.encoder(obs1)
-        obs2 = self.encoder(obs2)
-        obs3 = self.encoder(obs3)
+    def forward(self, obs1, act1, obs2, act2, obs3, detach=False):
+        obs1 = self.encoder(obs1, detach)
+        obs2 = self.encoder(obs2, detach)
+        obs3 = self.encoder(obs3, detach)
         joint_input = torch.cat([obs1, act1, obs2, act2, obs3], dim=1)
         res = self.specific(joint_input)
         return res
@@ -222,6 +222,11 @@ class SacSSAgent(object):
             self.domain_spe.parameters(), lr=ss_lr
         )
 
+        # MLP domain specific optimizer
+        self.domain_spe_MLP_optimizer = torch.optim.Adam(
+            self.domain_spe.specific.parameters(), lr=ss_lr
+        )
+
         # ss optimizers
         self.init_ss_optimizers(encoder_lr, ss_lr)
 
@@ -302,13 +307,9 @@ class SacSSAgent(object):
 
         inv_loss = F.mse_loss(pred_action, action)
 
-        self.encoder_optimizer.zero_grad()
-        self.inv_optimizer.zero_grad()
-        self.domain_spe_optimizer.zero_grad()
+        self.domain_spe_MLP_optimizer.zero_grad()
         inv_loss.backward()
-        self.encoder_optimizer.step()
-        self.inv_optimizer.step()
-        self.domain_spe_optimizer.step()
+        self.domain_spe_MLP_optimizer.step()
 
         if L is not None:
             L.log('train_inv/inv_loss', inv_loss, step)
