@@ -11,7 +11,7 @@ from agent.IL_agent_visual import make_il_agent_visual
 from eval import init_env
 
 def evaluate_agent(agent, env, args, exp_type="", buffer=None, adapt=False,
-                   feat_analysis=False, video=None, recorder=None):
+                   feat_analysis=False, video=None, recorder=None, mass=True):
     """Evaluate agent on env, storing obses, actions and next obses
     Params : - agent : IL agent visual
              - env : env to evaluate this agent in
@@ -46,7 +46,10 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, adapt=False,
             if feat_analysis:  feat_vects.append(ep_agent.extract_feat_vect(mass))
 
             with utils.eval_mode(ep_agent):
-                action = ep_agent.select_action(obs, traj)
+                if mass :
+                    action = ep_agent.select_action(obs, mass)
+                else :
+                    action = ep_agent.select_action(obs, traj)
             next_obs, reward, done, info, change, _ = env.step(action, rewards)
 
             # Save data
@@ -83,7 +86,6 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, adapt=False,
 
     if recorder: recorder.save("performance_" + exp_type, adapt)
 
-    # TODO update return type in main function
     return np.array(ep_rewards), obses, actions, feat_vects
 
 def collect_trajectory(RL_reference, env, args):
