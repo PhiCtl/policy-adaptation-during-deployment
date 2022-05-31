@@ -21,7 +21,8 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, adapt=False,
     # TODO handle GT IL agents
     ep_rewards = []
     obses, actions, feat_vects = [], [], []
-    buffer.batch_size = args.pad_batch_size
+    if buffer :
+        buffer.batch_size = args.pad_batch_size
 
     for i in tqdm(range(args.num_rollouts)):
 
