@@ -13,7 +13,6 @@ def parse_args():
 	parser.add_argument('--episode_length', default=1000, type=int)
 	parser.add_argument('--mode', default='train', type=str)
 	parser.add_argument('--dependent', default=False, action='store_true')
-	parser.add_argument('--threshold', default=0.0, type=float)
 	parser.add_argument('--window', default=100, type=int)
 	parser.add_argument('--cart_mass', default=1, type=float)
 	parser.add_argument('--force_walker', default=0.0, type=float)
@@ -37,6 +36,8 @@ def parse_args():
 	parser.add_argument('--domain_test', default=0.35, type=float)
 	parser.add_argument('--label', default="_0_3", type=str)
 	parser.add_argument('--rd', default=False, action='store_true')
+	parser.add_argument('--visual', default=False, action='store_true')
+	parser.add_argument('--il_lr', default=1e-3, type=float)
 
 	# critic
 	parser.add_argument('--critic_lr', default=1e-3, type=float)

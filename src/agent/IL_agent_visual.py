@@ -26,6 +26,7 @@ def make_il_agent_visual(obs_shape, action_shape, args, dynamics_output_shape=10
         encoder_lr=args.encoder_lr,
         encoder_tau=args.encoder_tau,
         ss_lr=args.ss_lr,
+        il_lr=args.il_lr,
         ss_update_freq=args.ss_update_freq,
         num_layers=args.num_layers,
         num_shared_layers=args.num_shared_layers,
@@ -179,6 +180,7 @@ class SacSSAgent(object):
             encoder_lr=1e-3,
             encoder_tau=0.005,
             ss_lr=1e-3,
+            il_lr=1e-3,
             ss_update_freq=1,
             num_layers=4,
             num_shared_layers=4,
@@ -219,12 +221,12 @@ class SacSSAgent(object):
 
         # domain specific optimizer
         self.domain_spe_optimizer = torch.optim.Adam(
-            self.domain_spe.parameters(), lr=ss_lr
+            self.domain_spe.parameters(), lr=il_lr
         )
 
         # MLP domain specific optimizer
         self.domain_spe_MLP_optimizer = torch.optim.Adam(
-            self.domain_spe.specific.parameters(), lr=ss_lr
+            self.domain_spe.specific.parameters(), lr=il_lr
         )
 
         # ss optimizers
