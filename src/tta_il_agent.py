@@ -152,7 +152,8 @@ def test_agents(args):
 
     envs, masses, il_agents = setup(args,
                                     [0.4, 0.3, 0.25, 0.2],
-                                    ["_0_4", "_0_2", "_0_25", "_0_3"])
+                                    ["_0_4", "_0_2", "_0_25", "_0_3"],
+                                    checkpoint="8")
 
     for agent, env, mass in zip(il_agents, envs, masses):
         rewards, _, _, _ = evaluate_agent(agent, env, args, dyn=True)
@@ -167,5 +168,5 @@ def test_agents(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    main(args)
+    test_agents(args)
     
