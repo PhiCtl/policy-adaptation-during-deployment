@@ -130,7 +130,7 @@ def main(args):
 
     # 2. Prepare test time evaluation
     # Build traj buffers
-    ref_expert, _ = load_agent("", env.action_space.shape, args)
+    ref_expert = load_agent("", env.action_space.shape, args)
     traj_buffer = collect_trajectory(ref_expert, env, args)
 
     video_dir = utils.make_dir(os.path.join(args.work_dir, 'video'))
