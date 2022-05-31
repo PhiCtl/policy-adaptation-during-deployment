@@ -61,7 +61,7 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, adapt=False,
                 batch_next_obs = utils.batch_from_obs(torch.Tensor(next_obs).cuda(), batch_size=args.pad_batch_size)
                 batch_action = torch.Tensor(action).cuda().unsqueeze(0).repeat(args.pad_batch_size, 1)
 
-                trajs = buffer.sample()
+                trajs = buffer.sample(args.pad_batch_size)
 
                 losses.append(ep_agent.update_inv(utils.random_crop(batch_obs), utils.random_crop(batch_next_obs),
                                                   batch_action, trajs))
