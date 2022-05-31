@@ -33,11 +33,11 @@ def setup(args, domains, labels, checkpoint="final"):
     for label, mass in zip(labels, masses):
         # Load IL agent
         cropped_obs_shape = (3 * args.frame_stack, 84, 84)
-        il_agent = make_il_agent(
-        #il_agent = make_il_agent_visual(
+        #il_agent = make_il_agent(
+        il_agent = make_il_agent_visual(
             obs_shape=cropped_obs_shape,
             action_shape=envs[0].action_space.shape,
-            dynamics_input_shape=mass.shape[0],
+            #dynamics_input_shape=mass.shape[0],
             args=args)
         load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
         il_agent.load(load_dir, checkpoint)
@@ -137,14 +137,14 @@ def main(args):
     video = VideoRecorder(video_dir if args.save_video else None, height=448, width=448)
 
     # 3. Non adapting agent
-    reward, _, _ = evaluate_agent(il_agent, env, args, buffer=traj_buffer)
+    reward, _, _ = evaluate_agent(il_agent, env, args, buffer=traj_buffer, dyn=False)
     print('non adapting reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
 
     # 4 . Adapting agent
-    env = init_env(args, domain[0])
-    print(f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-    reward, _, _ = evaluate_agent(il_agent, env, args, buffer=traj_buffer, adapt=True)
-    print('pad reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
+    # env = init_env(args, domain[0])
+    # print(f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
+    # reward, _, _ = evaluate_agent(il_agent, env, args, buffer=traj_buffer, adapt=True)
+    # print('pad reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
 
 
 def test_agents(args):
@@ -167,5 +167,5 @@ def test_agents(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    test_agents(args)
+    main(args)
     
