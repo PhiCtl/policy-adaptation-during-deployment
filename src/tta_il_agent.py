@@ -155,7 +155,7 @@ def test_agents(args):
                                     ["_0_4", "_0_2", "_0_25", "_0_3"])
 
     for agent, env, mass in zip(il_agents, envs, masses):
-        rewards, _, _, _ = evaluate_agent(agent, env, args, mass=True)
+        rewards, _, _, _ = evaluate_agent(agent, env, args, dyn=True)
         print(f'For {mass} agent : {rewards.mean()} +/- {rewards.std()}')
     # for agent, env, traj, label in zip(il_agents_train, envs, trajs_buffers, ["_0_4", "_0_2", "_0_25", "_0_3"]):
     #

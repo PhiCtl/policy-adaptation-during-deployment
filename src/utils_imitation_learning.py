@@ -11,7 +11,7 @@ from agent.IL_agent_visual import make_il_agent_visual
 from eval import init_env
 
 def evaluate_agent(agent, env, args, exp_type="", buffer=None, adapt=False,
-                   feat_analysis=False, video=None, recorder=None, mass=True):
+                   feat_analysis=False, video=None, recorder=None, dyn=True):
     """Evaluate agent on env, storing obses, actions and next obses
     Params : - agent : IL agent visual
              - env : env to evaluate this agent in
@@ -46,7 +46,7 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, adapt=False,
             if feat_analysis:  feat_vects.append(ep_agent.extract_feat_vect(mass))
 
             with utils.eval_mode(ep_agent):
-                if mass :
+                if dyn :
                     action = ep_agent.select_action(obs, mass)
                 else :
                     action = ep_agent.select_action(obs, traj)
