@@ -137,7 +137,7 @@ def main(args):
     video = VideoRecorder(video_dir if args.save_video else None, height=448, width=448)
 
     # 3. Non adapting agent
-    reward, _, _ = evaluate_agent(il_agent, env, args, buffer=traj_buffer, dyn=False)
+    reward, _, _, _ = evaluate_agent(il_agent, env, args, buffer=traj_buffer, dyn=False)
     print('non adapting reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
 
     # 4 . Adapting agent
