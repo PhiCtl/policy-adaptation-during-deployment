@@ -148,11 +148,11 @@ def main(args):
 
 
 def test_agents(args):
-    il_agents_train, experts, envs, dynamics, buffers, trajs_buffers, stats_expert = setup(args)
+    il_agents_train, experts, envs, dynamics, buffers, trajs_buffers, stats_expert = setup(args, train_IL=False)
 
     for agent, env, traj, label in zip(il_agents_train, envs, trajs_buffers, ["_0_4", "_0_2", "_0_25", "_0_3"]):
 
-        rewards, _, _ = evaluate_agent(agent, env, args, buffer=traj)
+        rewards, _, _, _ = evaluate_agent(agent, env, args, buffer=traj)
         print(f'For {label} agent : {rewards.mean()} +/- {rewards.std()}')
 
 
