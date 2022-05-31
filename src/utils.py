@@ -7,6 +7,10 @@ import os
 from datetime import datetime
 import random
 
+def tie_weights(src, trg):
+    assert type(src) == type(trg)
+    trg.weight = src.weight
+    trg.bias = src.bias
 
 class eval_mode(object):
     def __init__(self, *models):

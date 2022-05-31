@@ -141,10 +141,10 @@ def main(args):
     print('non adapting reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
 
     # 4 . Adapting agent
-    # env = init_env(args, domain[0])
-    # print(f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-    # reward, _, _ = evaluate_agent(il_agent, env, args, buffer=traj_buffer, adapt=True)
-    # print('pad reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
+    env = init_env(args, domain[0])
+    print(f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
+    reward, _, _ = evaluate_agent(il_agent, env, args, buffer=traj_buffer, adapt=True)
+    print('pad reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
 
 
 def test_agents(args):

@@ -3,17 +3,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import utils
-from agent.encoder import make_encoder, make_temp_encoder
+from agent.encoder import make_encoder
 
 LOG_FREQ = 10000
 
-def prepare_input(obs1, act1, obs2, act2, obs3, act3, obs4):
-    tr1 = torch.cat([obs1, act1, obs2], dim=1).unsqueeze(0)
-    tr2 = torch.cat([obs2, act2, obs3], dim=1).unsqueeze(0)
-    tr3 = torch.cat([obs3, act3, obs4], dim=1).unsqueeze(0)
-    input = torch.cat([tr1, tr2, tr3]) # 3 x N x (2 * obs shape + action shape)
-    input = torch.moveaxis(input, 0,1) # N x 3 x (2 * obs shape + action shape)
-    return input
 
 
 def tie_weights(src, trg):
@@ -74,11 +67,8 @@ def weight_init(m):
         gain = nn.init.calculate_gain('relu')
         nn.init.orthogonal_(m.weight.data[:, :, mid, mid], gain)
 
-
-# IL agent is a regressor that want to predict the following actions
 class Actor(nn.Module):
     """MLP actor network."""
-
     def __init__(
             self, obs_shape, action_shape, dynamics_output_shape, hidden_dim,
             encoder_feature_dim, num_layers, num_filters, num_shared_layers
@@ -116,7 +106,8 @@ class Actor(nn.Module):
         # Copy linear layers
         for tgt, src in zip(self.trunk, source.trunk):
             if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
-                tie_weights(src=src, trg=tgt)
+                utils.tie_weights(src=src, trg=tgt)
+
 
 
 class DomainSpecificVisual(nn.Module):
@@ -125,6 +116,7 @@ class DomainSpecificVisual(nn.Module):
     def __init__(self, obs_shape, action_shape, encoder_feature_dim,
                  num_layers, num_filters, num_shared_layers,
                  dynamics_output_shape, hidden_dim=20):
+
         super().__init__()
 
         self.encoder = make_encoder(
@@ -138,51 +130,13 @@ class DomainSpecificVisual(nn.Module):
                                       nn.Linear(hidden_dim, hidden_dim), nn.ReLU(),
                                       nn.Linear(hidden_dim, dynamics_output_shape))
 
-    def forward(self, obs1, act1, obs2, act2, obs3 ):#, act3, obs4):
-        # TODO : maybe try with longer sequence
+    def forward(self, obs1, act1, obs2, act2, obs3):
         obs1 = self.encoder(obs1)
         obs2 = self.encoder(obs2)
         obs3 = self.encoder(obs3)
-        #obs4 = self.encoder(obs4)
         joint_input = torch.cat([obs1, act1, obs2, act2, obs3], dim=1)
-        #joint_input = torch.cat([obs1, act1, obs2, act2, obs3, act3, obs4], dim=1)
         res = self.specific(joint_input)
         return res
-
-class DomainSpecificTemporal(nn.Module):
-
-    def __init__(self, obs_shape, action_shape, encoder_feature_dim,
-                 num_layers, num_filters, num_shared_layers,
-                 dynamics_output_shape, temp_output_dim=228, hidden_dim=20):
-        super().__init__()
-
-        self.encoder = make_encoder(
-            obs_shape, encoder_feature_dim, num_layers,
-            num_filters, num_shared_layers
-        )
-
-        # TODO temporal encoder
-        self.preprocess = make_temp_encoder(
-             2 * encoder_feature_dim + action_shape[0],
-            temp_output_dim
-        )
-
-        self.specific = nn.Sequential(nn.Linear(temp_output_dim, hidden_dim), nn.ReLU(),
-                                      nn.Linear(hidden_dim, hidden_dim), nn.ReLU(),
-                                      nn.Linear(hidden_dim, dynamics_output_shape))
-
-    def forward(self, obs1, act1, obs2, act2, obs3, act3, obs4):
-
-        obs1 = self.encoder(obs1)
-        obs2 = self.encoder(obs2)
-        obs3 = self.encoder(obs3)
-        obs4 = self.encoder(obs4)
-        joint_input = prepare_input(obs1, act1, obs2, act2, obs3, act3, obs4)
-        res = self.preprocess(joint_input)
-        out = self.specific(res)
-        return out
-
-
 
 class InvFunction(nn.Module):
     """MLP for inverse dynamics model."""
@@ -205,7 +159,7 @@ class InvFunction(nn.Module):
         # Copy linear layers
         for tgt, src in zip(self.trunk, source.trunk):
             if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
-                tie_weights(src=src, trg=tgt)
+                utils.tie_weights(src=src, trg=tgt)
 
 
 class SacSSAgent(object):
@@ -244,9 +198,6 @@ class SacSSAgent(object):
         ).cuda()
 
         # Domain specific part
-        # self.domain_spe = DomainSpecificTemporal(obs_shape, action_shape, encoder_feature_dim,
-        #                                        num_layers, num_filters, num_shared_layers,
-        #                                        dynamics_output_shape).cuda()
         self.domain_spe = DomainSpecificVisual(obs_shape, action_shape, encoder_feature_dim,
                                                num_layers, num_filters, num_shared_layers, dynamics_output_shape).cuda()
         self.domain_spe.encoder.copy_conv_weights_from(self.actor.encoder, num_shared_layers)
@@ -304,6 +255,7 @@ class SacSSAgent(object):
             mu = self.actor(obs, dyn_feat)
             return mu.cpu().data.numpy().flatten()
 
+
     def predict_action(self, obs, next_obs, traj, gt, L=None, step=None):
         """Make the forward pass for actor, domain specific and ss head"""
 
@@ -337,19 +289,7 @@ class SacSSAgent(object):
 
         return mu, pred_action, actor_loss + inv_loss
 
-    def update_actor(self, pred, gt, L=None, step=None):
 
-        actor_loss = F.mse_loss(pred, gt)
-
-        if L is not None:
-            L.log('train_actor/loss', actor_loss, step)
-
-        # optimize the actor and the domain specific module
-        self.actor_optimizer.zero_grad()
-        self.domain_spe_optimizer.zero_grad()
-        actor_loss.backward()
-        self.actor_optimizer.step()
-        self.domain_spe_optimizer.step()
 
     def update_inv(self, obs, next_obs, action, traj, L=None, step=None):
 
@@ -362,8 +302,12 @@ class SacSSAgent(object):
 
         inv_loss = F.mse_loss(pred_action, action)
 
+        self.encoder_optimizer.zero_grad()
+        self.inv_optimizer.zero_grad()
         self.domain_spe_optimizer.zero_grad()
         inv_loss.backward()
+        self.encoder_optimizer.step()
+        self.inv_optimizer.step()
         self.domain_spe_optimizer.step()
 
         if L is not None:
