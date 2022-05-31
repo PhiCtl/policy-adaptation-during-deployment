@@ -115,7 +115,6 @@ def init_env(args, mass=None, force=None):
         action_repeat=args.action_repeat,
         mode=args.mode,
         dependent=args.dependent,
-        threshold=args.threshold,
         window=args.window,
         mass= mass if mass else args.cart_mass,
         force=force if force else args.force_walker
