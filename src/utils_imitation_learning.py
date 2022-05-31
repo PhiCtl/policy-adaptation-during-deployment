@@ -46,7 +46,7 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, adapt=False,
             if feat_analysis:  feat_vects.append(ep_agent.extract_feat_vect(mass))
 
             with utils.eval_mode(ep_agent):
-                action = ep_agent.select_action(obs, mass)
+                action = ep_agent.select_action(obs, traj)
             next_obs, reward, done, info, change, _ = env.step(action, rewards)
 
             # Save data
@@ -183,10 +183,11 @@ def setup(args,
     print("-" * 60)
     print("Load experts")
     experts = []
-    for label in labels:
-        # All envs have should have the same action space shape
-        agent = load_agent(label, envs[0].action_space.shape, args) # TODO suppress logger
-        experts.append(agent)
+    if train_IL :
+        for label in labels:
+            # All envs have should have the same action space shape
+            agent = load_agent(label, envs[0].action_space.shape, args) # TODO suppress logger
+            experts.append(agent)
     # Load reference agent
     ref_expert = load_agent("", envs[0].action_space.shape, args)
 
@@ -200,10 +201,11 @@ def setup(args,
     # 4. Initialize buffers by collecting experts data and collect their performance in the meantime
 
     # 4.a We have 1 buffer per (env, RL_expert)
-    for expert, mass, env in zip(experts, labels, envs):
-        buffer, mean, std = collect_expert_samples(expert, env, args, mass)
-        buffers.append(buffer)
-        stats_expert[mass] = [mean, std]
+    if train_IL :
+        for expert, mass, env in zip(experts, labels, envs):
+            buffer, mean, std = collect_expert_samples(expert, env, args, mass)
+            buffers.append(buffer)
+            stats_expert[mass] = [mean, std]
 
     # 4.b Collect trajectories from ref RL agent on different domains
     trajs_buffers = []
