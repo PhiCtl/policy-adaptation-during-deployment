@@ -89,7 +89,8 @@ def main(args):
         agent.save(save_dir, "final")
 
     print("Verify weights")
-    print(il_agents_train[0].verify_weights_from(il_agents_train[1]))
+    for i in range(len(il_agents_train) -1):
+        print(il_agents_train[i].verify_weights_from(il_agents_train[i+1]))
 
     # Final evaluation
     for agent, env, traj_buffer, mass in zip(il_agents_train, envs, trajs_buffers,
