@@ -243,12 +243,4 @@ def setup(args,
 
         il_agents.append(il_agent)
 
-    # Share domain generic part between agents
-    il_agents_train = il_agents
-    if train_IL :
-        il_agents_train = [il_agents[0]]
-        for il_agent in il_agents[1:]:
-            il_agent.tie_agent_from(il_agents[0])
-            il_agents_train.append(il_agent)
-
-    return il_agents_train, experts, envs, dynamics, buffers, trajs_buffers, stats_expert
+    return il_agents, experts, envs, dynamics, buffers, trajs_buffers, stats_expert

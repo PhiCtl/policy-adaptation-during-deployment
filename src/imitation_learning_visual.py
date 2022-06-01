@@ -18,9 +18,14 @@ def main(args):
     domains = [0.4, 0.2 ] #, 0.25, 0.3]
     stats_il = {k: [] for k in labels}  # save score of Il agents
 
-    il_agents_train, experts, envs, _, buffers, trajs_buffers, stats_expert = setup(args,
+    il_agents, experts, envs, _, buffers, trajs_buffers, stats_expert = setup(args,
                                                                                  labels=labels,
                                                                                  domains=domains)
+    # Share domain generic part between agents
+    il_agents_train = [il_agents[0]]
+    for il_agent in il_agents[1:]:
+        il_agent.tie_agent_from(il_agents_train[0])
+        il_agents_train.append(il_agent)
 
     # 6. Train the four IL agents with DAgger algorithm
     print("-" * 60)
