@@ -14,7 +14,7 @@ shared encoder, as input to SS and actor heads
 
 def main(args):
 
-    labels = ["_0_4", "_0_2", "_0_25", "_0_3"],
+    labels = ["_0_4", "_0_2", "_0_25", "_0_3"]
     domains = [0.4, 0.2, 0.25, 0.3]
     stats_il = {k: [] for k in labels}  # save score of Il agents
 
