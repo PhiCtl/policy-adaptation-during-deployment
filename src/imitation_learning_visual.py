@@ -54,6 +54,7 @@ def main(args):
                 losses += loss
 
             # Backward pass
+            if step % 1000 == 0 : print(losses)
             losses.backward()
 
             for agent in il_agents_train:
@@ -86,6 +87,15 @@ def main(args):
     for agent, label in zip(il_agents_train, labels):
         save_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
         agent.save(save_dir, "final")
+
+    # Final evaluation
+    for agent, env, traj_buffer, mass in zip(il_agents_train, envs, trajs_buffers,
+                                                             labels):
+        # Evaluate agent on envt
+        rewards, obses, actions, _ = evaluate_agent(agent, env, args, buffer=traj_buffer)
+        # Save intermediary score
+        stats_il[mass].append([rewards.mean(), rewards.std()])
+        print(f'Performance of agent on mass {mass} : {rewards.mean()} +/- {rewards.std()}')
 
     # 8. Evaluate expert vs IL
     for label in labels:
