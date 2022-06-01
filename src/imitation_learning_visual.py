@@ -27,9 +27,9 @@ def main(args):
     il4.tie_agent_from(il1)
     il_agents_train = [il1, il1, il3, il4]
 
-    print("Verify weights")
-    for i in range(len(il_agents_train) - 1):
-        print(il_agents_train[i].verify_weights_from(il_agents_train[i + 1]))
+    # print("Verify weights")
+    # for i in range(len(il_agents_train) - 1):
+    #     print(il_agents_train[i].verify_weights_from(il_agents_train[i + 1]))
 
     # 6. Train the four IL agents with DAgger algorithm
     print("-" * 60)
@@ -85,10 +85,6 @@ def main(args):
             for agent, label in zip(il_agents_train, labels):
                 save_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
                 agent.save(save_dir, it)
-
-        print("Verify weights")
-        for i in range(len(il_agents_train) - 1):
-            print(il_agents_train[i].verify_weights_from(il_agents_train[i + 1]))
 
 
     # 7. Save IL agents
