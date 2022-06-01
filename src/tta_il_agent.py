@@ -135,7 +135,7 @@ def main(args):
         init = np.random.rand(args.dynamics_output_shape)
     else :
         init = il_agent.extract_feat_vect([tgt_domain, 0.1]) # TODO too specific !!
-    il_agent.init_feat_vect(init)
+    il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
 
     # 2. Prepare test time evaluation
     # Build traj buffers
