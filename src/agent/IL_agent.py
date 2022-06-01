@@ -329,10 +329,10 @@ class ILSSAgent(object):
         batch_size = h_next.shape[0]
 
         inv_loss = 0
-        for obs, next_obs, act in zip(h, h_next, action):
-            obs.unsqueeze_(0)
-            next_obs.unsqueeze_(0)
-            pred_action = self.inv(obs, next_obs, self.feat_vect)
+        for o, n_o, act in zip(h, h_next, action):
+            o = o.unsqueeze(0)
+            n_o = n_o.unsqueeze(0)
+            pred_action = self.inv(o, n_o, self.feat_vect)
             inv_loss += F.mse_loss(pred_action, act)
 
         #self.encoder_optimizer.zero_grad()
