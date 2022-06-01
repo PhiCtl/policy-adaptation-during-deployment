@@ -99,7 +99,8 @@ class PixelEncoder(nn.Module):
 		for i in range(n):
 			if not utils.verify_weights(src=source.convs[i], trg=self.convs[i]):
 				is_equal = False
-		if not utils.verify_weights(trg=self.fc, src=source.fc):
+				print(i)
+		if not utils.verify_weights(trg=self.fc, src=source.fc) and num == self.num_layers:
 			print("Linear layers in encoders are different")
 			is_equal = False
 		return is_equal
