@@ -18,6 +18,7 @@ def make_il_agent(obs_shape, action_shape, dynamics_input_shape, args):
         encoder_lr=args.encoder_lr,
         encoder_tau=args.encoder_tau,
         ss_lr=args.ss_lr,
+        il_lr=args.il_lr,
         ss_update_freq=args.ss_update_freq,
         num_layers=args.num_layers,
         num_shared_layers=args.num_shared_layers,
@@ -178,6 +179,7 @@ class ILSSAgent(object):
         encoder_lr=1e-3,
         encoder_tau=0.005,
         ss_lr=1e-3,
+        il_lr=1e-3,
         ss_update_freq=1,
         num_layers=4,
         num_shared_layers=4,
@@ -186,6 +188,7 @@ class ILSSAgent(object):
         self.encoder_tau = encoder_tau
         self.actor_update_freq = actor_update_freq
         self.ss_update_freq = ss_update_freq
+        self.il_lr = il_lr
 
         assert num_layers >= num_shared_layers, 'num shared layers cannot exceed total amount'
 
@@ -231,7 +234,7 @@ class ILSSAgent(object):
         self.feat_vect = torch.tensor(init_value).unsqueeze(0).float().cuda()
         self.feat_vect.requires_grad = True
         self.feat_vect_optimizer = torch.optim.Adam(
-            [self.feat_vect], lr=1e-3
+            [self.feat_vect], lr=self.il_lr
         )
 
     def init_ss_optimizers(self, encoder_lr=1e-3, ss_lr=1e-3):
