@@ -62,16 +62,19 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, adapt=False,
             actions.append(action)
 
             # Adapt
-            if adapt and buffer is not None:
+            if adapt:
                 # Prepare batch of observations
                 batch_obs = utils.batch_from_obs(torch.Tensor(obs).cuda(), batch_size=args.pad_batch_size)
                 batch_next_obs = utils.batch_from_obs(torch.Tensor(next_obs).cuda(), batch_size=args.pad_batch_size)
                 batch_action = torch.Tensor(action).cuda().unsqueeze(0).repeat(args.pad_batch_size, 1)
 
-                trajs = buff.sample()
-
-                losses.append(ep_agent.update_inv(utils.random_crop(batch_obs), utils.random_crop(batch_next_obs),
-                                                  batch_action, trajs))
+                if buffer is not None :
+                    trajs = buff.sample()
+                    losses.append(ep_agent.update_inv(utils.random_crop(batch_obs), utils.random_crop(batch_next_obs),
+                                                      batch_action, trajs))
+                else:
+                    losses.append(ep_agent.update_inv(utils.random_crop(batch_obs), utils.random_crop(batch_next_obs),
+                                                      batch_action))
 
             if video: video.record(env, losses)
             if recorder: recorder.update(change, reward)

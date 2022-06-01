@@ -33,11 +33,11 @@ def setup(args, domains, labels, checkpoint="final"):
     for label, mass in zip(labels, masses):
         # Load IL agent
         cropped_obs_shape = (3 * args.frame_stack, 84, 84)
-        #il_agent = make_il_agent(
-        il_agent = make_il_agent_visual(
+        il_agent = make_il_agent(
+        #il_agent = make_il_agent_visual(
             obs_shape=cropped_obs_shape,
             action_shape=envs[0].action_space.shape,
-            #dynamics_input_shape=mass.shape[0],
+            dynamics_input_shape=mass.shape[0],
             args=args)
         load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
         il_agent.load(load_dir, checkpoint)
@@ -117,9 +117,10 @@ def main(args):
     """Try test time adaption of IL agents"""
 
     domain = [args.domain_test]
+    tgt_domain = args.domain_training
     label = [args.label]
     rd = args.rd
-    print(f'domain {domain} label {label} at random' if rd else f'domain {domain} label {label}')
+    print(f'domain {domain} label {label} at random' if rd else f'domain {domain} label {label} initialized on {tgt_domain}')
 
     # 1. Load agent
 
@@ -128,28 +129,28 @@ def main(args):
     il_agent, env = il_agents[0], envs[0]
 
     # Initialize feature vector either at random either with domain_specific feature vector
-    # if rd :
-    #     init = np.random.rand(args.dynamics_output_shape)
-    # else :
-    #     init = il_agent.extract_feat_vect([0.3, 0.1])
-    # il_agent.init_feat_vect(init)
+    if rd :
+        init = np.random.rand(args.dynamics_output_shape)
+    else :
+        init = il_agent.extract_feat_vect([tgt_domain, 0.1]) # TODO too specific !!
+    il_agent.init_feat_vect(init)
 
     # 2. Prepare test time evaluation
     # Build traj buffers
-    ref_expert = load_agent("", env.action_space.shape, args)
-    traj_buffer = collect_trajectory(ref_expert, env, args)
+    # ref_expert = load_agent("", env.action_space.shape, args)
+    # traj_buffer = collect_trajectory(ref_expert, env, args)
 
     video_dir = utils.make_dir(os.path.join(args.work_dir, 'video'))
     video = VideoRecorder(video_dir if args.save_video else None, height=448, width=448)
 
     # 3. Non adapting agent
-    reward, _, _, _ = evaluate_agent(il_agent, env, args, buffer=traj_buffer, dyn=False)
+    reward, _, _, _ = evaluate_agent(il_agent, env, args, buffer=None, dyn=True)
     print('non adapting reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
 
     # 4 . Adapting agent
     env = init_env(args, domain[0])
     print(f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-    reward, _, _, _ = evaluate_agent(il_agent, env, args, buffer=traj_buffer, adapt=True, dyn=False)
+    reward, _, _, _ = evaluate_agent(il_agent, env, args, buffer=None, adapt=True, dyn=True)
     print('pad reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
 
 
