@@ -49,11 +49,11 @@ def setup(args, domains, labels, checkpoint="final"):
 def verify_weights(args):
     """Verify if agents indeed share weights"""
 
-    envs, masses, il_agents = setup(args, [0.4, 0.2], ["_0_4", "_0_2"])
+    envs, masses, il_agents = setup(args, [0.4, 0.2, 0.25, 0.3], ["_0_4", "_0_2", "_0_25", "_0_3"])
 
     for agt in il_agents:
-        #print(agt.actor.encoder.fc.state_dict())
-        print(agt.domain_spe.encoder.fc.state_dict())
+        print(agt.actor.encoder.fc.state_dict())
+        #print(agt.domain_spe.encoder.fc.state_dict())
 
 def PCA_decomposition(groups):
 
