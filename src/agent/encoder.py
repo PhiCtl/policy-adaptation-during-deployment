@@ -93,13 +93,14 @@ class PixelEncoder(nn.Module):
 		# Copy linear layer
 		tie_weights(trg=self.fc, src=source.fc)
 
-	def verify_weights_from(self, source):
+	def verify_weights_from(self, source, num=None):
 		is_equal = True
-		n = self.num_layers
+		n = self.num_layers if num is None else num
 		for i in range(n):
 			if not utils.verify_weights(src=source.convs[i], trg=self.convs[i]):
 				is_equal = False
 		if not utils.verify_weights(trg=self.fc, src=source.fc):
+			print("Linear layers in encoders are different")
 			is_equal = False
 		return is_equal
 

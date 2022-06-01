@@ -52,6 +52,8 @@ def verify_weights(args):
     envs, masses, il_agents = setup(args, [0.4, 0.2, 0.25, 0.3], ["_0_4", "_0_2", "_0_25", "_0_3"])
 
     print(il_agents[0].verify_weights_from(il_agents[1]))
+    print("-"*60)
+    print(il_agents[1].verify_weights_from(il_agents[2]))
 
 def PCA_decomposition(groups):
 

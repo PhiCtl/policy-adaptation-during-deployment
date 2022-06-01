@@ -119,7 +119,6 @@ class Actor(nn.Module):
             if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
                 if not utils.verify_weights(src=src, trg=tgt):
                     is_equal = False
-                    print("Linear layers in actor are not the same")
 
         return is_equal
 
@@ -216,6 +215,7 @@ class SacSSAgent(object):
         self.ss_update_freq = ss_update_freq
 
         assert num_layers >= num_shared_layers, 'num shared layers cannot exceed total amount'
+        self.num_shared_layers = num_shared_layers
 
         # Actor
         self.actor = Actor(
@@ -367,6 +367,9 @@ class SacSSAgent(object):
         print("shared Encoders are the same :", self.ss_encoder.verify_weights_from(source.ss_encoder))
         print("Actors are the same : ", self.actor.verify_weights_from(source.actor))
         print("Inv are the same: ", self.inv.verify_weights_from(source.inv))
+        print("Actors and shared encoders share the same layers : ", self.actor.encoder.verify_weights_from(self.ss_encoder, num=self.num_shared_layers))
+        print("Domain spe and actors shared encoders are the same : ", self.actor.encoder.verify_weights_from(
+            self.domain_spe.encoder, num=self.num_shared_layers))
 
         assert (isinstance(source, SacSSAgent))
         return (self.ss_encoder.verify_weights_from(source.ss_encoder) and \
