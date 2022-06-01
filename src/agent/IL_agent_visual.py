@@ -114,10 +114,12 @@ class Actor(nn.Module):
         assert type(self) == type(source)
 
         is_equal = self.encoder.verify_weights_from(source.encoder)
+        print("Encoders in actors are the same : ", is_equal)
         for tgt, src in zip(self.trunk, source.trunk):
             if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
                 if not utils.verify_weights(src=src, trg=tgt):
                     is_equal = False
+                    print("Linear layers in actor are not the same")
 
         return is_equal
 
