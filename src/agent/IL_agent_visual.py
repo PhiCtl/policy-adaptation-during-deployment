@@ -381,41 +381,52 @@ class SacSSAgent(object):
         return self.domain_spe(*traj).cpu().data.numpy().flatten()
 
     def save(self, model_dir, step):
-        torch.save(
-            self.actor.state_dict(), '%s/actor_%s.pt' % (model_dir, step)
-        )
-
-        if self.inv is not None:
-            torch.save(
-                self.inv.state_dict(),
-                '%s/inv_%s.pt' % (model_dir, step)
-            )
-
-        if self.ss_encoder is not None:
-            torch.save(
-                self.ss_encoder.state_dict(),
-                '%s/ss_encoder_%s.pt' % (model_dir, step)
-            )
-
-        if self.domain_spe is not None:
-            torch.save(
-                self.domain_spe.state_dict(),
-                '%s/domain_specific_%s.pt' % (model_dir, step)
-            )
+        path = '%s/full_model%s.pt' % (model_dir, step)
+        torch.save(self, path)
 
     def load(self, model_dir, step):
-        self.actor.load_state_dict(
-            torch.load('%s/actor_%s.pt' % (model_dir, step))
-        )
+        path = '%s/full_model%s.pt' % (model_dir, step)
+        model = torch.load(path)
+        return model
 
-        self.inv.load_state_dict(
-            torch.load('%s/inv_%s.pt' % (model_dir, step))
-        )
 
-        self.ss_encoder.load_state_dict(
-            torch.load('%s/ss_encoder_%s.pt' % (model_dir, step))
-        )
 
-        self.domain_spe.load_state_dict(
-            torch.load('%s/domain_specific_%s.pt' % (model_dir, step))
-        )
+    # def save(self, model_dir, step):
+    #     torch.save(
+    #         self.actor.state_dict(), '%s/actor_%s.pt' % (model_dir, step)
+    #     )
+    #
+    #     if self.inv is not None:
+    #         torch.save(
+    #             self.inv.state_dict(),
+    #             '%s/inv_%s.pt' % (model_dir, step)
+    #         )
+    #
+    #     if self.ss_encoder is not None:
+    #         torch.save(
+    #             self.ss_encoder.state_dict(),
+    #             '%s/ss_encoder_%s.pt' % (model_dir, step)
+    #         )
+    #
+    #     if self.domain_spe is not None:
+    #         torch.save(
+    #             self.domain_spe.state_dict(),
+    #             '%s/domain_specific_%s.pt' % (model_dir, step)
+    #         )
+    #
+    # def load(self, model_dir, step):
+    #     self.actor.load_state_dict(
+    #         torch.load('%s/actor_%s.pt' % (model_dir, step))
+    #     )
+    #
+    #     self.inv.load_state_dict(
+    #         torch.load('%s/inv_%s.pt' % (model_dir, step))
+    #     )
+    #
+    #     self.ss_encoder.load_state_dict(
+    #         torch.load('%s/ss_encoder_%s.pt' % (model_dir, step))
+    #     )
+    #
+    #     self.domain_spe.load_state_dict(
+    #         torch.load('%s/domain_specific_%s.pt' % (model_dir, step))
+    #     )
