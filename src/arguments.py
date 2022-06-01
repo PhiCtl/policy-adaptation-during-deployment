@@ -35,6 +35,7 @@ def parse_args():
 	parser.add_argument('--dynamics_output_shape', default=10, type=int)
 	parser.add_argument('--domain_test', default=0.35, type=float)
 	parser.add_argument('--label', default="_0_3", type=str)
+	parser.add_argument('--domain_training', default=0.3, type=float)
 	parser.add_argument('--rd', default=False, action='store_true')
 	parser.add_argument('--visual', default=False, action='store_true')
 	parser.add_argument('--il_lr', default=1e-3, type=float)
