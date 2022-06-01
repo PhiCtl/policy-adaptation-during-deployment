@@ -362,6 +362,10 @@ class SacSSAgent(object):
 
     def verify_weights_from(self, source):
 
+        print("shared Encoders are the same :", self.ss_encoder.verify_weights_from(source.ss_encoder))
+        print("Actors are the same : ", self.actor.verify_weights_from(source.actor))
+        print("Inv are the same: ", self.inv.verify_weights_from(source.inv))
+
         assert (isinstance(source, SacSSAgent))
         return (self.ss_encoder.verify_weights_from(source.ss_encoder) and \
                 self.actor.verify_weights_from(source.actor) and \
