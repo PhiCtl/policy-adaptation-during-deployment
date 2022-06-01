@@ -22,10 +22,10 @@ def main(args):
                                                                                  labels=labels,
                                                                                  domains=domains)
     # Share domain generic part between agents
-    il_agents_train = [il_agents[0]]
-    for il_agent in il_agents[1:]:
-        il_agent.tie_agent_from(il_agents_train[0])
-        il_agents_train.append(il_agent)
+    il_agents_train = []
+    for i in range(len(il_agents) - 1):
+        il_agents[i].tie_agent_from(il_agents[i+1])
+        il_agents_train.append(il_agents[i])
 
     print("Verify weights")
     for i in range(len(il_agents_train) - 1):
