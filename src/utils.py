@@ -13,7 +13,7 @@ def tie_weights(src, trg):
     trg.bias = src.bias
 
 def verify_weights(src, trg):
-    return trg.weight == src.weight and trg.bias == src.bias
+    return torch.eq(trg.weight,src.weight) and torch.equ(trg.bias, src.bias)
 
 class eval_mode(object):
     def __init__(self, *models):
