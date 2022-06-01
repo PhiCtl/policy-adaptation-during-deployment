@@ -7,15 +7,8 @@ from agent.encoder import make_encoder
 
 LOG_FREQ = 10000
 
-def tie_weights(src, trg):
-    assert type(src) == type(trg)
-    trg.weight = src.weight
-    trg.bias = src.bias
-
-
-def make_il_agent(obs_shape, action_shape, args, dynamics_input_shape):
-    return SacSSAgent(
-        obs_shape=obs_shape,
+def make_il_agent(obs_shape, action_shape, dynamics_input_shape, args):
+    return ILSSAgent(obs_shape=obs_shape,
         action_shape=action_shape,
         dynamics_input_shape=dynamics_input_shape,
         dynamics_output_shape=args.dynamics_output_shape,
@@ -30,7 +23,6 @@ def make_il_agent(obs_shape, action_shape, args, dynamics_input_shape):
         num_shared_layers=args.num_shared_layers,
         num_filters=args.num_filters,
     )
-
 
 def gaussian_logprob(noise, log_std):
     """Compute Gaussian log probability."""
@@ -66,13 +58,11 @@ def weight_init(m):
         gain = nn.init.calculate_gain('relu')
         nn.init.orthogonal_(m.weight.data[:, :, mid, mid], gain)
 
-
-#IL agent is a regresson that want to predict the following actions
 class Actor(nn.Module):
     """MLP actor network."""
     def __init__(
-        self, obs_shape, action_shape, dynamics_output_shape, hidden_dim,
-        encoder_feature_dim, num_layers, num_filters, num_shared_layers
+            self, obs_shape, action_shape, dynamics_output_shape, hidden_dim,
+            encoder_feature_dim, num_layers, num_filters, num_shared_layers
     ):
         super().__init__()
 
@@ -107,10 +97,23 @@ class Actor(nn.Module):
         # Copy linear layers
         for tgt, src in zip(self.trunk, source.trunk):
             if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
-                tie_weights(src=src, trg=tgt)
+                utils.tie_weights(src=src, trg=tgt)
+
+    def verify_weights_from(self, source):
+        # Both objects should be actor models
+        assert type(self) == type(source)
+
+        is_equal = self.encoder.verify_weights_from(source.encoder)
+        print("Encoders in actors are the same : ", is_equal)
+        for tgt, src in zip(self.trunk, source.trunk):
+            if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
+                if not utils.verify_weights(src=src, trg=tgt):
+                    is_equal = False
+
+        return is_equal
 
 
-class DomainSpecific(nn.Module):
+class DomainSpecificGT(nn.Module):
     """MLP specific domain network."""
 
     def __init__(self, dynamics_input_shape, dynamics_output_shape, hidden_dim=20):
@@ -144,10 +147,20 @@ class InvFunction(nn.Module):
         # Copy linear layers
         for tgt, src in zip(self.trunk, source.trunk):
             if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
-                tie_weights(src=src, trg=tgt)
+                utils.tie_weights(src=src, trg=tgt)
+
+    def verify_weights_from(self, source):
+        is_equal = True
+        assert type(self) == type(source)
+        # Copy linear layers
+        for tgt, src in zip(self.trunk, source.trunk):
+            if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
+                if not utils.verify_weights(src=src, trg=tgt):
+                    is_equal = False
+        return is_equal
 
 
-class SacSSAgent(object):
+class ILSSAgent(object):
     """
     SAC with an auxiliary self-supervised task.
     Based on https://github.com/denisyarats/pytorch_sac_ae
@@ -184,7 +197,7 @@ class SacSSAgent(object):
         ).cuda()
 
         # Domain specific part
-        self.domain_spe = DomainSpecific(dynamics_input_shape, dynamics_output_shape).cuda()
+        self.domain_spe = DomainSpecificGT(dynamics_input_shape, dynamics_output_shape).cuda()
         # Initialize feat_vect
         self.dynamics_output_shape = dynamics_output_shape
         self.feat_vect = None
@@ -229,7 +242,7 @@ class SacSSAgent(object):
         self.inv_optimizer =  torch.optim.Adam(
                 self.inv.parameters(), lr=ss_lr
         )
-    
+
     def train(self, training=True):
         self.training = training
         self.actor.train(training)
@@ -257,7 +270,7 @@ class SacSSAgent(object):
                 mu  = self.actor(obs, dyn_feat)
                 return mu.cpu().data.numpy().flatten()
 
-    def predict_action(self, obs, next_obs, gt, force = None, mass = None, L=None, step=None):
+    def predict_action(self, obs, next_obs, gt, force=None, mass=None, L=None, step=None):
         """Make the forward pass for actor, domain specific and ss head"""
 
         # 1. Reset gradients
@@ -267,21 +280,23 @@ class SacSSAgent(object):
         self.inv_optimizer.zero_grad()
 
         # 2 . Do the forward pass
-        if obs.dim() < 3 :
+        if obs.dim() < 3:
             obs = obs.unsqueeze(0)
-        # TODO should we move obs to cuda ?
 
         if mass is not None:
             mass = torch.FloatTensor(mass).cuda()
-            mass = mass.repeat(obs.shape[0], 1) # create a batch of masses
+            mass = mass.repeat(obs.shape[0], 1)  # create a batch of masses
 
-            dyn_feat = self.domain_spe(mass) # compute dynamics features
-        
+            dyn_feat = self.domain_spe(mass)  # compute dynamics features
+
         elif force is not None:
             force = torch.FloatTensor(force).cuda()
-            force = force.repeat(obs.shape[0], 1) # create a batch of forces
-            
-            dyn_feat = self.domain_spe(force) # compute dynamics features
+            force = force.repeat(obs.shape[0], 1)  # create a batch of forces
+
+            dyn_feat = self.domain_spe(force)  # compute dynamics features
+
+        else :
+            raise NotImplementedError
 
         # Make actor prediction
         mu = self.actor(obs, dyn_feat)
@@ -340,7 +355,7 @@ class SacSSAgent(object):
     def tie_agent_from(self, source):
         """Tie all domain generic part between self and source"""
         # Tie full agents
-        assert(isinstance(source, SacSSAgent))
+        assert(isinstance(source, ILSSAgent))
 
         # Tie SS encoder
         self.ss_encoder.tie_encoder_from(source.ss_encoder)
@@ -348,6 +363,17 @@ class SacSSAgent(object):
         self.actor.tie_actor_from(source.actor)
         # Tie inv
         self.inv.tie_inv_from(source.inv)
+
+    def verify_weights_from(self, source):
+
+        print("shared Encoders are the same :", self.ss_encoder.verify_weights_from(source.ss_encoder))
+        print("Actors are the same : ", self.actor.verify_weights_from(source.actor))
+        print("Inv are the same: ", self.inv.verify_weights_from(source.inv))
+
+        assert (isinstance(source, ILSSAgent))
+        return (self.ss_encoder.verify_weights_from(source.ss_encoder) and \
+                self.actor.verify_weights_from(source.actor) and \
+                self.inv.verify_weights_from(source.inv))
 
     def extract_feat_vect(self, mass= None, force = None):
         """Extract dynamics feature vector to check if stays constant"""
@@ -362,23 +388,23 @@ class SacSSAgent(object):
         torch.save(
             self.actor.state_dict(), '%s/actor_%s.pt' % (model_dir, step)
         )
-    
+
         if self.inv is not None:
             torch.save(
                 self.inv.state_dict(),
                 '%s/inv_%s.pt' % (model_dir, step)
             )
-     
+
         if self.ss_encoder is not None:
             torch.save(
                 self.ss_encoder.state_dict(),
                 '%s/ss_encoder_%s.pt' % (model_dir, step)
             )
-        
+
         if self.domain_spe is not None:
             torch.save(
                 self.domain_spe.state_dict(),
-                '%s/domain_specific_%s.pt' %(model_dir, step)
+                '%s/domain_specific_%s.pt' % (model_dir, step)
             )
 
     def load(self, model_dir, step):
