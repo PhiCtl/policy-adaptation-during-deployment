@@ -12,6 +12,9 @@ def tie_weights(src, trg):
     trg.weight = src.weight
     trg.bias = src.bias
 
+def verify_weights(src, trg):
+    return trg.weight == src.weight and trg.bias == src.bias
+
 class eval_mode(object):
     def __init__(self, *models):
         self.models = models

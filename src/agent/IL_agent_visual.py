@@ -109,6 +109,18 @@ class Actor(nn.Module):
             if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
                 utils.tie_weights(src=src, trg=tgt)
 
+    def verify_weights_from(self, source):
+        # Both objects should be actor models
+        assert type(self) == type(source)
+
+        is_equal = self.encoder.verify_weights_from(source.encoder)
+        for tgt, src in zip(self.trunk, source.trunk):
+            if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
+                if not utils.verify_weights(src=src, trg=tgt):
+                    is_equal = False
+
+        return is_equal
+
 
 
 class DomainSpecificVisual(nn.Module):
@@ -161,6 +173,17 @@ class InvFunction(nn.Module):
         for tgt, src in zip(self.trunk, source.trunk):
             if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
                 utils.tie_weights(src=src, trg=tgt)
+
+    def verify_weights_from(self, source):
+        is_equal = True
+        assert type(self) == type(source)
+        # Copy linear layers
+        for tgt, src in zip(self.trunk, source.trunk):
+            if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
+                if not utils.verify_weights(src=src, trg=tgt):
+                    is_equal = False
+        return is_equal
+
 
 
 class SacSSAgent(object):
@@ -336,6 +359,13 @@ class SacSSAgent(object):
         self.actor.tie_actor_from(source.actor)
         # Tie inv
         self.inv.tie_inv_from(source.inv)
+
+    def verify_weights_from(self, source):
+
+        assert (isinstance(source, SacSSAgent))
+        return (self.ss_encoder.verify_weights_from(source.ss_encoder) and \
+                self.actor.verify_weights_from(source.actor) and \
+                self.inv.verify_weights_from(source.inv))
 
     def extract_feat_vect(self, traj):
         """Extract dynamics feature vector"""

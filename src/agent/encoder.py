@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import utils
 
 
 OUT_DIM = {2: 39, 4: 35, 6: 31, 8: 27, 10: 23, 11: 21, 12: 19}
@@ -91,6 +92,16 @@ class PixelEncoder(nn.Module):
 		self.copy_conv_weights_from(source)
 		# Copy linear layer
 		tie_weights(trg=self.fc, src=source.fc)
+
+	def verify_weights_from(self, source):
+		is_equal = True
+		n = self.num_layers
+		for i in range(n):
+			if not utils.verify_weights(src=source.convs[i], trg=self.convs[i]):
+				is_equal = False
+		if not utils.verify_weights(trg=self.fc, src=source.fc):
+			is_equal = False
+		return is_equal
 
 
 
