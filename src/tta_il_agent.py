@@ -33,11 +33,11 @@ def setup(args, domains, labels, checkpoint="final"):
     for label, mass in zip(labels, masses):
         # Load IL agent
         cropped_obs_shape = (3 * args.frame_stack, 84, 84)
-        #il_agent = make_il_agent(
-        il_agent = make_il_agent_visual(
+        il_agent = make_il_agent(
+        #il_agent = make_il_agent_visual(
             obs_shape=cropped_obs_shape,
             action_shape=envs[0].action_space.shape,
-            #dynamics_input_shape=mass.shape[0],
+            dynamics_input_shape=mass.shape[0],
             args=args)
         load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
         agent = il_agent.load(load_dir, checkpoint)
@@ -151,11 +151,9 @@ def main(args):
 
     # 4 . Adapting agent
     env = init_env(args, domain[0])
-    print(il_agent.feat_vect)
     print(f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
     reward, _, _, _ = evaluate_agent(il_agent, env, args, buffer=None, adapt=True, dyn=True)
     print('pad reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
-    print(il_agent.feat_vect)
 
 
 def test_agents(args):
@@ -179,5 +177,5 @@ def test_agents(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    verify_weights(args)
+    main(args)
     
