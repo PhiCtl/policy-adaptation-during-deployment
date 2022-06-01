@@ -11,7 +11,7 @@ from agent.IL_agent_visual import make_il_agent_visual
 from eval import init_env
 
 def evaluate_agent(agent, env, args, exp_type="", buffer=None, adapt=False,
-                   feat_analysis=False, video=None, recorder=None, dyn=True):
+                   feat_analysis=False, video=None, recorder=None, dyn=False):
     """Evaluate agent on env, storing obses, actions and next obses
     Params : - agent : IL agent visual
              - env : env to evaluate this agent in
@@ -26,8 +26,11 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, adapt=False,
 
     for i in tqdm(range(args.num_rollouts)):
 
-        ep_agent = deepcopy(agent)
-        ep_agent.train()
+        if adapt:
+            ep_agent = deepcopy(agent)
+            ep_agent.train()
+        else :
+            ep_agent = agent
 
         if video: video.init(enabled=True)
 
