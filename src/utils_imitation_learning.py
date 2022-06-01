@@ -21,8 +21,10 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, adapt=False,
     # TODO handle GT IL agents
     ep_rewards = []
     obses, actions, feat_vects = [], [], []
+
     if buffer :
-        buffer.batch_size = args.pad_batch_size
+        buff = deepcopy(buffer)
+        buff.batch_size = args.pad_batch_size
 
     for i in tqdm(range(args.num_rollouts)):
 
@@ -43,7 +45,7 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, adapt=False,
             # Take a step
 
             # Trajectory : (obs, act, obs, act, obs)
-            traj = None if buffer is None else buffer.sample_traj()
+            traj = None if buffer is None else buff.sample_traj()
             mass = env.get_masses()
             if feat_analysis:  feat_vects.append(ep_agent.extract_feat_vect(mass))
 
@@ -66,7 +68,7 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, adapt=False,
                 batch_next_obs = utils.batch_from_obs(torch.Tensor(next_obs).cuda(), batch_size=args.pad_batch_size)
                 batch_action = torch.Tensor(action).cuda().unsqueeze(0).repeat(args.pad_batch_size, 1)
 
-                trajs = buffer.sample()
+                trajs = buff.sample()
 
                 losses.append(ep_agent.update_inv(utils.random_crop(batch_obs), utils.random_crop(batch_next_obs),
                                                   batch_action, trajs))
