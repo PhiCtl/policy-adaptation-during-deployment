@@ -18,14 +18,14 @@ def main(args):
     domains = [0.4, 0.2, 0.25, 0.3]
     stats_il = {k: [] for k in labels}  # save score of Il agents
 
-    il_agents, experts, envs, _, buffers, trajs_buffers, stats_expert = setup(args,
+    [il1, il2, il3, il4], experts, envs, _, buffers, trajs_buffers, stats_expert = setup(args,
                                                                                  labels=labels,
                                                                                  domains=domains)
     # Share domain generic part between agents
-    il_agents_train = []
-    for i in range(len(il_agents) - 1):
-        il_agents[i].tie_agent_from(il_agents[i+1])
-        il_agents_train.append(il_agents[i])
+    il2.tie_agent_from(il1)
+    il3.tie_agent_from(il1)
+    il4.tie_agent_from(il1)
+    il_agents_train = [il1, il1, il3, il4]
 
     print("Verify weights")
     for i in range(len(il_agents_train) - 1):
