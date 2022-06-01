@@ -88,6 +88,9 @@ def main(args):
         save_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
         agent.save(save_dir, "final")
 
+    print("Verify weights")
+    print(il_agents_train[0].verify_weights_from(il_agents_train[1]))
+
     # Final evaluation
     for agent, env, traj_buffer, mass in zip(il_agents_train, envs, trajs_buffers,
                                                              labels):
