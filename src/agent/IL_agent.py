@@ -230,8 +230,8 @@ class ILSSAgent(object):
 
         self.train()
 
-    def init_feat_vect(self, init_value):
-        self.feat_vect = torch.tensor(init_value).unsqueeze(0).float().cuda()
+    def init_feat_vect(self, init_value, batch_size):
+        self.feat_vect = torch.tensor(init_value).unsqueeze(0).repeat(batch_size,1).float().cuda()
         self.feat_vect.requires_grad = True
         self.feat_vect_optimizer = torch.optim.Adam(
             [self.feat_vect], lr=self.il_lr
@@ -326,8 +326,7 @@ class ILSSAgent(object):
 
         h = self.ss_encoder(obs)
         h_next = self.ss_encoder(next_obs)
-        feats = self.feat_vect.repeat(obs.shape[0], 1)
-        pred_action = self.inv(h, h_next, feats)
+        pred_action = self.inv(h, h_next, self.feat_vect)
 
         inv_loss = F.mse_loss(pred_action, action)
 
