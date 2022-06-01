@@ -341,8 +341,6 @@ class ILSSAgent(object):
 
         inv_loss.backward()
 
-        print(self.feat_vect)
-
         #self.encoder_optimizer.step()
         #self.inv_optimizer.step()
         self.feat_vect_optimizer.step()
