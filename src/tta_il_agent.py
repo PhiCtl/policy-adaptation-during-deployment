@@ -56,11 +56,11 @@ def verify_weights(args):
     # print(il_agents[1].verify_weights_from(il_agents[2]))
     #
     a0, a1 = il_agents[0], il_agents[1]
-    print(a1.actor.encoder.fc, a0.actor.encoder.fc)
+    print(a1.actor.encoder.fc.weight, a0.actor.encoder.fc.weight)
     print("-" * 60)
-    print(a1.actor.encoder.convs[0], a1.ss_encoder.convs[0])
+    print(a1.actor.encoder.convs[0].weight, a1.ss_encoder.convs[0].weight)
     print("-" * 60)
-    print(a1.actor.encoder.convs[0], a1.domain_spe.encoder.convs[0])
+    print(a1.actor.encoder.convs[0].weight, a1.domain_spe.encoder.convs[0].weight)
 
 def PCA_decomposition(groups):
 
