@@ -132,9 +132,9 @@ def main(args):
 
     # Initialize feature vector either at random either with domain_specific feature vector
     if rd :
-        init = np.random.rand(args.dynamics_output_shape)
+        init = np.random.rand((2,))
     else :
-        init = il_agent.extract_feat_vect([tgt_domain, 0.1]) # TODO too specific !!
+        init = [tgt_domain, 0.1]
     il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
 
     # 2. Prepare test time evaluation
