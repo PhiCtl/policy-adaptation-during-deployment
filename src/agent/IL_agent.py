@@ -108,6 +108,7 @@ class Actor(nn.Module):
         print("Encoders in actors are the same : ", is_equal)
         for tgt, src in zip(self.trunk, source.trunk):
             if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
+                print("lin layer actor")
                 if not utils.verify_weights(src=src, trg=tgt):
                     is_equal = False
 
@@ -156,6 +157,7 @@ class InvFunction(nn.Module):
         # Copy linear layers
         for tgt, src in zip(self.trunk, source.trunk):
             if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
+                print("lin layer inv")
                 if not utils.verify_weights(src=src, trg=tgt):
                     is_equal = False
         return is_equal
