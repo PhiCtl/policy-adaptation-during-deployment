@@ -236,7 +236,7 @@ class ILSSAgent(object):
         self.feat_vect = torch.tensor(init_value).unsqueeze(0).float().cuda()
         self.feat_vect.requires_grad = True
         self.feat_vect_optimizer = torch.optim.Adam(
-            [self.feat_vect], lr=self.il_lr
+            [self.feat_vect, *self.domain_spe.parameters()], lr=self.il_lr
         )
 
     def init_ss_optimizers(self, encoder_lr=1e-3, ss_lr=1e-3):
@@ -271,7 +271,7 @@ class ILSSAgent(object):
                     force = force.unsqueeze(0)
                     dyn_feat = self.domain_spe(force)
                 else: # If we're at test phase
-                    dyn_feat = self.feat_vect
+                    dyn_feat = self.domain_spe(self.feat_vect)
                 mu  = self.actor(obs, dyn_feat)
                 return mu.cpu().data.numpy().flatten()
 
@@ -328,23 +328,19 @@ class ILSSAgent(object):
 
         h = self.ss_encoder(obs)
         h_next = self.ss_encoder(next_obs)
-        batch_size = h_next.shape[0]
 
         inv_loss = 0
         for o, n_o, act in zip(h, h_next, action):
             o = o.unsqueeze(0)
             n_o = n_o.unsqueeze(0)
             act = act.unsqueeze(0)
-            pred_action = self.inv(o, n_o, self.feat_vect)
+            dyn_feat = self.domain_spe(self.feat_vect)
+            pred_action = self.inv(o, n_o, dyn_feat)
             inv_loss += F.mse_loss(pred_action, act)
 
-        #self.encoder_optimizer.zero_grad()
-        #self.inv_optimizer.zero_grad()
         self.feat_vect_optimizer.zero_grad()
         inv_loss.backward()
 
-        #self.encoder_optimizer.step()
-        #self.inv_optimizer.step()
         self.feat_vect_optimizer.step()
 
         if L is not None:
