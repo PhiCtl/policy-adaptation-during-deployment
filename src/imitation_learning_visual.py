@@ -84,13 +84,13 @@ def main(args):
         if it % 2 == 0 :
             for agent, label in zip(il_agents_train, labels):
                 save_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
-                agent.save(save_dir, it)
+                agent.save_full(save_dir, it)
 
 
     # 7. Save IL agents
     for agent, label in zip(il_agents_train, labels):
         save_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
-        agent.save(save_dir, "final")
+        agent.save_full(save_dir, "final")
 
     print("Verify weights")
     for i in range(len(il_agents_train) -1):
