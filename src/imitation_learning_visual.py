@@ -18,18 +18,18 @@ def main(args):
     domains = [0.4, 0.2, 0.25, 0.3]
     stats_il = {k: [] for k in labels}  # save score of Il agents
 
-    [il1, il2, il3, il4], experts, envs, _, buffers, trajs_buffers, stats_expert = setup(args,
+    il_agents, experts, envs, _, buffers, trajs_buffers, stats_expert = setup(args,
                                                                                  labels=labels,
                                                                                  domains=domains)
     # Share domain generic part between agents
-    il2.tie_agent_from(il1)
-    il3.tie_agent_from(il1)
-    il4.tie_agent_from(il1)
-    il_agents_train = [il1, il1, il3, il4]
+    il_agents_train = [il_agents[0]]
+    for il_agent in il_agents[1:]:
+        il_agent.tie_agent_from(il_agents_train[0])
+        il_agents_train.append(il_agent)
 
     # print("Verify weights")
-    # for i in range(len(il_agents_train) - 1):
-    #     print(il_agents_train[i].verify_weights_from(il_agents_train[i + 1]))
+    for i in range(len(il_agents_train) - 1):
+        print(il_agents_train[i].verify_weights_from(il_agents_train[i + 1]))
 
     # 6. Train the four IL agents with DAgger algorithm
     print("-" * 60)
