@@ -105,8 +105,8 @@ def evaluate(env, agent, args, buffer=None, video=None, recorder=None, adapt=Fal
     return np.mean(episode_rewards), np.std(episode_rewards)
 
 
-def init_env(args, mass=None, force=None):
-    utils.set_seed_everywhere(args.seed)
+def init_env(args, mass=None, force=None, seed=None):
+    utils.set_seed_everywhere(args.seed if seed is None else seed)
     return make_pad_env(
         domain_name=args.domain_name,
         task_name=args.task_name,
