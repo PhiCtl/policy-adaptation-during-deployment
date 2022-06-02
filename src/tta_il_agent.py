@@ -15,17 +15,18 @@ from agent.IL_agent import make_il_agent
 from eval import init_env
 from utils_imitation_learning import evaluate_agent, collect_trajectory, load_agent, eval_adapt #, setup
 
-def setup(args, domains, labels, checkpoint="final"):
+def setup(args, domains, labels, checkpoint="final", seed=None):
 
     """Load IL agents and corresponding envs for testing"""
 
     # TODO generalize to non visual and use it in the below functions
     # TODO generalize to forces
+    if seed is None : seed = args.seed
 
     envs = []
     masses = []
     for mass in domains:
-        env = init_env(args, mass)
+        env = init_env(args, mass, seed=seed)
         masses.append(env.get_masses())
         envs.append(env)
 
@@ -57,10 +58,10 @@ def verify_weights(args):
     print("-" * 60)
     print(il_agents[2].verify_weights_from(il_agents[3]))
     #
-    # a0, a1 = il_agents[0], il_agents[1]
-    # print(a1.actor.encoder.convs[0].weight, a0.actor.encoder.convs[0].weight)
-    # print("-" * 60)
-    # print(a1.actor.encoder.convs[1].bias, a0.actor.encoder.convs[1].bias)
+    a0, a1 = il_agents[0], il_agents[1]
+    print(a1.actor.encoder.convs[0].weight, a0.actor.encoder.convs[0].weight)
+    print("-" * 60)
+    print(a1.actor.encoder.convs[1].bias, a0.actor.encoder.convs[1].bias)
 
 def PCA_decomposition(groups):
 
@@ -123,37 +124,44 @@ def main(args):
     label = [args.label]
     rd = args.rd
     print(f'domain {domain} label {label} at random' if rd else f'domain {domain} label {label} initialized on {tgt_domain}')
+    adapt_rw, rw = [], []
 
-    # 1. Load agent
+    for i in range(4):
+        # Load environment
+        envs, masses, il_agents = setup(args, domain, label, seed=i)
+        il_agent, env = il_agents[0], envs[0]
 
-    # Load environment
-    envs, masses, il_agents = setup(args, domain, label)
-    il_agent, env = il_agents[0], envs[0]
+        # Initialize feature vector either at random either with domain_specific feature vector
+        if rd :
+            init = np.random.rand((2,1))
+        else :
+            init = [tgt_domain, 0.1]
+        il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
 
-    # Initialize feature vector either at random either with domain_specific feature vector
-    if rd :
-        init = np.random.rand((2,))
-    else :
-        init = [tgt_domain, 0.1]
-    il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
+        # 2. Prepare test time evaluation
+        # Build traj buffers
+        # ref_expert = load_agent("", env.action_space.shape, args)
+        # traj_buffer = collect_trajectory(ref_expert, env, args)
 
-    # 2. Prepare test time evaluation
-    # Build traj buffers
-    # ref_expert = load_agent("", env.action_space.shape, args)
-    # traj_buffer = collect_trajectory(ref_expert, env, args)
+        video_dir = utils.make_dir(os.path.join(args.work_dir, 'video'))
+        video = VideoRecorder(video_dir if args.save_video else None, height=448, width=448)
 
-    video_dir = utils.make_dir(os.path.join(args.work_dir, 'video'))
-    video = VideoRecorder(video_dir if args.save_video else None, height=448, width=448)
+        # 3. Non adapting agent
+        reward, _, _ = eval_adapt(il_agent, env, args)
+        adapt_rw.append(reward)
+        print('non adapting reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
 
-    # 3. Non adapting agent
-    reward, _, _ = eval_adapt(il_agent, env, args)
-    print('non adapting reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
+        # 4 . Adapting agent
+        print(f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
+        reward, _, _ = eval_adapt(il_agent, env, args, adapt=True)
+        rw.append(reward)
+        print('pad reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
 
-    # 4 . Adapting agent
-    print(f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-    reward, _, _ = eval_adapt(il_agent, env, args, adapt=True)
-    print('pad reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
+    adapt_rw = np.array(adapt_rw)
+    print(f'Adapting rw {adapt_rw.mean()} +/- {adapt_rw.std()}')
 
+    rw = np.array(rw)
+    print(f'Non Adapting rw {rw.mean()} +/- {rw.std()}')
 
 def test_agents(args):
     #il_agents_train, experts, envs, dynamics, buffers, trajs_buffers, stats_expert = setup(args, train_IL=False, checkpoint="8", dyn=False)
