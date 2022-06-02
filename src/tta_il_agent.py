@@ -146,8 +146,8 @@ def main(args):
     video = VideoRecorder(video_dir if args.save_video else None, height=448, width=448)
 
     # 3. Non adapting agent
-    reward, _, _ = eval_adapt(il_agent, env, args)
-    print('non adapting reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
+    # reward, _, _ = eval_adapt(il_agent, env, args)
+    # print('non adapting reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
 
     # 4 . Adapting agent
     print(f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
