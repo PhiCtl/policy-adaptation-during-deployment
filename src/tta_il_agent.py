@@ -40,7 +40,7 @@ def setup(args, domains, labels, checkpoint="final"):
             #dynamics_input_shape=mass.shape[0],
             args=args)
         load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
-        il_agent.load(load_dir, checkpoint)
+        il_agent = il_agent.load(load_dir, checkpoint)
         il_agents.append(il_agent)
 
     return envs, masses, il_agents
