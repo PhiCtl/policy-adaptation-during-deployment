@@ -126,42 +126,38 @@ def main(args):
     print(f'domain {domain} label {label} at random' if rd else f'domain {domain} label {label} initialized on {tgt_domain}')
     adapt_rw, rw = [], []
 
-    for i in range(4):
-        # Load environment
-        envs, masses, il_agents = setup(args, domain, label, seed=i)
-        il_agent, env = il_agents[0], envs[0]
 
-        # Initialize feature vector either at random either with domain_specific feature vector
-        if rd :
-            init = np.random.rand((2,1))
-        else :
-            init = il_agent.extract_feat_vect([tgt_domain, 0.1])#[tgt_domain, 0.1]
-        il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
+    # Load environment
+    envs, masses, il_agents = setup(args, domain, label)
+    il_agent, env = il_agents[0], envs[0]
 
-        # 2. Prepare test time evaluation
-        # Build traj buffers
-        # ref_expert = load_agent("", env.action_space.shape, args)
-        # traj_buffer = collect_trajectory(ref_expert, env, args)
+    # Initialize feature vector either at random either with domain_specific feature vector
+    if rd :
+        init = np.random.rand((2,1))
+    else :
+        init = il_agent.extract_feat_vect([tgt_domain, 0.1])#[tgt_domain, 0.1]
+    il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
 
-        video_dir = utils.make_dir(os.path.join(args.work_dir, 'video'))
-        video = VideoRecorder(video_dir if args.save_video else None, height=448, width=448)
+    # 2. Prepare test time evaluation
+    # Build traj buffers
+    # ref_expert = load_agent("", env.action_space.shape, args)
+    # traj_buffer = collect_trajectory(ref_expert, env, args)
 
-        # 3. Non adapting agent
-        reward, _, _ = eval_adapt(il_agent, env, args)
-        adapt_rw.append(reward)
-        print('non adapting reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
+    video_dir = utils.make_dir(os.path.join(args.work_dir, 'video'))
+    video = VideoRecorder(video_dir if args.save_video else None, height=448, width=448)
 
+    # 3. Non adapting agent
+    reward, _, _ = eval_adapt(il_agent, env, args)
+    print('non adapting reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
+
+    for lr in [1e-4, 1e-3, 1e-2, 1e-1]:
         # 4 . Adapting agent
+        il_agent.il_lr = lr
         print(f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
         reward, _, _ = eval_adapt(il_agent, env, args, adapt=True)
-        rw.append(reward)
-        print('pad reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
+        print('pad reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label, ' and lr ', lr)
 
-    adapt_rw = np.array(adapt_rw)
-    print(f'Adapting rw {adapt_rw.mean()} +/- {adapt_rw.std()}')
 
-    rw = np.array(rw)
-    print(f'Non Adapting rw {rw.mean()} +/- {rw.std()}')
 
 def test_agents(args):
     #il_agents_train, experts, envs, dynamics, buffers, trajs_buffers, stats_expert = setup(args, train_IL=False, checkpoint="8", dyn=False)
