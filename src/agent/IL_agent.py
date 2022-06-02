@@ -236,7 +236,7 @@ class ILSSAgent(object):
         self.feat_vect = torch.tensor(init_value).unsqueeze(0).float().cuda()
         self.feat_vect.requires_grad = True
         self.feat_vect_optimizer = torch.optim.Adam(
-            [self.feat_vect, *self.domain_spe.parameters()], lr=self.il_lr
+            [self.feat_vect], lr=self.il_lr
         )
 
     def init_ss_optimizers(self, encoder_lr=1e-3, ss_lr=1e-3):
