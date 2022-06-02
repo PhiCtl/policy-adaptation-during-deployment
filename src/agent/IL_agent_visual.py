@@ -152,6 +152,21 @@ class DomainSpecificVisual(nn.Module):
         res = self.specific(joint_input)
         return res
 
+    def verify_weights_from(self, source):
+
+        # Both objects should be actor models
+        assert type(self) == type(source)
+
+        is_diff = not self.encoder.verify_weights_from(source.encoder)
+        print("Encoders in domain are not the same : ", is_diff)
+        for tgt, src in zip(self.specific, source.specific):
+            if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
+                if utils.verify_weights(src=src, trg=tgt):
+                    is_diff = False
+
+        return is_diff
+
+
 class InvFunction(nn.Module):
     """MLP for inverse dynamics model."""
 
@@ -370,11 +385,8 @@ class SacSSAgent(object):
         print("Actors and shared encoders share the same layers : ", self.actor.encoder.verify_weights_from(self.ss_encoder, num=self.num_shared_layers))
         print("Domain spe and actors shared encoders are the same : ", self.actor.encoder.verify_weights_from(
             self.domain_spe.encoder, num=self.num_shared_layers))
-
+        print("Domain spe are not the same", self.domain_spe.verify_weights_from(source.domain_spe))
         assert (isinstance(source, SacSSAgent))
-        return (self.ss_encoder.verify_weights_from(source.ss_encoder) and \
-                self.actor.verify_weights_from(source.actor) and \
-                self.inv.verify_weights_from(source.inv))
 
     def extract_feat_vect(self, traj):
         """Extract dynamics feature vector"""
