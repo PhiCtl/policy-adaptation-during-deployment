@@ -332,6 +332,7 @@ class ILSSAgent(object):
         for o, n_o, act in zip(h, h_next, action):
             o = o.unsqueeze(0)
             n_o = n_o.unsqueeze(0)
+            act = act.unsqueeze(0)
             pred_action = self.inv(o, n_o, self.feat_vect)
             inv_loss += F.mse_loss(pred_action, act)
 
