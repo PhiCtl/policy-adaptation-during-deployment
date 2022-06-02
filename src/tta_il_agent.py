@@ -33,11 +33,11 @@ def setup(args, domains, labels, checkpoint="final"):
     for label, mass in zip(labels, masses):
         # Load IL agent
         cropped_obs_shape = (3 * args.frame_stack, 84, 84)
-        #il_agent = make_il_agent(
-        il_agent = make_il_agent_visual(
+        il_agent = make_il_agent(
+        #il_agent = make_il_agent_visual(
             obs_shape=cropped_obs_shape,
             action_shape=envs[0].action_space.shape,
-            #dynamics_input_shape=mass.shape[0],
+            dynamics_input_shape=mass.shape[0],
             args=args)
         load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
         il_agent.load(load_dir, checkpoint)
