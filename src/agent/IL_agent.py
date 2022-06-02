@@ -271,7 +271,7 @@ class ILSSAgent(object):
                     force = force.unsqueeze(0)
                     dyn_feat = self.domain_spe(force)
                 else: # If we're at test phase
-                    dyn_feat = self.domain_spe(self.feat_vect)
+                    dyn_feat = self.feat_vect #self.domain_spe(self.feat_vect)
                 mu  = self.actor(obs, dyn_feat)
                 return mu.cpu().data.numpy().flatten()
 
@@ -334,8 +334,9 @@ class ILSSAgent(object):
             o = o.unsqueeze(0)
             n_o = n_o.unsqueeze(0)
             act = act.unsqueeze(0)
-            dyn_feat = self.domain_spe(self.feat_vect)
-            pred_action = self.inv(o, n_o, dyn_feat)
+            #dyn_feat = self.domain_spe(self.feat_vect)
+            #pred_action = self.inv(o, n_o, dyn_feat)
+            pred_action = self.inv(o, n_o, self.feat_vect)
             inv_loss += F.mse_loss(pred_action, act)
 
         # self.encoder_optimizer.zero_grad()
