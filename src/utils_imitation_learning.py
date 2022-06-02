@@ -10,7 +10,7 @@ from agent.IL_agent import make_il_agent
 from agent.IL_agent_visual import make_il_agent_visual
 from eval import init_env
 
-def evaluate_agent(agent, env, args, exp_type="", buffer=None, adapt=False,
+def evaluate_agent(ep_agent, env, args, exp_type="", buffer=None,
                    feat_analysis=False, video=None, recorder=None, dyn=False):
     """Evaluate agent on env, storing obses, actions and next obses
     Params : - agent : IL agent visual
@@ -27,13 +27,6 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, adapt=False,
         buff.batch_size = args.pad_batch_size
 
     for i in tqdm(range(args.num_rollouts)):
-
-        if adapt:
-            ep_agent = deepcopy(agent)
-            ep_agent.train()
-            print(ep_agent.feat_vect)
-        else :
-            ep_agent = agent
 
         if video: video.init(enabled=True)
 
@@ -62,6 +55,61 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, adapt=False,
             obses.append(obs)
             actions.append(action)
 
+
+            if video: video.record(env, losses)
+            if recorder: recorder.update(change, reward)
+
+            obs = next_obs
+            step += 1
+
+        obses.append(obs)  # Save last next obs
+        ep_rewards.append(episode_reward)
+        if video: video.save(f'{args.mode}_{exp_type}_{i}.mp4')
+        if recorder: recorder.end_episode()
+
+
+    if recorder: recorder.save("performance_" + exp_type, False)
+
+    return np.array(ep_rewards), obses, actions, feat_vects
+
+def eval_adapt(agent, env, args, exp_type="", adapt=False, video=None, recorder=None):
+    """Evaluate agent on env, storing obses, actions and next obses
+    Params : - agent : IL agent visual
+             - env : env to evaluate this agent in
+             - args
+             - buffer : needed to train IL agent with a trajectory as input to the domain specific module"""
+
+    # TODO handle GT IL agents
+    ep_rewards = []
+    obses, actions =  [], []
+
+
+    for i in tqdm(range(args.num_rollouts)):
+
+        if adapt:
+            ep_agent = deepcopy(agent)
+            ep_agent.train()
+        else :
+            ep_agent = agent
+
+        if video: video.init(enabled=True)
+
+        obs = env.reset()
+        done = False
+        episode_reward, step, rewards, losses = 0, 0, [], []
+
+        while not done:
+
+            # Take a step
+            with utils.eval_mode(ep_agent):
+                action = ep_agent.select_action(obs)
+            next_obs, reward, done, info, change, _ = env.step(action, rewards)
+
+            # Save data
+            episode_reward += reward
+            obses.append(obs)
+            actions.append(action)
+
             # Adapt
             if adapt:
                 # Prepare batch of observations
@@ -69,12 +117,7 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, adapt=False,
                 batch_next_obs = utils.batch_from_obs(torch.Tensor(next_obs).cuda(), batch_size=args.pad_batch_size)
                 batch_action = torch.Tensor(action).cuda().unsqueeze(0).repeat(args.pad_batch_size, 1)
 
-                if buffer is not None :
-                    trajs = buff.sample()
-                    losses.append(ep_agent.update_inv(utils.random_crop(batch_obs), utils.random_crop(batch_next_obs),
-                                                      batch_action, trajs))
-                else:
-                    losses.append(ep_agent.update_inv(utils.random_crop(batch_obs), utils.random_crop(batch_next_obs),
+                losses.append(ep_agent.update_inv(utils.random_crop(batch_obs), utils.random_crop(batch_next_obs),
                                                       batch_action))
 
             if video: video.record(env, losses)
@@ -91,7 +134,7 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, adapt=False,
 
     if recorder: recorder.save("performance_" + exp_type, adapt)
 
-    return np.array(ep_rewards), obses, actions, feat_vects
+    return np.array(ep_rewards), obses, actions
 
 def collect_trajectory(RL_reference, env, args):
     """Collect trajectory on domain with a reference RL agent

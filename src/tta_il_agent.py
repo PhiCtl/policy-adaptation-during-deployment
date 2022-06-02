@@ -13,7 +13,7 @@ from arguments import parse_args
 from agent.IL_agent_visual import make_il_agent_visual
 from agent.IL_agent import make_il_agent
 from eval import init_env
-from utils_imitation_learning import evaluate_agent, collect_trajectory, load_agent #, setup
+from utils_imitation_learning import evaluate_agent, collect_trajectory, load_agent, eval_adapt #, setup
 
 def setup(args, domains, labels, checkpoint="final"):
 
@@ -146,13 +146,13 @@ def main(args):
     video = VideoRecorder(video_dir if args.save_video else None, height=448, width=448)
 
     # 3. Non adapting agent
-    reward, _, _, _ = evaluate_agent(il_agent, env, args, buffer=None, dyn=True)
+    reward, _, _ = eval_adapt(il_agent, env, args)
     print('non adapting reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
 
     # 4 . Adapting agent
     env = init_env(args, domain[0])
     print(f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-    reward, _, _, _ = evaluate_agent(il_agent, env, args, buffer=None, adapt=True, dyn=True)
+    reward, _, _ = eval_adapt(il_agent, env, args, adapt=True)
     print('pad reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
 
 
