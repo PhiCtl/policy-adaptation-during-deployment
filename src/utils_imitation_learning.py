@@ -97,7 +97,7 @@ def eval_adapt(agent, env, args, exp_type="", adapt=False, video=None, recorder=
         obs = env.reset()
         done = False
         episode_reward, step, rewards, losses = 0, 0, [], []
-
+        print(ep_agent.feat_vect)
         while not done:
 
             # Take a step
@@ -126,6 +126,7 @@ def eval_adapt(agent, env, args, exp_type="", adapt=False, video=None, recorder=
             obs = next_obs
             step += 1
 
+        print(ep_agent.feat_vect)
         obses.append(obs)  # Save last next obs
         ep_rewards.append(episode_reward)
         if video: video.save(f'{args.mode}_pad_{i}.mp4' if adapt else f'{args.mode}_eval_{i}.mp4')
