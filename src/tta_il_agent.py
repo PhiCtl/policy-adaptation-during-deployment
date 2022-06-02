@@ -157,15 +157,14 @@ def main(args):
 
 
 def test_agents(args):
-    il_agents_train, experts, envs, dynamics, buffers, trajs_buffers, stats_expert = setup(args, train_IL=False, checkpoint="8", dyn=False)
+    #il_agents_train, experts, envs, dynamics, buffers, trajs_buffers, stats_expert = setup(args, train_IL=False, checkpoint="8", dyn=False)
 
-    # envs, masses, il_agents = setup(args,
-    #                                 [0.4, 0.3, 0.25, 0.2],
-    #                                 ["_0_4", "_0_2", "_0_25", "_0_3"],
-    #                                 checkpoint="8")
+    envs, masses, il_agents_train = setup(args,
+                                    [0.4, 0.3, 0.25, 0.2],
+                                    ["_0_4", "_0_2", "_0_25", "_0_3"])
 
-    for agent, env, traj, label in zip(il_agents_train, envs, trajs_buffers, ["_0_4", "_0_2", "_0_25", "_0_3"]):
-        rewards, _, _, _ = evaluate_agent(agent, env, args, dyn=False, buffer=traj)
+    for agent, env, label in zip(il_agents_train, envs, ["_0_4", "_0_2", "_0_25", "_0_3"]):
+        rewards, _, _, _ = evaluate_agent(agent, env, args, dyn=True, buffer=None)
         print(f'For {label} agent : {rewards.mean()} +/- {rewards.std()}')
     # for agent, env, traj, label in zip(il_agents_train, envs, trajs_buffers, ["_0_4", "_0_2", "_0_25", "_0_3"]):
     #
@@ -177,5 +176,5 @@ def test_agents(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    verify_weights(args)
+    test_agents(args)
     
