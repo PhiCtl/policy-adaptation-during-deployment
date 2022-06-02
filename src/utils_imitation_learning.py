@@ -31,6 +31,7 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, adapt=False,
         if adapt:
             ep_agent = deepcopy(agent)
             ep_agent.train()
+            print(ep_agent.feat_vect)
         else :
             ep_agent = agent
 
@@ -82,10 +83,12 @@ def evaluate_agent(agent, env, args, exp_type="", buffer=None, adapt=False,
             obs = next_obs
             step += 1
 
+        print(ep_agent.feat_vect)
         obses.append(obs)  # Save last next obs
         ep_rewards.append(episode_reward)
         if video: video.save(f'{args.mode}_pad_{i}.mp4' if adapt else f'{args.mode}_eval_{i}.mp4')
         if recorder: recorder.end_episode()
+
 
     if recorder: recorder.save("performance_" + exp_type, adapt)
 
