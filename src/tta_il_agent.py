@@ -154,7 +154,7 @@ def main(args):
     else:
         init = il_agent.extract_feat_vect([args.domain_training, 0.1])  # [tgt_domain, 0.1]
     il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
-    lr_screening(il_agent, args.label, env, args, lrs=[0.005, 0.1, 0.5])
+    lr_screening(il_agent, args.label, env, args) #, lrs=[0.005, 0.1, 0.5])
 
 
 
