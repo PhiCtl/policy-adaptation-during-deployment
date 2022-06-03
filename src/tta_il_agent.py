@@ -97,7 +97,7 @@ def seed_screening(args, num_seeds=5):
 
         # Initialize feature vector either at random either with domain_specific feature vector
         if args.rd:
-            init = np.random.rand((2, 1))
+            init = np.random.rand(2, 1)
         else:
             init = il_agent.extract_feat_vect([args.domain_training, 0.1])  # [tgt_domain, 0.1]
         il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
@@ -150,7 +150,7 @@ def main(args):
     envs, masses, il_agents = setup_small(args, [args.domain_test], [args.label])
     il_agent, env = il_agents[0], envs[0]
     if args.rd:
-        init = np.random.rand((2, 1))
+        init = np.random.rand(2, 1)
     else:
         init = il_agent.extract_feat_vect([args.domain_training, 0.1])  # [tgt_domain, 0.1]
     il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
