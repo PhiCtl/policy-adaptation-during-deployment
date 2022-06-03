@@ -144,8 +144,11 @@ def main(args):
     """Try test time adaption of IL agents"""
 
     print(f'domain {args.domain_test} label {args.label} at random' if args.rd
-          else f'domain {args.domain} label {args.label} initialized on {args.domain_training}')
+          else f'domain {args.domain_test} label {args.label} initialized on {args.domain_training}')
     print(f'learning rate {args.il_lr}')
+
+    envs, masses, il_agents = setup_small(args, [args.domain_test], [args.label])
+    lr_screening(il_agents[0], args.label, envs[0], args, lrs=[0.005, 0.1, 0.5])
 
 
 
@@ -181,4 +184,4 @@ def test_agents(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    test_agents(args)
+    main(args)
