@@ -6,51 +6,20 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 
-import utils
-from recorder import AdaptRecorder
-from video import VideoRecorder
 from arguments import parse_args
-from agent.IL_agent_visual import make_il_agent_visual
-from agent.IL_agent import make_il_agent
-from eval import init_env
-from utils_imitation_learning import evaluate_agent, collect_trajectory, load_agent, eval_adapt #, setup
+from utils_imitation_learning import evaluate_agent, eval_adapt, setup, setup_small
 
-def setup(args, domains, labels, checkpoint="final", seed=None):
-
-    """Load IL agents and corresponding envs for testing"""
-
-    # TODO generalize to non visual and use it in the below functions
-    # TODO generalize to forces
-    if seed is None : seed = args.seed
-
-    envs = []
-    masses = []
-    for mass in domains:
-        env = init_env(args, mass, seed=seed)
-        masses.append(env.get_masses())
-        envs.append(env)
-
-    il_agents = []
-    for label, mass in zip(labels, masses):
-        # Load IL agent
-        cropped_obs_shape = (3 * args.frame_stack, 84, 84)
-        il_agent = make_il_agent(
-        #il_agent = make_il_agent_visual(
-            obs_shape=cropped_obs_shape,
-            action_shape=envs[0].action_space.shape,
-            dynamics_input_shape=mass.shape[0],
-            args=args)
-        load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
-        il_agent.load(load_dir, checkpoint)
-        il_agents.append(il_agent)
-
-    return envs, masses, il_agents
+"""Script to :
+    - analyse the feature vectors of the domain specific module
+    - perform test time training of IL agents
+    - verify if weights were correctly tied
+    - evaluate agents again on their training environment"""
 
 
 def verify_weights(args):
     """Verify if agents indeed share weights"""
 
-    envs, masses, il_agents = setup(args, [0.4, 0.2, 0.25, 0.3], ["_0_4", "_0_2", "_0_25", "_0_3"])
+    envs, masses, il_agents = setup_small(args, [0.4, 0.2, 0.25, 0.3], ["_0_4", "_0_2", "_0_25", "_0_3"])
 
     print(il_agents[0].verify_weights_from(il_agents[1]))
     print("-"*60)
@@ -115,64 +84,90 @@ def feature_vector_analysis(args):
     # Perform PCA analysis
     PCA_decomposition(features)
 
-def main(args):
+def seed_screening(args, num_seeds=5):
 
-    """Try test time adaption of IL agents"""
-
-    domain = [args.domain_test]
-    tgt_domain = args.domain_training
-    label = [args.label]
-    rd = args.rd
-    print(f'domain {domain} label {label} at random' if rd else f'domain {domain} label {label} initialized on {tgt_domain}')
+    """For GT Il agents only"""
     adapt_rw, rw = [], []
 
+    for i in range(num_seeds):
 
-    # Load environment
-    envs, masses, il_agents = setup(args, domain, label)
-    il_agent, env = il_agents[0], envs[0]
+        # Load environment
+        envs, masses, il_agents = setup_small(args, [args.domain], [args.label], seed=i)
+        il_agent, env = il_agents[0], envs[0]
 
-    # Initialize feature vector either at random either with domain_specific feature vector
-    if rd :
-        init = np.random.rand((2,1))
-    else :
-        init = il_agent.extract_feat_vect([tgt_domain, 0.1])#[tgt_domain, 0.1]
-    il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
+        # Initialize feature vector either at random either with domain_specific feature vector
+        if args.rd:
+            init = np.random.rand((2, 1))
+        else:
+            init = il_agent.extract_feat_vect([args.domain_training, 0.1])  # [tgt_domain, 0.1]
+        il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
 
-    # 2. Prepare test time evaluation
-    # Build traj buffers
-    # ref_expert = load_agent("", env.action_space.shape, args)
-    # traj_buffer = collect_trajectory(ref_expert, env, args)
+        # Non adapting agent
+        reward, _, _ = eval_adapt(il_agent, env, args)
+        rw.append(reward)
+        print('non adapting reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', args.label)
 
-    video_dir = utils.make_dir(os.path.join(args.work_dir, 'video'))
-    video = VideoRecorder(video_dir if args.save_video else None, height=448, width=448)
+        # Adapting agent
+        print(
+            f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
+        reward, _, _ = eval_adapt(il_agent, env, args, adapt=True)
+        adapt_rw.append(reward)
+        print('pad reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', args.label)
 
-    # 3. Non adapting agent
+    adapt_rw = np.array(adapt_rw)
+    print(f'Adapting agent performance : {adapt_rw.mean()} +/- {adapt_rw.std()}')
+    rw = np.array(rw)
+    print(f'Non adapting agent performance : {rw.mean()} +/- {rw.std()}')
+
+
+def lr_screening(il_agent, label, env, args, lrs=[1e-4, 1e-3, 1e-2, 1e-1, 0.5]):
+
+    """For GIT IL agents only at the moment"""
+    # TODO generalize to other agents
+
+    # Non adapting agent
     reward, _, _ = eval_adapt(il_agent, env, args)
     print('non adapting reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
 
-    for lr in [1e-4, 1e-3, 1e-2, 1e-1]:
-        # 4 . Adapting agent
+    for lr in lrs:
+        # Adapting agent
         il_agent.il_lr = lr
-        print(f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
+        print(
+            f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
         reward, _, _ = eval_adapt(il_agent, env, args, adapt=True)
         print('pad reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label, ' and lr ', lr)
 
 
 
+def main(args):
+
+    """Try test time adaption of IL agents"""
+
+    print(f'domain {args.domain_test} label {args.label} at random' if args.rd
+          else f'domain {args.domain} label {args.label} initialized on {args.domain_training}')
+    print(f'learning rate {args.il_lr}')
+
+
+
 def test_agents(args):
-    #il_agents_train, experts, envs, dynamics, buffers, trajs_buffers, stats_expert = setup(args, train_IL=False, checkpoint="8", dyn=False)
 
-    envs, masses, il_agents_train = setup(args,
-                                    [0.4, 0.3, 0.25, 0.2],
-                                    ["_0_4", "_0_3", "_0_25", "_0_2"])
+    # envs, masses, il_agents_train = setup(args,
+    #                                 [0.4, 0.3, 0.25, 0.2],
+    #                                 ["_0_4", "_0_3", "_0_25", "_0_2"])
 
-    for agent, env, label in zip(il_agents_train, envs, ["_0_4", "_0_3", "_0_25", "_0_2"]):
-        rewards, _, _, _ = evaluate_agent(agent, env, args, dyn=True, buffer=None)
-        print(f'For {label} agent : {rewards.mean()} +/- {rewards.std()}')
-    # for agent, env, traj, label in zip(il_agents_train, envs, trajs_buffers, ["_0_4", "_0_2", "_0_25", "_0_3"]):
-    #
-    #     rewards, _, _, _ = evaluate_agent(agent, env, args, buffer=traj)
+    # for agent, env, label in zip(il_agents_train, envs, ["_0_4", "_0_3", "_0_25", "_0_2"]):
+    #     rewards, _, _, _ = evaluate_agent(agent, env, args, dyn=True, buffer=None)
     #     print(f'For {label} agent : {rewards.mean()} +/- {rewards.std()}')
+
+    il_agents_train, experts, envs, dynamics, buffers, trajs_buffers, stats_expert = setup(args,
+                                                                                           train_IL=False,
+                                                                                           checkpoint="final",
+                                                                                           gt=False)
+
+    for agent, env, traj, label in zip(il_agents_train, envs, trajs_buffers, ["_0_4", "_0_2", "_0_25", "_0_3"]):
+
+        rewards, _, _, _ = evaluate_agent(agent, env, args, buffer=traj)
+        print(f'For {label} agent : {rewards.mean()} +/- {rewards.std()}')
 
 
 
