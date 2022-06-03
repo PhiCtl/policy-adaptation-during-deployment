@@ -167,7 +167,6 @@ def main(args):
         #'eval_reward': eval_reward,
         #'pad_reward': pad_reward
     }, results_fp)
-    print(f' Threshold {args.threshold} Window size {args.window}')
     print('Saved results to', results_fp)
 
 

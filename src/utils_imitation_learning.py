@@ -10,8 +10,8 @@ from agent.IL_agent import make_il_agent
 from agent.IL_agent_visual import make_il_agent_visual
 from eval import init_env
 
-def evaluate_agent(ep_agent, env, args, exp_type="", buffer=None,
-                   feat_analysis=False, video=None, recorder=None, dyn=False):
+def evaluate_agent(ep_agent, env, args, buffer=None, exp_type="",
+                   feat_analysis=False, video=None, recorder=None):
     """Evaluate agent on env, storing obses, actions and next obses
     Params : - agent : IL agent visual
              - env : env to evaluate this agent in
@@ -39,15 +39,11 @@ def evaluate_agent(ep_agent, env, args, exp_type="", buffer=None,
             # Take a step
 
             # Trajectory : (obs, act, obs, act, obs)
-            traj = None if buffer is None else buff.sample_traj()
-            mass = env.get_masses()
-            if feat_analysis:  feat_vects.append(ep_agent.extract_feat_vect(mass))
+            traj = buff.sample_traj() if buffer else None
+            if feat_analysis and buffer :  feat_vects.append(ep_agent.extract_feat_vect(traj))
 
             with utils.eval_mode(ep_agent):
-                if dyn :
-                    action = ep_agent.select_action(obs, mass)
-                else :
-                    action = ep_agent.select_action(obs, traj)
+                action = ep_agent.select_action(obs, traj)
             next_obs, reward, done, info, change, _ = env.step(action, rewards)
 
             # Save data
@@ -74,12 +70,10 @@ def evaluate_agent(ep_agent, env, args, exp_type="", buffer=None,
 
 def eval_adapt(agent, env, args, exp_type="", adapt=False, video=None, recorder=None):
     """Evaluate agent on env, storing obses, actions and next obses
-    Params : - agent : IL agent visual
+    Params : - agent : IL agent GT
              - env : env to evaluate this agent in
-             - args
-             - buffer : needed to train IL agent with a trajectory as input to the domain specific module"""
+             - args"""
 
-    # TODO handle GT IL agents
     ep_rewards = []
     obses, actions =  [], []
 
@@ -204,7 +198,8 @@ def setup(args,
           checkpoint="final",
           type="mass",
           gt=False,
-          train_IL=True):
+          train_IL=True,
+          seed=None):
     """Set up function for IL agents training or evaluating
         Params : - args
                  - labels : list of labels to load agents with
@@ -216,6 +211,7 @@ def setup(args,
         Return : - """
 
     assert type in ["mass", "force"], "Dynamics not implemented"
+    if seed is None : seed = args.seed
 
     # 1. Define 4 envts : four different environments / domains that differ by the mass or the force
     print("-" * 60)
@@ -223,7 +219,7 @@ def setup(args,
     envs = []
     dynamics = []  # eg. for cartpole [1, 0.1] : mass of the cart and mass of the pole
     for d in domains:
-        env = init_env(args, mass=d) if type == "mass" else init_env(args, force=d)
+        env = init_env(args, mass=d, seed=seed) if type == "mass" else init_env(args, force=d, seed=seed)
         full_dyn = env.get_masses() if type == "mass" else env.get_forces()
         dynamics.append(full_dyn)
         envs.append(env)
@@ -235,7 +231,7 @@ def setup(args,
     if train_IL :
         for label in labels:
             # All envs have should have the same action space shape
-            agent = load_agent(label, envs[0].action_space.shape, args) # TODO suppress logger
+            agent = load_agent(label, envs[0].action_space.shape, args)
             experts.append(agent)
     # Load reference agent
     ref_expert = load_agent("", envs[0].action_space.shape, args)
@@ -288,8 +284,55 @@ def setup(args,
         # If test time, we load pre-trained agents
         if not train_IL:
             load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
-            il_agent.load(load_dir, checkpoint)
+            # Two different load functions -> TODO to gather
+            if gt : il_agent.load(load_dir, checkpoint)
+            else : il_agent = il_agent.load_full(load_dir, checkpoint)
 
         il_agents.append(il_agent)
 
     return il_agents, experts, envs, dynamics, buffers, trajs_buffers, stats_expert
+
+def setup_small(args, domains, labels, checkpoint="final", seed=None, visual=False):
+
+    """Load IL agents and corresponding envs for testing
+    Params : domains : example list for cart mass change : [0.4, 0.3]
+             labels : corresponding labels to load the files : example ["_0_4", "_0_3"]
+             checkpoint : to load a model
+             seed : to initialize env and agent
+             visual : If we want a visual or a GT trained IL agent"""
+    if seed is None : seed = args.seed
+
+    envs = []
+    masses = []
+    for mass in domains:
+        env = init_env(args, mass, seed=seed)
+        masses.append(env.get_masses())
+        envs.append(env)
+
+    il_agents = []
+    for label, mass in zip(labels, masses):
+
+        # Load IL agent
+        cropped_obs_shape = (3 * args.frame_stack, 84, 84)
+        if visual :
+            il_agent = make_il_agent_visual(
+                obs_shape=cropped_obs_shape,
+                action_shape=envs[0].action_space.shape,
+                args=args)
+        else :
+            il_agent = make_il_agent(
+                obs_shape=cropped_obs_shape,
+                action_shape=envs[0].action_space.shape,
+                dynamics_input_shape=mass.shape[0],
+                args=args)
+        load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
+
+        # I needed two different load functions for IL GT vs IL visual agents
+        if visual :
+            il_agent = il_agent.load_full(load_dir, checkpoint)
+        else :
+            il_agent.load(load_dir, checkpoint)
+
+        il_agents.append(il_agent)
+
+    return envs, masses, il_agents
