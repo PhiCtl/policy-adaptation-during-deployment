@@ -80,7 +80,7 @@ def feature_vector_analysis(args):
     # Extract feat vects from Il agents
     features = dict()
     for label, env, il_agent, traj_buff in zip(["_0_3", "_0_2", "_0_25", "_0_4"], envs, il_agents, traj_buffers):
-        _, _, _, feat_vects = evaluate_agent(il_agent, env, args, feat_analysis=True, buffer=None,)
+        _, _, _, feat_vects = evaluate_agent(il_agent, env, args, feat_analysis=True, buffer=traj_buff)
         features[label[1:]] = np.array(feat_vects)
 
     print("perform PCA")
