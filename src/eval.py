@@ -143,7 +143,7 @@ def main(args):
 
     # Evaluate agent without PAD
     print(f'Evaluating {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-    eval_reward, std = evaluate(env, agent, args, video, recorder)
+    eval_reward, std = evaluate(env, agent, args, video = video, recorder = recorder)
     print('eval reward:', int(eval_reward), ' +/- ', int(std))
 
     # Evaluate agent with PAD (if applicable)
@@ -151,7 +151,7 @@ def main(args):
     if args.use_inv or args.use_curl or args.use_rot:
         env = init_env(args)
         print( f'Policy Adaptation during Deployment of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-        pad_reward, std = evaluate(env, agent, args, video, recorder, adapt=True, exp_type="pad")
+        pad_reward, std = evaluate(env, agent, args, video = video, recorder = recorder, adapt=True, exp_type="pad")
         print('pad reward:', int(pad_reward), ' +/- ', int(std))
 
         # env = init_env(args)
