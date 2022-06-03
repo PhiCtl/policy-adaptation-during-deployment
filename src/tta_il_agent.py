@@ -87,7 +87,7 @@ def feature_vector_analysis(args):
     # Perform PCA analysis
     PCA_decomposition(features)
 
-def seed_screening(args, num_seeds=5):
+def seed_screening(args, num_seeds=5, lr=None):
 
     """For GT Il agents only"""
     adapt_rw, rw = [], []
@@ -97,6 +97,7 @@ def seed_screening(args, num_seeds=5):
         # Load environment
         envs, masses, il_agents = setup_small(args, [args.domain], [args.label], seed=i)
         il_agent, env = il_agents[0], envs[0]
+        if lr: il_agent.il_lr = lr
 
         # Initialize feature vector either at random either with domain_specific feature vector
         if args.rd:
@@ -150,14 +151,18 @@ def main(args):
           else f'domain {args.domain_test} label {args.label} initialized on {args.domain_training}')
     print(f'learning rate {args.il_lr}')
 
-    envs, masses, il_agents = setup_small(args, [args.domain_test], [args.label])
-    il_agent, env = il_agents[0], envs[0]
-    if args.rd:
-        init = np.random.rand(2, 1)
-    else:
-        init = il_agent.extract_feat_vect([args.domain_training, 0.1])  # [tgt_domain, 0.1]
-    il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
-    lr_screening(il_agent, args.label, env, args, lrs=[0.005, 0.1, 0.5, 1])
+    # envs, masses, il_agents = setup_small(args, [args.domain_test], [args.label])
+    # il_agent, env = il_agents[0], envs[0]
+    # if args.rd:
+    #     init = np.random.rand(2, 1)
+    # else:
+    #     init = il_agent.extract_feat_vect([args.domain_training, 0.1])  # [tgt_domain, 0.1]
+    # il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
+    # lr_screening(il_agent, args.label, env, args, lrs=[0.005, 0.1, 0.5, 1])
+
+    for lr in [0.005, 0.1, 0.5, 1]:
+        print("Learning rate :", lr)
+        seed_screening(args, lr=lr)
 
 
 
@@ -193,4 +198,4 @@ def test_agents(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    feature_vector_analysis(args)
+    main(args)
