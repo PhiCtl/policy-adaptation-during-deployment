@@ -87,7 +87,7 @@ def feature_vector_analysis(args):
     # Perform PCA analysis
     PCA_decomposition(features)
 
-def seed_screening(args, num_seeds=5, lr=None):
+def seeds_summary(args, num_seeds=5, lr=None):
 
     """For GT Il agents only"""
     adapt_rw, rw = [], []
@@ -95,7 +95,7 @@ def seed_screening(args, num_seeds=5, lr=None):
     for i in range(num_seeds):
 
         # Load environment
-        envs, masses, il_agents = setup_small(args, [args.domain], [args.label], seed=i)
+        envs, masses, il_agents = setup_small(args, [args.domain_test], [args.label], seed=i)
         il_agent, env = il_agents[0], envs[0]
         if lr: il_agent.il_lr = lr
 
@@ -162,7 +162,7 @@ def main(args):
 
     for lr in [0.005, 0.1, 0.5, 1]:
         print("Learning rate :", lr)
-        seed_screening(args, lr=lr)
+        seeds_summary(args, lr=lr)
 
 
 
