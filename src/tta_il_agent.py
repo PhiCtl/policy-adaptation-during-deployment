@@ -7,7 +7,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 
 from arguments import parse_args
-from utils_imitation_learning import evaluate_agent, eval_adapt, setup, setup_small
+from utils_imitation_learning import evaluate_agent, eval_adapt, setup, setup_small, load_agent, collect_trajectory
 
 """Script to :
     - analyse the feature vectors of the domain specific module
@@ -69,18 +69,18 @@ def feature_vector_analysis(args):
                                           ["_0_3", "_0_2", "_0_25", "_0_4"],
                                           visual=True)
 
-    # print("load traj buffers")
+    print("load traj buffers")
     # Build traj buffers
     traj_buffers = []
-    # ref_expert, _ = load_agent("", envs[0].action_space.shape, args)
-    # for env in envs:
-    #     traj_buffers.append(collect_trajectory(ref_expert, env, args))
+    ref_expert, _ = load_agent("", envs[0].action_space.shape, args)
+    for env in envs:
+        traj_buffers.append(collect_trajectory(ref_expert, env, args))
 
     print("extract features")
     # Extract feat vects from Il agents
     features = dict()
-    for label, env, il_agent in zip(["_0_3", "_0_2", "_0_25", "_0_4"], envs, il_agents):
-        _, _, _, feat_vects = evaluate_agent(il_agent, env, args, feat_analysis=True, buffer=None)
+    for label, env, il_agent, traj_buff in zip(["_0_3", "_0_2", "_0_25", "_0_4"], envs, il_agents, traj_buffers):
+        _, _, _, feat_vects = evaluate_agent(il_agent, env, args, feat_analysis=True, buffer=None,)
         features[label[1:]] = np.array(feat_vects)
 
     print("perform PCA")
