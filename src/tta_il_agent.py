@@ -148,7 +148,13 @@ def main(args):
     print(f'learning rate {args.il_lr}')
 
     envs, masses, il_agents = setup_small(args, [args.domain_test], [args.label])
-    lr_screening(il_agents[0], args.label, envs[0], args, lrs=[0.005, 0.1, 0.5])
+    il_agent, env = il_agents[0], envs[0]
+    if args.rd:
+        init = np.random.rand((2, 1))
+    else:
+        init = il_agent.extract_feat_vect([args.domain_training, 0.1])  # [tgt_domain, 0.1]
+    il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
+    lr_screening(il_agent, args.label, env, args) #, lrs=[0.005, 0.1, 0.5])
 
 
 
