@@ -72,7 +72,7 @@ def feature_vector_analysis(args):
     print("load traj buffers")
     # Build traj buffers
     traj_buffers = []
-    ref_expert, _ = load_agent("", envs[0].action_space.shape, args)
+    ref_expert = load_agent("", envs[0].action_space.shape, args)
     for env in envs:
         traj_buffers.append(collect_trajectory(ref_expert, env, args))
 
@@ -157,7 +157,7 @@ def main(args):
     else:
         init = il_agent.extract_feat_vect([args.domain_training, 0.1])  # [tgt_domain, 0.1]
     il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
-    lr_screening(il_agent, args.label, env, args) #, lrs=[0.005, 0.1, 0.5])
+    #lr_screening(il_agent, args.label, env, args, lrs=[0.005, 0.1, 0.5, 1])
 
 
 
@@ -193,4 +193,4 @@ def test_agents(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    feature_vector_analysis(args)
+    main(args)
