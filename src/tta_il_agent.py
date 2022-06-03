@@ -64,7 +64,10 @@ def feature_vector_analysis(args):
 
     print("load agents")
     # Load envs and agents
-    envs, masses, il_agents = setup(args, [0.3, 0.2, 0.25, 0.4], ["_0_3", "_0_2", "_0_25", "_0_4"] )
+    envs, masses, il_agents = setup_small(args,
+                                          [0.3, 0.2, 0.25, 0.4],
+                                          ["_0_3", "_0_2", "_0_25", "_0_4"],
+                                          visual=True)
 
     # print("load traj buffers")
     # Build traj buffers
@@ -190,4 +193,4 @@ def test_agents(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    main(args)
+    feature_vector_analysis(args)
