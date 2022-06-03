@@ -15,8 +15,7 @@ python3 src/eval.py \
 	--use_inv \
 	--num_shared_layers 8 \
 	--seed 0 \
-	--force_walker -3 \
-	--work_dir logs/walker_walk_0_-3/inv/0 \
+	--work_dir logs/walker_walk/inv/0 \
 	--pad_checkpoint 500k \
 	--pad_num_episodes 100 \
 	--episode_length 1000
