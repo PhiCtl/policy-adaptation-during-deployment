@@ -148,7 +148,7 @@ def main(args):
     print(f'learning rate {args.il_lr}')
 
     envs, masses, il_agents = setup_small(args, [args.domain], [args.label])
-    lr_screening(il_agents[0], args.label, envs[0], args, lrs=[0.005, 0.1, 0.5])
+    lr_screening(il_agents[0], args.label, envs[0], args) #, lrs=[0.005, 0.1, 0.5])
 
 
 
