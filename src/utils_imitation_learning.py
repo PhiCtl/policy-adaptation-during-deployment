@@ -22,7 +22,7 @@ def evaluate_agent(ep_agent, env, args, buffer=None, exp_type="",
     ep_rewards = []
     obses, actions, feat_vects = [], [], []
 
-    if buffer :
+    if buffer:
         buff = deepcopy(buffer)
         buff.batch_size = args.pad_batch_size
 
@@ -37,7 +37,6 @@ def evaluate_agent(ep_agent, env, args, buffer=None, exp_type="",
         while not done:
 
             # Take a step
-
             # Trajectory : (obs, act, obs, act, obs)
             traj = buff.sample_traj() if buffer else None
             if feat_analysis and buffer :  feat_vects.append(ep_agent.extract_feat_vect(traj))
