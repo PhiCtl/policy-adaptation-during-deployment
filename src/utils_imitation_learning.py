@@ -213,7 +213,7 @@ def setup(args,
     assert type in ["mass", "force"], "Dynamics not implemented"
     if seed is None : seed = args.seed
 
-    # 1. Define 4 envts : four different environments / domains that differ by the mass or the force
+    # 1. Define 4 envts: four different environments / domains that differ by the mass or the force
     print("-" * 60)
     print("Define environment")
     envs = []
@@ -258,7 +258,6 @@ def setup(args,
         trajs_buffers.append(collect_trajectory(ref_expert, env, args))
 
     # 5. Create IL agents
-
     print("-" * 60)
     print("Create IL agents")
     il_agents = []
