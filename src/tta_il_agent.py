@@ -7,7 +7,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 
 from arguments import parse_args
-from utils_imitation_learning import evaluate_agent, eval_adapt, setup, setup_small
+from utils_imitation_learning import evaluate_agent, eval_adapt, setup, setup_small, load_agent, collect_trajectory
 
 """Script to :
     - analyse the feature vectors of the domain specific module
@@ -64,27 +64,30 @@ def feature_vector_analysis(args):
 
     print("load agents")
     # Load envs and agents
-    envs, masses, il_agents = setup(args, [0.3, 0.2, 0.25, 0.4], ["_0_3", "_0_2", "_0_25", "_0_4"] )
+    envs, masses, il_agents = setup_small(args,
+                                          [0.3, 0.2, 0.25, 0.4],
+                                          ["_0_3", "_0_2", "_0_25", "_0_4"],
+                                          visual=True)
 
-    # print("load traj buffers")
+    print("load traj buffers")
     # Build traj buffers
     traj_buffers = []
-    # ref_expert, _ = load_agent("", envs[0].action_space.shape, args)
-    # for env in envs:
-    #     traj_buffers.append(collect_trajectory(ref_expert, env, args))
+    ref_expert = load_agent("", envs[0].action_space.shape, args)
+    for env in envs:
+        traj_buffers.append(collect_trajectory(ref_expert, env, args))
 
     print("extract features")
     # Extract feat vects from Il agents
     features = dict()
-    for label, env, il_agent in zip(["_0_3", "_0_2", "_0_25", "_0_4"], envs, il_agents):
-        _, _, _, feat_vects = evaluate_agent(il_agent, env, args, feat_analysis=True, buffer=None)
+    for label, env, il_agent, traj_buff in zip(["_0_3", "_0_2", "_0_25", "_0_4"], envs, il_agents, traj_buffers):
+        _, _, _, feat_vects = evaluate_agent(il_agent, env, args, feat_analysis=True, buffer=traj_buff)
         features[label[1:]] = np.array(feat_vects)
 
     print("perform PCA")
     # Perform PCA analysis
     PCA_decomposition(features)
 
-def seed_screening(args, num_seeds=5):
+def seeds_summary(args, num_seeds=5, lr=None):
 
     """For GT Il agents only"""
     adapt_rw, rw = [], []
@@ -92,12 +95,13 @@ def seed_screening(args, num_seeds=5):
     for i in range(num_seeds):
 
         # Load environment
-        envs, masses, il_agents = setup_small(args, [args.domain], [args.label], seed=i)
+        envs, masses, il_agents = setup_small(args, [args.domain_test], [args.label], seed=i)
         il_agent, env = il_agents[0], envs[0]
+        if lr: il_agent.il_lr = lr
 
         # Initialize feature vector either at random either with domain_specific feature vector
         if args.rd:
-            init = np.random.rand((2, 1))
+            init = np.random.rand(args.dynamics_output_shape)
         else:
             init = il_agent.extract_feat_vect([args.domain_training, 0.1])  # [tgt_domain, 0.1]
         il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
@@ -147,8 +151,18 @@ def main(args):
           else f'domain {args.domain_test} label {args.label} initialized on {args.domain_training}')
     print(f'learning rate {args.il_lr}')
 
-    envs, masses, il_agents = setup_small(args, [args.domain_test], [args.label])
-    lr_screening(il_agents[0], args.label, envs[0], args, lrs=[0.005, 0.1, 0.5])
+    # envs, masses, il_agents = setup_small(args, [args.domain_test], [args.label])
+    # il_agent, env = il_agents[0], envs[0]
+    # if args.rd:
+    #     init = np.random.rand(2, 1)
+    # else:
+    #     init = il_agent.extract_feat_vect([args.domain_training, 0.1])  # [tgt_domain, 0.1]
+    # il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
+    # lr_screening(il_agent, args.label, env, args, lrs=[0.005, 0.1, 0.5, 1])
+
+    for lr in [0.0001, 0.001, 0.005, 0.1]:
+        print("Learning rate :", lr)
+        seeds_summary(args, lr=lr)
 
 
 
