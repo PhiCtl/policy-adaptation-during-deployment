@@ -14,8 +14,10 @@ shared encoder, as input to SS and actor heads
 
 def main(args):
 
-    labels = ["_0_4", "_0_2", "_0_25", "_0_3"]
-    domains = [0.4, 0.2, 0.25, 0.3]
+    #labels = ["_0_4", "_0_2", "_0_25", "_0_3"]
+    labels = ["_0_-1", "_0_-2", "_0_-3"]
+    #domains = [0.4, 0.2, 0.25, 0.3]
+    domains = [-1, -2, -3]
     stats_il = {k: [] for k in labels}  # save score of Il agents
 
     il_agents, experts, envs, _, buffers, trajs_buffers, stats_expert = setup(args,
@@ -67,13 +69,13 @@ def main(args):
         # b. Evaluate - Perform IL agent policy rollouts
         print("\n\n********** Evaluation and relabeling %i ************" % it)
 
-        for agent, expert, env, buffer, traj_buffer, mass in zip(il_agents_train, experts, envs, buffers, trajs_buffers, labels):
+        for agent, expert, env, buffer, traj_buffer, label in zip(il_agents_train, experts, envs, buffers, trajs_buffers, labels):
 
             # Evaluate agent on envt
             rewards, obses, actions, _ = evaluate_agent(agent, env, args, buffer=traj_buffer)
             # Save intermediary score
-            stats_il[mass].append([rewards.mean(), rewards.std()])
-            print(f'Performance of agent on mass {mass} : {rewards.mean()} +/- {rewards.std()}')
+            stats_il[label].append([rewards.mean(), rewards.std()])
+            print(f'Performance of agent on force {label} : {rewards.mean()} +/- {rewards.std()}')
             # Relabel actions -> using DAgger algorithm
             actions_new = relabel(obses, expert)
             # Add trajectory to training buffer
@@ -97,18 +99,18 @@ def main(args):
         print(il_agents_train[i].verify_weights_from(il_agents_train[i+1]))
 
     # Final evaluation
-    for agent, env, traj_buffer, mass in zip(il_agents_train, envs, trajs_buffers,
+    for agent, env, traj_buffer, label in zip(il_agents_train, envs, trajs_buffers,
                                                              labels):
         # Evaluate agent on envt
         rewards, obses, actions, _ = evaluate_agent(agent, env, args, buffer=traj_buffer)
         # Save intermediary score
-        stats_il[mass].append([rewards.mean(), rewards.std()])
-        print(f'Performance of agent on mass {mass} : {rewards.mean()} +/- {rewards.std()}')
+        stats_il[label].append([rewards.mean(), rewards.std()])
+        print(f'Performance of agent on force {label} : {rewards.mean()} +/- {rewards.std()}')
 
     # 8. Evaluate expert vs IL
     for label in labels:
         print("-" * 60)
-        print(f'Mass of {label}')
+        print(f'Force of {label}')
         print(f'Expert performance : {stats_expert[label][0]} +/- {stats_expert[label][1]}')
         print(f'Imitation learning agent with dagger performance : {stats_il[label][-1][0]} +/- {stats_il[label][-1][1]}')
 
