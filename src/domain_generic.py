@@ -132,7 +132,7 @@ def main(args):
     
     for label in labels:
         # All envs have should have the same action space shape
-        agent, _ = load_agent(label, envs[0].action_space.shape, args)
+        agent = load_agent(label, envs[0].action_space.shape, args)
         experts.append(agent)
         #loggers.append(logger)
 
