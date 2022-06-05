@@ -172,7 +172,7 @@ def main(args):
             # Sample data
             preds, pred_invs, gts, losses = [], [], [], 0
 
-            # Forward pass for the domain generic agent for all domains (?)
+            # Forward pass for the domain generic agent for all domains
             
             obs, action, next_obs = buffer.sample() # sample a batch
             action_pred, action_inv, loss = domain_generic_agent.predict_action(obs, next_obs, action)
@@ -208,7 +208,6 @@ def main(args):
 
     for label in labels:
         print("-"*60)
-        #print(f'Baseline performance: {pad_stats[label][0]} +/- {pad_stats[label][1]}')
         print(f'Expert performance : {stats_expert[label][0]} +/- {stats_expert[label][1]}')
         print(f'Imitation learning agent with dagger performance : {stats_domain_generic_agent[label][-1][0]} +/- {stats_domain_generic_agent[label][-1][1]}')
 
