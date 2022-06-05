@@ -167,7 +167,7 @@ def main(args):
         #'eval_reward': eval_reward,
         #'pad_reward': pad_reward
     }, results_fp)
-    print('Saved results to',ults_fp)
+    print('Saved results to',results_fp)
 
 
 if __name__ == '__main__':

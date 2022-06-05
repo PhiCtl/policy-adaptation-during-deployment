@@ -13,10 +13,10 @@ from eval import init_env
 def evaluate_agent(ep_agent, env, args, buffer=None, exp_type="",
                    feat_analysis=False, video=None, recorder=None):
     """Evaluate agent on env, storing obses, actions and next obses
-    Params : - agent : IL agent visual
-             - env : env to evaluate this agent in
+    Params : - agent: IL agent visual
+             - env: env to evaluate this agent in
              - args
-             - buffer : needed to train IL agent with a trajectory as input to the domain specific module"""
+             - buffer: needed to train IL agent with a trajectory as input to the domain specific module"""
 
     # TODO handle GT IL agents
     ep_rewards = []
@@ -193,10 +193,10 @@ def load_agent(label, action_shape, args): # OK
     return agent
 
 def setup(args,
-          labels=["_0_4", "_0_2", "_0_25", "_0_3"],
-          domains=[0.4, 0.2, 0.25, 0.3],
+          labels = ["_0_-1", "_0_-2", "_0_-3"],
+          domains = [-1, -2, -3],
           checkpoint="final",
-          type="mass",
+          type="force",
           gt=False,
           train_IL=True,
           seed=None):
@@ -247,10 +247,10 @@ def setup(args,
 
     # 4.a We have 1 buffer per (env, RL_expert)
     if train_IL :
-        for expert, mass, env in zip(experts, labels, envs):
-            buffer, mean, std = collect_expert_samples(expert, env, args, mass)
+        for expert, label, env in zip(experts, labels, envs):
+            buffer, mean, std = collect_expert_samples(expert, env, args, label)
             buffers.append(buffer)
-            stats_expert[mass] = [mean, std]
+            stats_expert[label] = [mean, std]
 
     # 4.b Collect trajectories from ref RL agent on different domains
     trajs_buffers = []
@@ -303,14 +303,15 @@ def setup_small(args, domains, labels, checkpoint="final", seed=None, visual=Fal
     if seed is None : seed = args.seed
 
     envs = []
-    masses = []
-    for mass in domains:
-        env = init_env(args, mass, seed=seed)
-        masses.append(env.get_masses())
+    #masses = []
+    forces = []
+    for force in domains:
+        env = init_env(args, force, seed=seed)
+        forces.append(env.get_forces())
         envs.append(env)
 
     il_agents = []
-    for label, mass in zip(labels, masses):
+    for label, force in zip(labels, forces):
 
         # Load IL agent
         cropped_obs_shape = (3 * args.frame_stack, 84, 84)
@@ -323,7 +324,7 @@ def setup_small(args, domains, labels, checkpoint="final", seed=None, visual=Fal
             il_agent = make_il_agent(
                 obs_shape=cropped_obs_shape,
                 action_shape=envs[0].action_space.shape,
-                dynamics_input_shape=mass.shape[0],
+                dynamics_input_shape=force.shape[0],
                 args=args)
         load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
 
@@ -335,4 +336,4 @@ def setup_small(args, domains, labels, checkpoint="final", seed=None, visual=Fal
 
         il_agents.append(il_agent)
 
-    return envs, masses, il_agents
+    return envs, forces, il_agents
