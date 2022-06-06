@@ -8,7 +8,7 @@ parameters, either the mass or the force).
 Those IL agents have a shared domain generic module, which has the same architecture as the original "PAD" agent we've
 explored so far. They have their own domain specific module, which takes as input the past 3 observations and actions 
 (ie. obs, act, obs, act, obs) to infer the dynamics. The output of this module is concatenated with output from
-shared encoder, as input to SS and actor heads
+shared encoder, as input to SS and actor heads.
 """
 
 
