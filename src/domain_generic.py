@@ -157,11 +157,11 @@ def main(args):
     print("-" * 60)
     print("Train domain generic agent")
 
-    for it in range(args.n_iter): # number of dagger iterations
+    for it in tqdm(range(args.n_iter)): # number of dagger iterations
         print("\n\n********** Training %i ************"%it)
 
         # Train the domain generic agent policy
-        for step in range(args.il_steps):
+        for step in tqdm(range(args.il_steps)):
 
             # Sample data
             preds, pred_invs, gts, losses = [], [], [], 0
@@ -178,6 +178,7 @@ def main(args):
 
             # Backward pass
             losses.backward()
+            if step % 1000 == 0: print(losses)
 
             # Update the domain generic agent
             domain_generic_agent.update()

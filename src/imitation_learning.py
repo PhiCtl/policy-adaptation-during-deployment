@@ -110,6 +110,7 @@ def main(args):
 
             # Backward pass
             losses.backward()
+            if step % 1000 == 0: print(losses)
 
             for agent in il_agents_train:
                 agent.update()
