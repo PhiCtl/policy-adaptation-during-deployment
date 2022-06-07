@@ -20,9 +20,8 @@ def verify_weights(args):
     """Verify if agents indeed share weights"""
 
     #envs, masses, il_agents = setup_small(args, [0.4, 0.2, 0.25, 0.3], ["_0_4", "_0_2", "_0_25", "_0_3"])
-    envs, forces, il_agents = setup_small(args, [-1, -2, -3], ["_0_-1", "_0_-2", "_0_-3"])
+    envs, forces, il_agents = setup_small(args, [-1, -2, -3], ["_0_-1", "_0_-2", "_0_-3"], visual=True, mass=False)
 
-    
     print(il_agents[0].verify_weights_from(il_agents[1]))
     print("-"*60)
     print(il_agents[1].verify_weights_from(il_agents[2]))
@@ -72,7 +71,7 @@ def feature_vector_analysis(args):
     envs, forces, il_agents = setup_small(args,
                                           [-1, -2, -3],
                                           ["_0_-1", "_0_-2", "_0_-3"],
-                                          visual=True)
+                                          visual=True, mass = False)
 
     print("load traj buffers")
     # Build traj buffers
@@ -100,7 +99,7 @@ def seeds_summary(args, num_seeds=5, lr=None):
     for i in range(num_seeds):
 
         # Load environment
-        envs, forces, il_agents = setup_small(args, [args.domain_test], [args.label], seed=i)
+        envs, forces, il_agents = setup_small(args, [args.domain_test], [args.label], seed=i, visual = True, mass = False)
         il_agent, env = il_agents[0], envs[0]
         if lr: il_agent.il_lr = lr
 
@@ -174,7 +173,7 @@ def test_agents(args):
     # envs, masses, il_agents_train = setup_small(args,
     #                                 [0.4, 0.3, 0.25, 0.2],
     #                                 ["_0_4", "_0_3", "_0_25", "_0_2"])
-    envs, forces, il_agents_train = setup_small(args, [-1, -2, -3], ["_0_-1", "_0_-2", "_0_-3"])
+    envs, forces, il_agents_train = setup_small(args, [-1, -2, -3], ["_0_-1", "_0_-2", "_0_-3"], visual = True, mass = False)
 
     for agent, label in zip(il_agents_train, ["_0_-1", "_0_-2", "_0_-3"]):
         print(f'Label {label}')
