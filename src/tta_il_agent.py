@@ -169,7 +169,7 @@ def main(args):
 
 def test_agents(args):
 
-    envs, masses, il_agents_train = setup(args,
+    envs, masses, il_agents_train = setup_small(args,
                                     [0.4, 0.3, 0.25, 0.2],
                                     ["_0_4", "_0_3", "_0_25", "_0_2"])
 
