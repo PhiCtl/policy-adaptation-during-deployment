@@ -34,7 +34,6 @@ def verify_weights(args):
 
 def PCA_decomposition(groups):
 
-
     """Perform PCA decomposition into 2 principal components
     of each group in groups and plot the result (in 2D)"""
 
@@ -64,9 +63,13 @@ def feature_vector_analysis(args):
 
     print("load agents")
     # Load envs and agents
-    envs, masses, il_agents = setup_small(args,
-                                          [0.3, 0.2, 0.25, 0.4],
-                                          ["_0_3", "_0_2", "_0_25", "_0_4"],
+    # envs, masses, il_agents = setup_small(args,
+    #                                       [0.3, 0.2, 0.25, 0.4],
+    #                                       ["_0_3", "_0_2", "_0_25", "_0_4"],
+    #                                       visual=True)
+    envs, forces, il_agents = setup_small(args,
+                                          [-1, -2, -3],
+                                          ["_0_-1", "_0_-2", "_0_-3"],
                                           visual=True)
 
     print("load traj buffers")
@@ -79,7 +82,7 @@ def feature_vector_analysis(args):
     print("extract features")
     # Extract feat vects from Il agents
     features = dict()
-    for label, env, il_agent, traj_buff in zip(["_0_3", "_0_2", "_0_25", "_0_4"], envs, il_agents, traj_buffers):
+    for label, env, il_agent, traj_buff in zip(["_0_-1", "_0_-2", "_0_-3"], envs, il_agents, traj_buffers):
         _, _, _, feat_vects = evaluate_agent(il_agent, env, args, feat_analysis=True, buffer=traj_buff)
         features[label[1:]] = np.array(feat_vects)
 
@@ -95,7 +98,7 @@ def seeds_summary(args, num_seeds=5, lr=None):
     for i in range(num_seeds):
 
         # Load environment
-        envs, masses, il_agents = setup_small(args, [args.domain_test], [args.label], seed=i)
+        envs, forces, il_agents = setup_small(args, [args.domain_test], [args.label], seed=i)
         il_agent, env = il_agents[0], envs[0]
         if lr: il_agent.il_lr = lr
 
@@ -103,7 +106,7 @@ def seeds_summary(args, num_seeds=5, lr=None):
         if args.rd:
             init = np.random.rand(args.dynamics_output_shape)
         else:
-            init = il_agent.extract_feat_vect([args.domain_training, 0.1])  # [tgt_domain, 0.1]
+            init = il_agent.extract_feat_vect([args.domain_training, -1])  # [tgt_domain, 0.1]
         il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
 
         # Non adapting agent
@@ -164,8 +167,6 @@ def main(args):
         print("Learning rate :", lr)
         seeds_summary(args, lr=lr)
 
-
-
 def test_agents(args):
 
     envs, masses, il_agents_train = setup(args,
@@ -195,8 +196,6 @@ def test_agents(args):
     #
     #     rewards, _, _, _ = evaluate_agent(agent, env, args, buffer=traj)
     #     print(f'For {label} agent : {rewards.mean()} +/- {rewards.std()}')
-
-
 
 
 if __name__ == "__main__":
