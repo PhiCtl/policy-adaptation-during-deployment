@@ -181,7 +181,7 @@ def test_agents(args):
         for env in envs:
             init = agent.extract_feat_vect(mass)
             agent.init_feat_vect(init, batch_size=args.pad_batch_size)
-            rewards, _, _, _ = eval_adapt(agent, env, args)
+            rewards, _, _ = eval_adapt(agent, env, args)
             print(f'For {label} agent : {rewards.mean()} +/- {rewards.std()}')
 
     # il_agents, experts, envs, dynamics, buffers, trajs_buffers, stats_expert = setup(args,
