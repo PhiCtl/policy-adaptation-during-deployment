@@ -14,7 +14,7 @@ python3 src/domain_generic.py \
     --mode train \
     --use_inv \
     --num_shared_layers 8 \
-    --pad_checkpoint 400k \
+    --pad_checkpoint 500k \
     --seed 0 \
     --work_dir logs/walker_walk \
     --save_dir logs/domain_generic/walker_walk 

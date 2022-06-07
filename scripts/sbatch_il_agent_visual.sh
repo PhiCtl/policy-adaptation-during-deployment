@@ -13,8 +13,8 @@ python3 src/imitation_learning_visual.py \
     --mode train \
     --use_inv \
     --num_shared_layers 8 \
-    --pad_checkpoint 400k \
+    --pad_checkpoint 500k \
     --seed 0 \
     --train_steps 100000 \
     --work_dir logs/walker_walk \
-    --save_dir logs/IL/walker_walk 
+    --save_dir logs/IL_visual/walker_walk 
