@@ -179,7 +179,8 @@ def test_agents(args):
         print(f'Label {label}')
         print("-"*60)
         for env in envs:
-            agent.init_feat_vect(mass, batch_size=args.pad_batch_size)
+            init = agent.extract_feat_vect(mass)
+            agent.init_feat_vect(init, batch_size=args.pad_batch_size)
             rewards, _, _, _ = eval_adapt(agent, env, args)
             print(f'For {label} agent : {rewards.mean()} +/- {rewards.std()}')
 
