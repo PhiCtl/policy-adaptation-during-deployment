@@ -16,5 +16,5 @@ python3 src/tta_il_agent.py \
     --pad_checkpoint 500k \
     --seed 0 \
     --train_steps 100000 \
-    --work_dir logs/walker_walk \
-    --save_dir logs/IL/shared/cartpole_swingup 
+    --work_dir logs/cartpole_swingup \
+    --save_dir logs/IL/shared/cartpole_swingup
