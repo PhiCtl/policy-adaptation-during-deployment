@@ -177,7 +177,7 @@ def test_agents(args):
         print(f'Label {label}')
         print("-"*60)
         for env in envs:
-            rewards, _, _, _ = evaluate_agent(agent, env, args, dyn=True, buffer=None)
+            rewards, _, _, _ = eval_adapt(agent, env, args)
             print(f'For {label} agent : {rewards.mean()} +/- {rewards.std()}')
 
     # il_agents, experts, envs, dynamics, buffers, trajs_buffers, stats_expert = setup(args,
