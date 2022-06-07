@@ -290,7 +290,7 @@ def setup(args,
 
     return il_agents, experts, envs, dynamics, buffers, trajs_buffers, stats_expert
 
-def setup_small(args, domains, labels, checkpoint="final", seed=None, visual=False):
+def setup_small(args, domains, labels, checkpoint="final", seed=None, visual=False, mass=True):
 
     """Load IL agents and corresponding envs for testing
     Params : domains : example list for cart mass change : [0.4, 0.3]
@@ -301,15 +301,14 @@ def setup_small(args, domains, labels, checkpoint="final", seed=None, visual=Fal
     if seed is None : seed = args.seed
 
     envs = []
-    #masses = []
-    forces = []
-    for force in domains:
-        env = init_env(args, force, seed=seed)
-        forces.append(env.get_forces())
+    dyn = []
+    for d in domains:
+        env = init_env(args, mass=d, seed=seed) if mass else init_env(args, force=d, seed=seed)
+        dyn.append(env.get_masses() if mass else env.get_forces())
         envs.append(env)
 
     il_agents = []
-    for label, force in zip(labels, forces):
+    for label, d in zip(labels, dyn):
 
         # Load IL agent
         cropped_obs_shape = (3 * args.frame_stack, 84, 84)
@@ -322,7 +321,7 @@ def setup_small(args, domains, labels, checkpoint="final", seed=None, visual=Fal
             il_agent = make_il_agent(
                 obs_shape=cropped_obs_shape,
                 action_shape=envs[0].action_space.shape,
-                dynamics_input_shape=force.shape[0],
+                dynamics_input_shape=d.shape[0],
                 args=args)
         load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
 
@@ -334,4 +333,4 @@ def setup_small(args, domains, labels, checkpoint="final", seed=None, visual=Fal
 
         il_agents.append(il_agent)
 
-    return envs, forces, il_agents
+    return envs, dyn, il_agents

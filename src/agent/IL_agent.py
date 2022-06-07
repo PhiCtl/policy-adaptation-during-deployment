@@ -129,6 +129,19 @@ class DomainSpecificGT(nn.Module):
         res = self.specific(gt)
         return res
 
+    def verify_weights(self, source):
+        # Both objects should be actor models
+        assert type(self) == type(source)
+
+        is_equal = True
+        for tgt, src in zip(self.specific, source.specific):
+            if isinstance(tgt, nn.Linear) and isinstance(src, nn.Linear):
+                print("lin layer domain spe")
+                if not utils.verify_weights(src=src, trg=tgt):
+                    is_equal = False
+
+        return is_equal
+
 class InvFunction(nn.Module):
     """MLP for inverse dynamics model."""
     def __init__(self, obs_dim, action_dim, dynamics_output_shape, hidden_dim):
@@ -381,6 +394,7 @@ class ILSSAgent(object):
         print("shared Encoders are the same :", self.ss_encoder.verify_weights_from(source.ss_encoder))
         print("Actors are the same : ", self.actor.verify_weights_from(source.actor))
         print("Inv are the same: ", self.inv.verify_weights_from(source.inv))
+        print("Domain specifics should not be the same", not self.domain_spe.verify_weights(source.domain_spe))
 
         return (self.ss_encoder.verify_weights_from(source.ss_encoder) and \
                 self.actor.verify_weights_from(source.actor) and \
