@@ -42,10 +42,10 @@ def evaluate_agent(agent, env, args, feat_analysis=False): # OK
         while not done:
 
             # Take a step
-            #mass = env.get_masses()
-            force = env.get_forces()
+            mass = env.get_masses()
+            #force = env.get_forces()
             with utils.eval_mode(agent):
-                action = agent.select_action(obs, force)
+                action = agent.select_action(obs, mass=mass)
             next_obs, reward, done, info, _, _ = env.step(action, rewards)
             episode_reward += reward
 
@@ -64,20 +64,24 @@ def evaluate_agent(agent, env, args, feat_analysis=False): # OK
     
 def main(args):
 
-    #labels = ["_0_4", "_0_2", "_0_25", "_0_3"] #for cart-pole mass
-    labels = ["_0_-1", "_0_-2", "_0_-3"] #for walker-walk force
-    #domains = [0.4, 0.2, 0.25, 0.3] #for cart-pole mass
-    domains = [-1, -2, -3] #for walker-walk force
+    labels = ["_0_4", "_0_2", "_0_25", "_0_3"] #for cart-pole mass
+    #labels = ["_0_-1", "_0_-2", "_0_-3"] #for walker-walk force
+    domains = [0.4, 0.2, 0.25, 0.3] #for cart-pole mass
+    #domains = [-1, -2, -3] #for walker-walk force
     il_agents, experts, envs, dynamics, buffers, _, stats_expert = setup(args,
                                                                          labels=labels,
                                                                          domains=domains,
                                                                          gt=True,
                                                                          train_IL=True,
-                                                                         type="force")
+                                                                         type="mass")
     il_agents_train = [il_agents[0]]
     for il_agent in il_agents[1:]:
         il_agent.tie_agent_from(il_agents_train[0])
         il_agents_train.append(il_agent)
+
+    # print("Verify weights")
+    for i in range(len(il_agents_train) - 1):
+        print(il_agents_train[i].verify_weights_from(il_agents_train[i + 1]))
 
     stats_il = {k:[] for k in labels} # save score of Il agents
 
@@ -95,9 +99,9 @@ def main(args):
             preds, pred_invs, gts, losses = [], [], [], 0
 
             # Forward pass sequentially for all agents
-            for agent, buffer, force in zip(il_agents_train, buffers, dynamics):
+            for agent, buffer, mass in zip(il_agents_train, buffers, dynamics):
                 obs, action, next_obs = buffer.sample() # sample a batch
-                action_pred, action_inv, loss = agent.predict_action(obs, next_obs, action, force=force)
+                action_pred, action_inv, loss = agent.predict_action(obs, next_obs, action, mass=mass)
 
                 preds.append(action_pred) # Action from actor network
                 pred_invs.append(action_inv) # Action from SS head
@@ -112,10 +116,10 @@ def main(args):
 
         # Evaluate - Perform IL agent policy rollouts
         print("\n\n********** Evaluation and relabeling %i ************" % it)
-        for agent, expert, env, buffer, force in zip(il_agents_train, experts, envs, buffers, labels):
+        for agent, expert, env, buffer, mass in zip(il_agents_train, experts, envs, buffers, labels):
             rewards, obses, actions = evaluate_agent(agent, env, args) # evaluate agent on environment
-            stats_il[force].append([rewards.mean(), rewards.std()]) # save intermediary score
-            print(f'Performance of agent on force {force} : {rewards.mean()} +/- {rewards.std()}')
+            stats_il[mass].append([rewards.mean(), rewards.std()]) # save intermediary score
+            print(f'Performance of agent on force {mass} : {rewards.mean()} +/- {rewards.std()}')
             actions_new = relabel(obses, expert)
             buffer.add_path(obses, actions_new)
 
@@ -132,10 +136,14 @@ def main(args):
         save_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
         agent.save(save_dir, "final")
 
+    # print("Verify weights")
+    for i in range(len(il_agents_train) - 1):
+        print(il_agents_train[i].verify_weights_from(il_agents_train[i + 1]))
+
     # 7. Evaluate expert vs IL
     for label in labels :
         print("-"*60)
-        print(f'Force of {label}')
+        print(f'Mass of {label}')
         print(f'Expert performance : {stats_expert[label][0]} +/- {stats_expert[label][1]}')
         print(f'Imitation learning agent with dagger performance : {stats_il[label][-1][0]} +/- {stats_il[label][-1][1]}')
 
