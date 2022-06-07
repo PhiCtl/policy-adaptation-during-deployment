@@ -109,7 +109,7 @@ def main(args):
     envs = []
     masses = []
     #forces = []
-    for mass in [0.4, 0.3, 0.25, 0.2]:
+    for mass in [0.4, 0.2, 0.25, 0.3]:
         env = init_env(args, mass=mass)
         masses.append(env.get_masses())
         envs.append(env)
