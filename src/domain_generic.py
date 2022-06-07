@@ -140,7 +140,8 @@ def main(args):
 
     for expert, env, label in zip(experts, envs, labels):
         rewards, obses, actions = evaluate_agent(expert, env, args)
-        buffer.add_path(obses, actions) 
+        buffer.add_path(obses, actions)
+        print(buffer.idx)
         stats_expert[label]= [rewards.mean(), rewards.std()] #performance of the expert agent in its domain
 
     print("-" * 60)

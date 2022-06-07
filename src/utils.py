@@ -92,9 +92,9 @@ class SimpleBuffer(object):
 
     def add_path(self, obses, actions):
         # TODO ugly...
-        obs1 = obses[:-2]
-        act1 = actions[:-1]
-        obs2 = obses[1:-1]
+        obs1 = obses[:-1]
+        act1 = actions[:]
+        obs2 = obses[1:]
 
         for obs, action, next_obs in zip(obs1, act1, obs2):
             self.add(obs, action, next_obs)
