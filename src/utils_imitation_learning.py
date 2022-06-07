@@ -293,8 +293,8 @@ def setup(args,
 def setup_small(args, domains, labels, checkpoint="final", seed=None, visual=False, mass=True):
 
     """Load IL agents and corresponding envs for testing
-    Params : domains : example list for cart mass change : [0.4, 0.3]
-             labels : corresponding labels to load the files : example ["_0_4", "_0_3"]
+    Params : domains : example list for cart mass change/walker walk force change : [0.4, 0.3], [-1, -2, -3]
+             labels : corresponding labels to load the files : example ["_0_4", "_0_3"] or ["0_-1", "0_-2", "_0_-3"]
              checkpoint : to load a model
              seed : to initialize env and agent
              visual : If we want a visual or a GT trained IL agent"""

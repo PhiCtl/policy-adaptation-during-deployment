@@ -337,7 +337,6 @@ class SacSSAgent(object):
         return mu, pred_action, actor_loss + inv_loss
 
 
-
     def update_inv(self, obs, next_obs, action, traj, L=None, step=None):
 
         assert obs.shape[-1] == 84 and next_obs.shape[-1] == 84
@@ -400,8 +399,6 @@ class SacSSAgent(object):
         path = '%s/full_model%s.pt' % (model_dir, step)
         model = torch.load(path)
         return model
-
-
 
     def save(self, model_dir, step):
         torch.save(
