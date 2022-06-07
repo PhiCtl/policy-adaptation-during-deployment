@@ -171,16 +171,18 @@ def main(args):
 
 def test_agents(args):
 
-    # envs, masses, il_agents_train = setup_small(args,
-    #                                 [0.4, 0.3, 0.25, 0.2],
-    #                                 ["_0_4", "_0_3", "_0_25", "_0_2"])
-    envs, forces, il_agents_train = setup_small(args, [-1, -2, -3], ["_0_-1", "_0_-2", "_0_-3"])
+    envs, masses, il_agents_train = setup_small(args,
+                                    [0.4, 0.3, 0.25, 0.2],
+                                    ["_0_4", "_0_3", "_0_25", "_0_2"])
 
-    for agent, label in zip(il_agents_train, ["_0_-1", "_0_-2", "_0_-3"]):
+
+    for agent, label, mass in zip(il_agents_train, ["_0_4", "_0_3", "_0_25", "_0_2"], masses):
         print(f'Label {label}')
         print("-"*60)
         for env in envs:
-            rewards, _, _, _ = eval_adapt(agent, env, args)
+            init = agent.extract_feat_vect(mass)
+            agent.init_feat_vect(init, batch_size=args.pad_batch_size)
+            rewards, _, _ = eval_adapt(agent, env, args)
             print(f'For {label} agent : {rewards.mean()} +/- {rewards.std()}')
 
     # il_agents, experts, envs, dynamics, buffers, trajs_buffers, stats_expert = setup(args,
