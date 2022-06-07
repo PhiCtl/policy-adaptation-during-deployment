@@ -15,15 +15,11 @@ import utils
 from eval import init_env, evaluate
 from logger import Logger
 
-def evaluate_agent(agent, env, args, buffer=None, step=None, L=None): # OK
+def evaluate_agent(agent, env, args): # OK
     """Evaluate agent on env, storing obses, actions and next obses in buffer if any"""
 
     ep_rewards = []
     obses, actions = [], []
-
-    if buffer:
-        buff = deepcopy(buffer)
-        buff.batch_size = args.pad_batch_size
     
     for i in range(args.num_rollouts):
         obs = env.reset()
@@ -40,8 +36,6 @@ def evaluate_agent(agent, env, args, buffer=None, step=None, L=None): # OK
                 action = agent.select_action(obs)
             next_obs, reward, done, info, change, _ = env.step(action, rewards)
             episode_reward += reward
-            if L and step:
-                L.log('eval/episode_reward', episode_reward, step)
             obses.append(obs)
             actions.append(action)
 
@@ -51,9 +45,6 @@ def evaluate_agent(agent, env, args, buffer=None, step=None, L=None): # OK
 
         obses.append(obs)
         ep_rewards.append(episode_reward)
-
-    if L and step:
-        L.dump(step)
 
     return np.array(ep_rewards), obses, actions
 
@@ -108,33 +99,30 @@ def evaluate_agent(agent, env, args, buffer=None, step=None, L=None): # OK
 def main(args):
 
     # TODO better practise than lists
-    #labels = ["_0_4", "_0_2", "_0_25", "_0_3"]
-    labels = ["_0_-1", "_0_-2", "_0_-3"]
+    labels = ["_0_4", "_0_2", "_0_25", "_0_3"]
+    #labels = ["_0_-1", "_0_-2", "_0_-3"]
     
     # Define 4 envts
     print("-"*60)
     print("Define environment")
     #all the enviroments for different domains
     envs = []
-    #masses = []
-    forces = []
-    for force in [-1, -2, -3]:
-        env = init_env(args, force)
-        forces.append(env.get_forces())
-        #print(masses[-1]) # debug
+    masses = []
+    #forces = []
+    for mass in [0.4, 0.3, 0.25, 0.2]:
+        env = init_env(args, mass=mass)
+        masses.append(env.get_masses())
         envs.append(env)
 
     # Load expert agents
     print("-" * 60)
     print("Load experts")
     experts = []
-    #loggers = []
     
     for label in labels:
         # All envs have should have the same action space shape
         agent = load_agent(label, envs[0].action_space.shape, args)
         experts.append(agent)
-        #loggers.append(logger)
 
     # Collect samples from the domain-generic agent
     print("-" * 60)
@@ -203,7 +191,7 @@ def main(args):
             buffer.add_path(obses, actions_new)
 
         # Save partial model
-        if it % 3 == 0 :
+        if it % 2 == 0 :
             save_dir = utils.make_dir(os.path.join(args.save_dir, "", 'model'))
             domain_generic_agent.save(save_dir, it)
 
