@@ -23,16 +23,16 @@ def verify_weights(args):
     envs, forces, il_agents = setup_small(args, [-1, -2, -3], ["_0_-1", "_0_-2", "_0_-3"])
 
     
-    print(il_agents[0].verify_weights_from(il_agents[1]))
-    print("-"*60)
-    print(il_agents[1].verify_weights_from(il_agents[2]))
-    print("-" * 60)
-    print(il_agents[2].verify_weights_from(il_agents[3]))
-    #
-    # a0, a1 = il_agents[0], il_agents[1]
-    # print(a1.actor.encoder.convs[0].weight, a0.actor.encoder.convs[0].weight)
+    # print(il_agents[0].verify_weights_from(il_agents[1]))
+    # print("-"*60)
+    # print(il_agents[1].verify_weights_from(il_agents[2]))
     # print("-" * 60)
-    # print(a1.actor.encoder.convs[1].bias, a0.actor.encoder.convs[1].bias)
+    # print(il_agents[2].verify_weights_from(il_agents[3]))
+    #
+    a0, a1 = il_agents[0], il_agents[1]
+    print(a1.actor.encoder.convs[0].weight, a0.actor.encoder.convs[0].weight)
+    print("-" * 60)
+    print(a1.inv.trunk[1].bias, a0.inv.trunk[1].bias)
 
 def PCA_decomposition(groups):
 
