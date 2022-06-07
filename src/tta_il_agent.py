@@ -171,31 +171,35 @@ def main(args):
 
 def test_agents(args):
 
-    # envs, masses, il_agents_train = setup(args,
-    #                                 [0.4, 0.3, 0.25, 0.2],
-    #                                 ["_0_4", "_0_3", "_0_25", "_0_2"])
+    envs, masses, il_agents_train = setup_small(args,
+                                    [0.4, 0.3, 0.25, 0.2],
+                                    ["_0_4", "_0_3", "_0_25", "_0_2"])
 
-    # for agent, env, label in zip(il_agents_train, envs, ["_0_4", "_0_3", "_0_25", "_0_2"]):
-    #     rewards, _, _, _ = evaluate_agent(agent, env, args, dyn=True, buffer=None)
+    for agent, label in zip(il_agents_train, ["_0_4", "_0_3", "_0_25", "_0_2"]):
+        print(f'Label {label}')
+        print("-"*60)
+        for env in envs:
+            rewards, _, _, _ = eval_adapt(agent, env, args)
+            print(f'For {label} agent : {rewards.mean()} +/- {rewards.std()}')
+
+    # il_agents, experts, envs, dynamics, buffers, trajs_buffers, stats_expert = setup(args,
+    #                                                                                        train_IL=False,
+    #                                                                                        checkpoint="final",
+    #                                                                                        gt=False)
+    #
+    # # Verify weights
+    # print(il_agents[0].verify_weights_from(il_agents[1]))
+    # print("-" * 60)
+    # print(il_agents[1].verify_weights_from(il_agents[2]))
+    # print("-" * 60)
+    # print(il_agents[2].verify_weights_from(il_agents[3]))
+
+    # for agent, env, traj, label in zip(il_agents, envs, trajs_buffers, ["_0_4", "_0_2", "_0_25", "_0_3"]):
+    #
+    #     rewards, _, _, _ = evaluate_agent(agent, env, args, buffer=traj)
     #     print(f'For {label} agent : {rewards.mean()} +/- {rewards.std()}')
 
-    il_agents, experts, envs, dynamics, buffers, trajs_buffers, stats_expert = setup(args,
-                                                                                           train_IL=False,
-                                                                                           checkpoint="final",
-                                                                                           gt=False)
-
-    # Verify weights
-    print(il_agents[0].verify_weights_from(il_agents[1]))
-    print("-" * 60)
-    print(il_agents[1].verify_weights_from(il_agents[2]))
-    print("-" * 60)
-    print(il_agents[2].verify_weights_from(il_agents[3]))
-
-    for agent, env, traj, label in zip(il_agents, envs, trajs_buffers, ["_0_-1", "_0_-2", "_0_-3"]):
-
-        rewards, _, _, _ = evaluate_agent(agent, env, args, buffer=traj)
-        print(f'For {label} agent : {rewards.mean()} +/- {rewards.std()}')
 
 if __name__ == "__main__":
     args = parse_args()
-    verify_weights(args)
+    test_agents(args)
