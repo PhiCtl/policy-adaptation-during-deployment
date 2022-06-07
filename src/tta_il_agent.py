@@ -173,10 +173,11 @@ def test_agents(args):
                                     [0.4, 0.3, 0.25, 0.2],
                                     ["_0_4", "_0_3", "_0_25", "_0_2"])
 
-    for agent, label in zip(il_agents_train, ["_0_4", "_0_3", "_0_25", "_0_2"]):
+    for agent, label, mass in zip(il_agents_train, ["_0_4", "_0_3", "_0_25", "_0_2"], masses):
         print(f'Label {label}')
         print("-"*60)
         for env in envs:
+            agent.init_feat_vect(mass, batch_size=args.pad_batch_size)
             rewards, _, _, _ = eval_adapt(agent, env, args)
             print(f'For {label} agent : {rewards.mean()} +/- {rewards.std()}')
 
