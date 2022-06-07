@@ -19,8 +19,10 @@ from utils_imitation_learning import evaluate_agent, eval_adapt, setup, setup_sm
 def verify_weights(args):
     """Verify if agents indeed share weights"""
 
-    envs, masses, il_agents = setup_small(args, [0.4, 0.2, 0.25, 0.3], ["_0_4", "_0_2", "_0_25", "_0_3"])
+    #envs, masses, il_agents = setup_small(args, [0.4, 0.2, 0.25, 0.3], ["_0_4", "_0_2", "_0_25", "_0_3"])
+    envs, forces, il_agents = setup_small(args, [-1, -2, -3], ["_0_-1", "_0_-2", "_0_-3"])
 
+    
     print(il_agents[0].verify_weights_from(il_agents[1]))
     print("-"*60)
     print(il_agents[1].verify_weights_from(il_agents[2]))
