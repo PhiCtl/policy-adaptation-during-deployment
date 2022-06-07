@@ -304,7 +304,7 @@ def setup_small(args, domains, labels, checkpoint="final", seed=None, visual=Fal
     #masses = []
     forces = []
     for force in domains:
-        env = init_env(args, force, seed=seed)
+        env = init_env(args, mass=force, seed=seed)
         forces.append(env.get_forces())
         envs.append(env)
 
