@@ -32,7 +32,7 @@ def verify_weights(args):
     a0, a1 = il_agents[0], il_agents[1]
     print(a1.actor.encoder.convs[0].weight, a0.actor.encoder.convs[0].weight)
     print("-" * 60)
-    print(a1.inv.trunk[1].bias, a0.inv.trunk[1].bias)
+    print(a1.inv.trunk[0].bias, a0.inv.trunk[0].bias)
 
 def PCA_decomposition(groups):
 
@@ -205,4 +205,4 @@ def test_agents(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    verify_weights(args)
+    main(args)
