@@ -168,10 +168,10 @@ def seeds_summary_visual(args, lr=None, num_seeds=6):
     adapt_rw = np.array(adapt_rw)
     print(f'Adapting agent performance : {adapt_rw.mean()} +/- {adapt_rw.std()}')
     dom = "_rd" if args.rd else "_" + str(args.domain_training)
-    adapt_recorder.save("performance_" + str(lr) + dom, adapt=True)
+    adapt_recorder.save("performance_visual_" + str(lr) + dom, adapt=True)
     rw = np.array(rw)
     print(f'Non adapting agent performance : {rw.mean()} +/- {rw.std()}')
-    recorder.save("performance_" + str(lr) + dom, adapt=False)
+    recorder.save("performance_visual_" + str(lr) + dom, adapt=False)
 
 
 
