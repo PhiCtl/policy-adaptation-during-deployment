@@ -231,8 +231,7 @@ def test_agents(args):
     #         rewards, _, _ = eval_adapt(agent, env, args)
     #         print(f'For {label} agent in {env_lab} : {rewards.mean()} +/- {rewards.std()}')
 
-    il_agents, experts, envs, dynamics, buffers, trajs_buffers, stats_expert = setup(args,
-                                                                                           train_IL=False,
+    il_agents, experts, envs, dynamics, buffers, trajs_buffers, stats_expert = setup(args, train_IL=False,
                                                                                            checkpoint="final",
                                                                                            gt=False)
 
@@ -251,4 +250,4 @@ def test_agents(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    test_agents(args)
+    main(args)
