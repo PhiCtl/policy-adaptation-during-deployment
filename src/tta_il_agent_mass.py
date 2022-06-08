@@ -211,9 +211,9 @@ def main(args):
     # il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
     # lr_screening(il_agent, args.label, env, args, lrs=[0.005, 0.1, 0.5, 1])
 
-    for lr in [0.0001, 0.001, 0.005, 0.01, 0.05, 0.1]:
+    for lr in [0.1] : #[0.0001, 0.001, 0.005, 0.01, 0.05, 0.1]:
         print("Learning rate :", lr)
-        seeds_summary_visual(args, lr=lr)
+        seeds_summary(args, lr=lr)
 
 def test_agents(args):
 
