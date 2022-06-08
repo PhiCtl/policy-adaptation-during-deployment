@@ -134,6 +134,46 @@ def seeds_summary(args, num_seeds=6, lr=None):
     print(f'Non adapting agent performance : {rw.mean()} +/- {rw.std()}')
     recorder.save("performance_" + str(lr) + dom, adapt=False)
 
+def seeds_summary_visual(args, lr=None, num_seeds=6):
+
+    adapt_rw, rw = [], []
+    adapt_recorder = AdaptRecorder(args.work_dir, args.mode)
+    recorder = AdaptRecorder(args.work_dir, args.mode)
+
+    for i in range(num_seeds):
+
+        # Load environment
+        [il_agent], _, [env], _, _, [traj_buffer], _ = setup(args,
+                                                             labels=[args.label],
+                                                             domains=[args.domain_test],
+                                                             train_IL=False,
+                                                             checkpoint="final",
+                                                             gt=False,
+                                                             seed=i)
+        # Change agent adaptation learning rate
+        if lr: il_agent.il_lr = lr
+
+        # Non adapting agent
+        reward, _, _ = evaluate_agent(il_agent, env, args, buffer=traj_buffer, recorder=recorder)
+        rw.append(reward)
+        print('non adapting reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', args.label)
+
+        # Adapting agent
+        print(
+            f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
+        reward, _, _ = evaluate_agent(il_agent, env, args, buffer=traj_buffer, recorder=adapt_recorder, adapt=True)
+        adapt_rw.append(reward)
+        print('pad reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', args.label)
+
+    adapt_rw = np.array(adapt_rw)
+    print(f'Adapting agent performance : {adapt_rw.mean()} +/- {adapt_rw.std()}')
+    dom = "_rd" if args.rd else "_" + str(args.domain_training)
+    adapt_recorder.save("performance_" + str(lr) + dom, adapt=True)
+    rw = np.array(rw)
+    print(f'Non adapting agent performance : {rw.mean()} +/- {rw.std()}')
+    recorder.save("performance_" + str(lr) + dom, adapt=False)
+
+
 
 def lr_screening(il_agent, label, env, args, lrs=[1e-4, 1e-3, 1e-2, 1e-1, 0.5]):
 
@@ -173,7 +213,7 @@ def main(args):
 
     for lr in [0.0001, 0.001, 0.005, 0.01, 0.05, 0.1]:
         print("Learning rate :", lr)
-        seeds_summary(args, lr=lr)
+        seeds_summary_visual(args, lr=lr)
 
 def test_agents(args):
 

@@ -10,21 +10,18 @@ from agent.IL_agent import make_il_agent
 from agent.IL_agent_visual import make_il_agent_visual
 from eval import init_env
 
-def evaluate_agent(ep_agent, env, args, buffer=None, exp_type="",
-                   feat_analysis=False, video=None, recorder=None):
+def evaluate_agent(ep_agent, env, args, buffer, exp_type="",
+                   video=None, recorder=None, adapt=False):
     """Evaluate agent on env, storing obses, actions and next obses
     Params : - agent: IL agent visual
              - env: env to evaluate this agent in
              - args
              - buffer: needed to train IL agent with a trajectory as input to the domain specific module"""
 
-    # TODO handle GT IL agents
     ep_rewards = []
-    obses, actions, feat_vects = [], [], []
-
-    if buffer:
-        buff = deepcopy(buffer)
-        buff.batch_size = args.pad_batch_size
+    obses, actions = [], []
+    buff = deepcopy(buffer) # Because we don't want to modify buffer batch size outside the function
+    buff.batch_size = args.pad_batch_size
 
     for i in tqdm(range(args.num_rollouts)):
 
@@ -38,8 +35,7 @@ def evaluate_agent(ep_agent, env, args, buffer=None, exp_type="",
 
             # Take a step
             # Trajectory : (obs, act, obs, act, obs)
-            traj = buff.sample_traj() if buffer else None
-            if feat_analysis and buffer :  feat_vects.append(ep_agent.extract_feat_vect(traj))
+            traj = buff.sample_traj()
 
             with utils.eval_mode(ep_agent):
                 action = ep_agent.select_action(obs, traj)
@@ -49,6 +45,18 @@ def evaluate_agent(ep_agent, env, args, buffer=None, exp_type="",
             episode_reward += reward
             obses.append(obs)
             actions.append(action)
+
+            # Adapt
+            if adapt:
+                # Prepare batch of observations
+                batch_obs = utils.batch_from_obs(torch.Tensor(obs).cuda(), batch_size=args.pad_batch_size)
+                batch_next_obs = utils.batch_from_obs(torch.Tensor(next_obs).cuda(), batch_size=args.pad_batch_size)
+                batch_action = torch.Tensor(action).cuda().unsqueeze(0).repeat(args.pad_batch_size, 1)
+                batch_traj = buff.sample()
+
+                # Update domain specific module
+                ep_agent.update_inv(utils.random_crop(batch_obs), utils.random_crop(batch_next_obs),
+                                    batch_action, batch_traj)
 
 
             if video: video.record(env, losses)
@@ -62,10 +70,7 @@ def evaluate_agent(ep_agent, env, args, buffer=None, exp_type="",
         if video: video.save(f'{args.mode}_{exp_type}_{i}.mp4')
         if recorder: recorder.end_episode()
 
-
-    if recorder: recorder.save("performance_" + exp_type, False)
-
-    return np.array(ep_rewards), obses, actions, feat_vects
+    return np.array(ep_rewards), obses, actions
 
 def eval_adapt(agent, env, args, adapt=False, video=None, recorder=None):
     """Evaluate agent on env, storing obses, actions and next obses

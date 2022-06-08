@@ -137,6 +137,7 @@ class DomainSpecificVisual(nn.Module):
             obs_shape, encoder_feature_dim, num_layers,
             num_filters, num_shared_layers
         )
+        self.num_shared = num_shared_layers
 
         input_feature_dim = 3 * encoder_feature_dim + 2 * action_shape[0]
 
@@ -242,7 +243,7 @@ class SacSSAgent(object):
         # Domain specific part
         self.domain_spe = DomainSpecificVisual(obs_shape, action_shape, encoder_feature_dim,
                                                num_layers, num_filters, num_shared_layers, dynamics_output_shape).cuda()
-        #self.domain_spe.encoder.copy_conv_weights_from(self.actor.encoder, num_shared_layers) # TODO uncomment !!
+        #self.domain_spe.encoder.copy_conv_weights_from(self.actor.encoder, num_shared_layers) # commented because of issues
 
         # Self-supervision
         self.ss_encoder = make_encoder(
@@ -264,10 +265,6 @@ class SacSSAgent(object):
             self.domain_spe.parameters(), lr=il_lr
         )
 
-        # MLP domain specific optimizer
-        self.domain_spe_MLP_optimizer = torch.optim.Adam(
-            self.domain_spe.specific.parameters(), lr=il_lr
-        )
 
         # ss optimizers
         self.init_ss_optimizers(encoder_lr, ss_lr)
@@ -337,7 +334,7 @@ class SacSSAgent(object):
         return mu, pred_action, actor_loss + inv_loss
 
 
-    def update_inv(self, obs, next_obs, action, traj, L=None, step=None):
+    def update_inv(self, obs, next_obs, action, traj):
 
         assert obs.shape[-1] == 84 and next_obs.shape[-1] == 84
 
@@ -348,14 +345,9 @@ class SacSSAgent(object):
 
         inv_loss = F.mse_loss(pred_action, action)
 
-        self.domain_spe_MLP_optimizer.zero_grad()
+        self.domain_spe_optimizer.zero_grad()
         inv_loss.backward()
-        self.domain_spe_MLP_optimizer.step()
-
-        if L is not None:
-            L.log('train_inv/inv_loss', inv_loss, step)
-
-        return inv_loss.item()
+        self.domain_spe_optimizer.step()
 
     def update(self):
 
