@@ -67,7 +67,7 @@ def evaluate_agent(ep_agent, env, args, buffer=None, exp_type="",
 
     return np.array(ep_rewards), obses, actions, feat_vects
 
-def eval_adapt(agent, env, args, exp_type="", adapt=False, video=None, recorder=None):
+def eval_adapt(agent, env, args, adapt=False, video=None, recorder=None):
     """Evaluate agent on env, storing obses, actions and next obses
     Params : - agent : IL agent GT
              - env : env to evaluate this agent in
@@ -122,9 +122,6 @@ def eval_adapt(agent, env, args, exp_type="", adapt=False, video=None, recorder=
         ep_rewards.append(episode_reward)
         if video: video.save(f'{args.mode}_pad_{i}.mp4' if adapt else f'{args.mode}_eval_{i}.mp4')
         if recorder: recorder.end_episode()
-
-
-    if recorder: recorder.save("performance_" + exp_type, adapt)
 
     return np.array(ep_rewards), obses, actions
 

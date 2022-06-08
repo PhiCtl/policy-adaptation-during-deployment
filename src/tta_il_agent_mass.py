@@ -7,6 +7,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 
 from arguments import parse_args
+from recorder import AdaptRecorder
 from utils_imitation_learning import evaluate_agent, eval_adapt, setup, setup_small, load_agent, collect_trajectory
 
 """Script to :
@@ -92,10 +93,12 @@ def feature_vector_analysis(args):
     # Perform PCA analysis
     PCA_decomposition(features)
 
-def seeds_summary(args, num_seeds=5, lr=None):
+def seeds_summary(args, num_seeds=6, lr=None):
 
     """For GT Il agents only"""
     adapt_rw, rw = [], []
+    adapt_recorder = AdaptRecorder(args.work_dir, args.mode)
+    recorder = AdaptRecorder(args.work_dir, args.mode)
 
     for i in range(num_seeds):
 
@@ -108,25 +111,27 @@ def seeds_summary(args, num_seeds=5, lr=None):
         if args.rd:
             init = np.random.rand(args.dynamics_output_shape)
         else:
-            init = il_agent.extract_feat_vect([args.domain_training, -1])  # [tgt_domain, 0.1]
+            init = il_agent.extract_feat_vect([args.domain_training, 0.1])  # [tgt_domain, 0.1]
         il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
 
         # Non adapting agent
-        reward, _, _ = eval_adapt(il_agent, env, args)
+        reward, _, _ = eval_adapt(il_agent, env, args, recorder=recorder)
         rw.append(reward)
         print('non adapting reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', args.label)
 
         # Adapting agent
         print(
             f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-        reward, _, _ = eval_adapt(il_agent, env, args, adapt=True)
+        reward, _, _ = eval_adapt(il_agent, env, args, adapt=True, recorder=adapt_recorder)
         adapt_rw.append(reward)
         print('pad reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', args.label)
 
     adapt_rw = np.array(adapt_rw)
     print(f'Adapting agent performance : {adapt_rw.mean()} +/- {adapt_rw.std()}')
+    adapt_recorder.save("performance_" + str(lr), adapt=True)
     rw = np.array(rw)
     print(f'Non adapting agent performance : {rw.mean()} +/- {rw.std()}')
+    recorder.save("performance_" + str(lr), adapt=False)
 
 
 def lr_screening(il_agent, label, env, args, lrs=[1e-4, 1e-3, 1e-2, 1e-1, 0.5]):
@@ -165,7 +170,7 @@ def main(args):
     # il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
     # lr_screening(il_agent, args.label, env, args, lrs=[0.005, 0.1, 0.5, 1])
 
-    for lr in [0.0001, 0.001, 0.005, 0.1]:
+    for lr in [0.0001, 0.001, 0.005, 0.01, 0.05, 0.1]:
         print("Learning rate :", lr)
         seeds_summary(args, lr=lr)
 
