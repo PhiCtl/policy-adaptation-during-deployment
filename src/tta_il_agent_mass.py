@@ -128,10 +128,11 @@ def seeds_summary(args, num_seeds=6, lr=None):
 
     adapt_rw = np.array(adapt_rw)
     print(f'Adapting agent performance : {adapt_rw.mean()} +/- {adapt_rw.std()}')
-    adapt_recorder.save("performance_" + str(lr), adapt=True)
+    dom = "_rd" if args.rd else "_" + str(args.domain_training)
+    adapt_recorder.save("performance_" + str(lr) + dom, adapt=True)
     rw = np.array(rw)
     print(f'Non adapting agent performance : {rw.mean()} +/- {rw.std()}')
-    recorder.save("performance_" + str(lr), adapt=False)
+    recorder.save("performance_" + str(lr) + dom, adapt=False)
 
 
 def lr_screening(il_agent, label, env, args, lrs=[1e-4, 1e-3, 1e-2, 1e-1, 0.5]):
