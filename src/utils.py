@@ -7,12 +7,16 @@ import os
 from datetime import datetime
 import random
 
+"""Adapted from https://github.com/nicklashansen/policy-adaptation-during-deployment"""
+
 def tie_weights(src, trg):
+    """Tie weights between a source and a target layer so that the weights are shared"""
     assert type(src) == type(trg)
     trg.weight = src.weight
     trg.bias = src.bias
 
 def verify_weights(src, trg):
+    """Verify the weights between source and target layers are indeed shared"""
     return torch.equal(trg.weight,src.weight) and torch.equal(trg.bias, src.bias)
 
 class eval_mode(object):
@@ -64,6 +68,8 @@ def make_dir(dir_path):
     return dir_path
 
 class SimpleBuffer(object):
+
+    """Simple replay buffer"""
 
     def __init__(self, obs_shape, action_shape, capacity, batch_size, label=None):
         self.capacity = capacity
@@ -177,69 +183,6 @@ class TrajectoryBuffer(SimpleBuffer):
 
         return [obs_0, action_0, obs_1, action_1, obs_2]
 
-class ExtendedTrajectoryBuffer(TrajectoryBuffer):
-    """Stores data from an environment in 7 arrays
-           we want at some point to retrieve a successive sequence of observations and actions
-           that's why observations and actions are stored this way
-        """
-
-    def __init__(self, obs_shape, action_shape, capacity, batch_size, label=None):
-        self.capacity = capacity
-        self.batch_size = batch_size
-
-        super().__init__(obs_shape, action_shape, capacity, batch_size, label=label)
-
-        # the proprioceptive obs is stored as float32, pixels obs as uint8
-        obs_dtype = np.float32 if len(obs_shape) == 1 else np.uint8
-
-
-        self.actions_2 = np.empty((capacity, *action_shape), dtype=np.float32)
-        self.obses_3 = np.empty((capacity, *obs_shape), dtype=obs_dtype)
-
-    def add(self, obs_0, action_0, obs_1, action_1, obs_2, action_2, obs_3):
-
-        np.copyto(self.actions_2[self.idx], action_2)
-        np.copyto(self.obses_3[self.idx], obs_3)
-        super().add(obs_0, action_0, obs_1, action_1, obs_2)  # Take care of increments
-
-    def add_path(self, obses, actions):
-        obs0s = obses[:-3]
-        act0s = actions[:-2]
-        obs1s = obses[1:-2]
-        act1s = actions[1:-1]
-        obs2s = obses[2:-1]
-        act2s = actions[2:]
-        obs3s = obses[3:]
-        for obs_0, action_0, obs_1, action_1, obs_2, action_2, obs_3 in zip(obs0s, act0s, obs1s, act1s, obs2s, act2s,
-                                                                            obs3s):
-            self.add(obs_0, action_0, obs_1, action_1, obs_2, action_2, obs_3)
-
-    def sample(self, idxs=None):
-
-        if idxs is None :
-            idxs = np.random.randint(
-                0, self.capacity if self.full else self.idx, size=self.batch_size
-            )
-
-        obses_0, actions_0, obses_1, actions_1, obses_2 = super().sample(idxs = idxs)
-        actions_2 = torch.as_tensor(self.actions_2[idxs]).float().cuda()
-        obses_3 = torch.as_tensor(self.obses_3[idxs]).float().cuda()
-
-        obses_3 = random_crop(obses_3)
-
-        return obses_0, actions_0, obses_1, [obses_0, actions_0, obses_1, actions_1, obses_2, actions_2, obses_3 ]
-
-    def sample_traj(self):
-        """Sample single trajectory"""
-
-        ix = np.random.randint(0, self.capacity if self.full else self.idx, size=1)
-        obs_0, action_0, obs_1, action_1, obs_2 = super().sample(idxs=ix)
-        action_2 = torch.as_tensor(self.actions_2[ix]).float().cuda()
-        obs_3 = torch.as_tensor(self.obses_3[ix]).float().cuda()
-
-        obs_3 = random_crop(obs_3)
-
-        return [obs_0, action_0, obs_1, action_1, obs_2, action_2, obs_3]
 
 class ReplayBuffer(object):
     """Buffer to store environment transitions"""
