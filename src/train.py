@@ -9,6 +9,8 @@ import time
 from logger import Logger
 from video import VideoRecorder
 
+"""Training scripts for agents
+Adapted from https://github.com/nicklashansen/policy-adaptation-during-deployment"""
 
 def evaluate(env, agent, video, num_episodes, L, step):
 	"""Evaluate agent"""
@@ -41,8 +43,9 @@ def main(args):
 		episode_length=args.episode_length,
 		action_repeat=args.action_repeat,
 		mode=args.mode,
-		#mass=args.cart_mass, # for domain difference during training
-		force=args.force_walker
+		mass=args.cart_mass,
+		force=args.force_walker,
+		dependent=args.dependent
 	)
 
 	utils.make_dir(args.work_dir)
@@ -66,9 +69,11 @@ def main(args):
 		args=args
 	)
 
+	# If we want to load a pretrained agent and train it further
 	if args.pad_checkpoint and args.init_dir :
-		agent.load(init_dir, args.pad_checkpoint) # To keep on training...
+		agent.load(init_dir, args.pad_checkpoint)
 
+	# Tensorboard output activated
 	L = Logger(args.work_dir, use_tb=True)
 	episode, episode_reward, done = 0, 0, True
 	rewards = []
