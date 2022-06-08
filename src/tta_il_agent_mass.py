@@ -217,38 +217,38 @@ def main(args):
 
 def test_agents(args):
 
-    envs, masses, il_agents_train = setup_small(args,
-                                    [0.4, 0.3, 0.25, 0.2],
-                                    ["_0_4", "_0_3", "_0_25", "_0_2"])
-
-
-    for agent, label, mass in zip(il_agents_train, ["_0_4", "_0_3", "_0_25", "_0_2"], masses):
-        print(f'Label {label}')
-        print("-"*60)
-        for env, env_lab in zip(envs, ["_0_4", "_0_3", "_0_25", "_0_2"]):
-            init = np.random.rand(args.dynamics_output_shape)
-            agent.init_feat_vect(init, batch_size=args.pad_batch_size)
-            rewards, _, _ = eval_adapt(agent, env, args)
-            print(f'For {label} agent in {env_lab} : {rewards.mean()} +/- {rewards.std()}')
-
-    # il_agents, experts, envs, dynamics, buffers, trajs_buffers, stats_expert = setup(args,
-    #                                                                                        train_IL=False,
-    #                                                                                        checkpoint="final",
-    #                                                                                        gt=False)
+    # envs, masses, il_agents_train = setup_small(args,
+    #                                 [0.4, 0.3, 0.25, 0.2],
+    #                                 ["_0_4", "_0_3", "_0_25", "_0_2"])
     #
-    # # Verify weights
-    # print(il_agents[0].verify_weights_from(il_agents[1]))
-    # print("-" * 60)
-    # print(il_agents[1].verify_weights_from(il_agents[2]))
-    # print("-" * 60)
-    # print(il_agents[2].verify_weights_from(il_agents[3]))
-
-    # for agent, env, traj, label in zip(il_agents, envs, trajs_buffers, ["_0_4", "_0_2", "_0_25", "_0_3"]):
     #
-    #     rewards, _, _, _ = evaluate_agent(agent, env, args, buffer=traj)
-    #     print(f'For {label} agent : {rewards.mean()} +/- {rewards.std()}')
+    # for agent, label, mass in zip(il_agents_train, ["_0_4", "_0_3", "_0_25", "_0_2"], masses):
+    #     print(f'Label {label}')
+    #     print("-"*60)
+    #     for env, env_lab in zip(envs, ["_0_4", "_0_3", "_0_25", "_0_2"]):
+    #         init = np.random.rand(args.dynamics_output_shape)
+    #         agent.init_feat_vect(init, batch_size=args.pad_batch_size)
+    #         rewards, _, _ = eval_adapt(agent, env, args)
+    #         print(f'For {label} agent in {env_lab} : {rewards.mean()} +/- {rewards.std()}')
+
+    il_agents, experts, envs, dynamics, buffers, trajs_buffers, stats_expert = setup(args,
+                                                                                           train_IL=False,
+                                                                                           checkpoint="final",
+                                                                                           gt=False)
+
+    # Verify weights
+    print(il_agents[0].verify_weights_from(il_agents[1]))
+    print("-" * 60)
+    print(il_agents[1].verify_weights_from(il_agents[2]))
+    print("-" * 60)
+    print(il_agents[2].verify_weights_from(il_agents[3]))
+
+    for agent, env, traj, label in zip(il_agents, envs, trajs_buffers, ["_0_4", "_0_3", "_0_2", "_0_25"]):
+
+        rewards, _, _ = evaluate_agent(agent, env, args, buffer=traj)
+        print(f'For {label} agent : {rewards.mean()} +/- {rewards.std()}')
 
 
 if __name__ == "__main__":
     args = parse_args()
-    main(args)
+    test_agents(args)
