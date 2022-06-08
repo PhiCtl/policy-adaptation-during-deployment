@@ -1,18 +1,8 @@
 
-import torch
-import os
 from tqdm import tqdm
 
-import numpy as np
-
 from arguments import parse_args
-from agent.agent import make_agent
-from agent.IL_agent import make_il_agent
-import utils
 from utils_imitation_learning import *
-from eval import init_env
-from logger import Logger
-
 """
 This script trains Imitation learning agents from RL experts trained on different domains (different by their dynamics
 parameters, either the mass or the force).
@@ -22,45 +12,6 @@ dynamics value, eg. the mass of the system. The output of this module is concate
 shared encoder, as input to SS and actor heads
 """
 
-def evaluate_agent(agent, env, args, feat_analysis=False): # OK
-    """Evaluate agent on env, storing obses, actions and next obses
-       if feat_analysis, then we also return the feature vector (output of the domain
-       specific module)"""
-
-    ep_rewards = []
-    obses, actions, feat_vects = [], [], []
-
-    for i in range(args.num_rollouts):
-        obs = env.reset()
-        done = False
-        episode_reward = 0
-        step = 0
-        rewards = []
-
-        agent.train()
-
-        while not done:
-
-            # Take a step
-            mass = env.get_masses()
-            #force = env.get_forces()
-            with utils.eval_mode(agent):
-                action = agent.select_action(obs, mass=mass)
-            next_obs, reward, done, info, _, _ = env.step(action, rewards)
-            episode_reward += reward
-
-            obses.append(obs)
-            actions.append(action)
-            obs = next_obs
-            step += 1
-
-        obses.append(obs)
-        ep_rewards.append(episode_reward)
-
-    if feat_analysis:
-        return np.array(ep_rewards), obses, actions, feat_vects
-    return np.array(ep_rewards), obses, actions
-
     
 def main(args):
 
@@ -68,6 +19,7 @@ def main(args):
     #labels = ["_0_-1", "_0_-2", "_0_-3"] #for walker-walk force
     domains = [0.4, 0.2, 0.25, 0.3] #for cart-pole mass
     #domains = [-1, -2, -3] #for walker-walk force
+    # TODO change below for forces
     il_agents, experts, envs, dynamics, buffers, _, stats_expert = setup(args,
                                                                          labels=labels,
                                                                          domains=domains,
@@ -101,7 +53,7 @@ def main(args):
             # Forward pass sequentially for all agents
             for agent, buffer, mass in zip(il_agents_train, buffers, dynamics):
                 obs, action, next_obs = buffer.sample() # sample a batch
-                action_pred, action_inv, loss = agent.predict_action(obs, next_obs, action, mass=mass)
+                action_pred, action_inv, loss = agent.predict_action(obs, next_obs, action, mass=mass) # TODO change here for forces
 
                 preds.append(action_pred) # Action from actor network
                 pred_invs.append(action_inv) # Action from SS head
@@ -118,9 +70,11 @@ def main(args):
         # Evaluate - Perform IL agent policy rollouts
         print("\n\n********** Evaluation and relabeling %i ************" % it)
         for agent, expert, env, buffer, mass in zip(il_agents_train, experts, envs, buffers, labels):
-            rewards, obses, actions = evaluate_agent(agent, env, args) # evaluate agent on environment
+            # evaluate agent on environment
+            # TODO change for forces
+            rewards, obses, actions = eval_adapt(agent, env, args, mass=True, adapt=False, train=True)
             stats_il[mass].append([rewards.mean(), rewards.std()]) # save intermediary score
-            print(f'Performance of agent on force {mass} : {rewards.mean()} +/- {rewards.std()}')
+            print(f'Performance of agent on mass {mass} : {rewards.mean()} +/- {rewards.std()}')
             actions_new = relabel(obses, expert)
             buffer.add_path(obses, actions_new)
 

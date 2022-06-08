@@ -81,15 +81,18 @@ def evaluate_agent(agent, env, args, buffer=None, exp_type="",
 
     return np.array(ep_rewards), obses, actions
 
-def eval_adapt(agent, env, args, adapt=False, video=None, recorder=None):
+def eval_adapt(agent, env, args, mass=True, adapt=False, train=False, video=None, recorder=None):
     """Evaluate agent on env, storing obses, actions and next obses
     Params : - agent : IL agent Ground truth (with the groundtruth dynamics as input to domain specific)
              - env : env to evaluate this agent in
+             - mass : if the dynamics change is a mass change
+             - train : if we're in training phase
+             - adapt : if we're in the adaptation phase and we want to adapt at test time
              - args"""
 
     ep_rewards = []
     obses, actions =  [], []
-
+    assert(not train or not adapt), "Cannot adapt during training "
 
     for i in tqdm(range(args.num_rollouts)):
 
@@ -108,7 +111,11 @@ def eval_adapt(agent, env, args, adapt=False, video=None, recorder=None):
 
             # Take a step
             with utils.eval_mode(ep_agent):
-                action = ep_agent.select_action(obs)
+                if train :
+                    dyn = env.get_masses() if mass else env.get_forces()
+                    action = ep_agent.select_action(obs, mass=dyn) if mass else ep_agent.select_action(obs, force=dyn)
+                else : # at evaluation phase based on feature vector inference
+                    action = ep_agent.select_action(obs)
             next_obs, reward, done, info, change, _ = env.step(action, rewards)
 
             # Save data

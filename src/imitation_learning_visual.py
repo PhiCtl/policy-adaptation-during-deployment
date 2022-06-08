@@ -22,7 +22,11 @@ def main(args):
 
     il_agents, experts, envs, _, buffers, trajs_buffers, stats_expert = setup(args,
                                                                                  labels=labels,
-                                                                                 domains=domains)
+                                                                                 domains=domains,
+                                                                                  type="force",
+                                                                                  gt=False,
+                                                                                  train_IL=True
+                                                                                )
     # Share domain generic part between agents
     il_agents_train = [il_agents[0]]
     for il_agent in il_agents[1:]:

@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import utils
 
+"""Adapted from https://github.com/nicklashansen/policy-adaptation-during-deployment"""
+
 
 OUT_DIM = {2: 39, 4: 35, 6: 31, 8: 27, 10: 23, 11: 21, 12: 19}
 OUT_LATENT_DIM = {201: 23 * 5}
@@ -107,36 +109,6 @@ class PixelEncoder(nn.Module):
 
 
 
-class TemporalEncoder(nn.Module):
-	"""1D Convolutional encoder for time series feature extraction"""
-
-	def __init__(self, input_dim, output_dim, num_channels, num_filters):
-		super().__init__()
-
-
-		self.conv1 = nn.Conv1d(num_channels, num_filters, 6) # (input - kernel + 1) / stride + 1
-		self.pool1 = nn.MaxPool1d(4)
-		self.conv2 = nn.Conv1d(num_filters, num_filters, 5, stride=2)
-
-		self.fc = nn.Linear(OUT_LATENT_DIM[input_dim], output_dim)
-
-	def forward(self, dynamics):
-
-		conv = torch.relu(self.conv1(dynamics))
-		pooled = self.pool1(conv)
-		conv = self.conv2(pooled)
-
-		h = conv.view(conv.size(0), -1)
-		output = self.fc(h)
-		return output
-
-
-	def copy_conv_weights_from(self, source):
-		tie_weights(src=source.conv1, trg=self.conv1)
-		tie_weights(src=source.conv2, trg=self.conv2)
-    
-	
-
 def make_encoder(
 	obs_shape, feature_dim, num_layers, num_filters, num_shared_layers
 ):
@@ -149,7 +121,3 @@ def make_encoder(
 		obs_shape, feature_dim, num_layers, num_filters, num_shared_layers
 	)
 
-def make_temp_encoder(
-		input_dim, output_dim, num_channels=3, num_filters=5
-):
-	return TemporalEncoder(input_dim, output_dim, num_channels, num_filters)
