@@ -1,101 +1,39 @@
-import os
-
-import matplotlib.pyplot as plt
 import numpy as np
-
-from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
 
 from arguments import parse_args
 from recorder import AdaptRecorder
-from utils_imitation_learning import evaluate_agent, eval_adapt, setup, setup_small, load_agent, collect_trajectory
+from utils_imitation_learning import evaluate_agent, eval_adapt, setup, setup_small
 
 """Script to :
-    - analyse the feature vectors of the domain specific module
     - perform test time training of IL agents
     - verify if weights were correctly tied
     - evaluate agents again on their training environment"""
 
 
-def verify_weights(args):
-    """Verify if agents indeed share weights"""
+def verify_weights(args, domains, dynamics, mass, visual):
+    """Verify if agents indeed share weights
+    PArams : - args
+             - domains : [0.4, 0.3] for instance for different cart masses
+             - labels : corresponding labels ["_0_4", "_0_3"] for instance
+             - mass : boolean either mass dynamics change either force (in this case set mass to False)
+             - visual : boolean for visual input based agents """
 
-    envs, masses, il_agents = setup_small(args, [0.4, 0.2, 0.25, 0.3], ["_0_4", "_0_2", "_0_25", "_0_3"])
-    #envs, forces, il_agents = setup_small(args, [-1, -2, -3], ["_0_-1", "_0_-2", "_0_-3"])
+    envs, masses, il_agents = setup_small(args, domains, dynamics, mass=mass, visual=visual)
 
-    
-    # print(il_agents[0].verify_weights_from(il_agents[1]))
-    # print("-"*60)
-    # print(il_agents[1].verify_weights_from(il_agents[2]))
-    # print("-" * 60)
-    # print(il_agents[2].verify_weights_from(il_agents[3]))
-    #
-    a0, a1 = il_agents[0], il_agents[1]
-    print(a1.actor.encoder.convs[0].weight, a0.actor.encoder.convs[0].weight)
+    print(il_agents[0].verify_weights_from(il_agents[1]))
+    print("-"*60)
+    print(il_agents[1].verify_weights_from(il_agents[2]))
     print("-" * 60)
-    print(a1.inv.trunk[0].bias, a0.inv.trunk[0].bias)
+    print(il_agents[2].verify_weights_from(il_agents[3]))
 
-def PCA_decomposition(groups):
-
-    """Perform PCA decomposition into 2 principal components
-    of each group in groups and plot the result (in 2D)"""
-
-    pca_decomposition = dict()
-
-    # Perform PCA decomposition
-    for domain, vect in groups.items():
-        std_data = StandardScaler().fit_transform(groups[domain])
-        pca = PCA(n_components=2)
-        pca_decomposition[domain] = pca.fit_transform(std_data)
-
-    # Plot
-    plt.figure(figsize=(20,20))
-    plt.xlabel('Principal Component 1', fontsize=15)
-    plt.ylabel('Principal Component 2', fontsize=15)
-    plt.title('2 component PCA', fontsize=20)
-
-    for domain, vect in pca_decomposition.items():
-        plt.scatter(vect[:,0], vect[:,1], label=domain)
-
-    plt.legend()
-    plt.grid()
-    plt.savefig("images/pca_decomp.jpeg")
-
-
-def feature_vector_analysis(args):
-
-    print("load agents")
-    # Load envs and agents
-    # envs, masses, il_agents = setup_small(args,
-    #                                       [0.3, 0.2, 0.25, 0.4],
-    #                                       ["_0_3", "_0_2", "_0_25", "_0_4"],
-    #                                       visual=True)
-    envs, forces, il_agents = setup_small(args,
-                                          [-1, -2, -3],
-                                          ["_0_-1", "_0_-2", "_0_-3"],
-                                          visual=True)
-
-    print("load traj buffers")
-    # Build traj buffers
-    traj_buffers = []
-    ref_expert = load_agent("", envs[0].action_space.shape, args)
-    for env in envs:
-        traj_buffers.append(collect_trajectory(ref_expert, env, args))
-
-    print("extract features")
-    # Extract feat vects from Il agents
-    features = dict()
-    for label, env, il_agent, traj_buff in zip(["_0_-1", "_0_-2", "_0_-3"], envs, il_agents, traj_buffers):
-        _, _, _, feat_vects = evaluate_agent(il_agent, env, args, feat_analysis=True, buffer=traj_buff)
-        features[label[1:]] = np.array(feat_vects)
-
-    print("perform PCA")
-    # Perform PCA analysis
-    PCA_decomposition(features)
 
 def seeds_summary(args, num_seeds=6, lr=None):
 
-    """For GT Il agents only"""
+    """For GT Il agents only
+    Params : - args
+             - num_seeds : on which we can evaluate our agents
+             - lr : the learning rate for test time adaptation"""
+
     adapt_rw, rw = [], []
     adapt_recorder = AdaptRecorder(args.work_dir, args.mode)
     recorder = AdaptRecorder(args.work_dir, args.mode)
@@ -136,6 +74,8 @@ def seeds_summary(args, num_seeds=6, lr=None):
 
 def seeds_summary_visual(args, lr=None, num_seeds=6):
 
+    """Same function as above but for visual input based imitation learning agents"""
+
     adapt_rw, rw = [], []
     adapt_recorder = AdaptRecorder(args.work_dir, args.mode)
     recorder = AdaptRecorder(args.work_dir, args.mode)
@@ -174,26 +114,6 @@ def seeds_summary_visual(args, lr=None, num_seeds=6):
     recorder.save("performance_visual_" + str(lr) + dom, adapt=False)
 
 
-
-def lr_screening(il_agent, label, env, args, lrs=[1e-4, 1e-3, 1e-2, 1e-1, 0.5]):
-
-    """For GIT IL agents only at the moment"""
-    # TODO generalize to other agents
-
-    # Non adapting agent
-    reward, _, _ = eval_adapt(il_agent, env, args)
-    print('non adapting reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label)
-
-    for lr in lrs:
-        # Adapting agent
-        il_agent.il_lr = lr
-        print(
-            f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-        reward, _, _ = eval_adapt(il_agent, env, args, adapt=True)
-        print('pad reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', label, ' and lr ', lr)
-
-
-
 def main(args):
 
     """Try test time adaption of IL agents"""
@@ -202,21 +122,14 @@ def main(args):
           else f'domain {args.domain_test} label {args.label} initialized on {args.domain_training}')
     print(f'learning rate {args.il_lr}')
 
-    # envs, masses, il_agents = setup_small(args, [args.domain_test], [args.label])
-    # il_agent, env = il_agents[0], envs[0]
-    # if args.rd:
-    #     init = np.random.rand(2, 1)
-    # else:
-    #     init = il_agent.extract_feat_vect([args.domain_training, 0.1])  # [tgt_domain, 0.1]
-    # il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
-    # lr_screening(il_agent, args.label, env, args, lrs=[0.005, 0.1, 0.5, 1])
-
     for lr in [0.1] : #[0.0001, 0.001, 0.005, 0.01, 0.05, 0.1]:
         print("Learning rate :", lr)
-        seeds_summary(args, lr=lr)
+        seeds_summary(args, lr=lr) # change to seeds_summary_visual(args, lr=lr) if needed
 
 def test_agents(args):
 
+
+    # Uncomment part below to test ground truth input based agents
     # envs, masses, il_agents_train = setup_small(args,
     #                                 [0.4, 0.3, 0.25, 0.2],
     #                                 ["_0_4", "_0_3", "_0_25", "_0_2"])
@@ -231,9 +144,14 @@ def test_agents(args):
     #         rewards, _, _ = eval_adapt(agent, env, args)
     #         print(f'For {label} agent in {env_lab} : {rewards.mean()} +/- {rewards.std()}')
 
-    il_agents, experts, envs, dynamics, buffers, trajs_buffers, stats_expert = setup(args, train_IL=False,
-                                                                                           checkpoint="final",
-                                                                                           gt=False)
+    # Test of visual input based agents
+    labels = ["_0_4", "_0_3", "_0_2", "_0_25"] # Shoudl be in same order as domaines
+    il_agents, experts, envs, dynamics, buffers, trajs_buffers, stats_expert = setup(args,
+                                                                                     domains=[0.4, 0.3, 0.2, 0.25],
+                                                                                     labels = labels,
+                                                                                     train_IL=False,
+                                                                                     checkpoint="final",
+                                                                                     gt=False)
 
     # Verify weights
     print(il_agents[0].verify_weights_from(il_agents[1]))
@@ -242,7 +160,7 @@ def test_agents(args):
     print("-" * 60)
     print(il_agents[2].verify_weights_from(il_agents[3]))
 
-    for agent, env, traj, label in zip(il_agents, envs, trajs_buffers, ["_0_4", "_0_3", "_0_2", "_0_25"]):
+    for agent, env, traj, label in zip(il_agents, envs, trajs_buffers, labels):
 
         rewards, _, _ = evaluate_agent(agent, env, args, buffer=traj)
         print(f'For {label} agent : {rewards.mean()} +/- {rewards.std()}')
@@ -250,4 +168,4 @@ def test_agents(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    main(args)
+    test_agents(args)
