@@ -47,6 +47,7 @@ def main(args):
 
 	utils.make_dir(args.work_dir)
 	model_dir = utils.make_dir(os.path.join(args.work_dir, 'model'))
+	init_dir = os.path.join(args.init_dir, 'model')
 	video_dir = utils.make_dir(os.path.join(args.work_dir, 'video'))
 	video = VideoRecorder(video_dir if args.save_video else None)
 
@@ -65,8 +66,8 @@ def main(args):
 		args=args
 	)
 
-	if args.pad_checkpoint is not None :
-		agent.load(model_dir, args.pad_checkpoint) # To keep on training...
+	if args.pad_checkpoint and args.init_dir :
+		agent.load(init_dir, args.pad_checkpoint) # To keep on training...
 
 	L = Logger(args.work_dir, use_tb=True)
 	episode, episode_reward, done = 0, 0, True
