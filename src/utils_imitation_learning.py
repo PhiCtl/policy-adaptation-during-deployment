@@ -10,7 +10,7 @@ from agent.IL_agent import make_il_agent
 from agent.IL_agent_visual import make_il_agent_visual
 from eval import init_env
 
-def evaluate_agent(ep_agent, env, args, buffer, exp_type="",
+def evaluate_agent(ep_agent, env, args, buffer=None, exp_type="",
                    video=None, recorder=None, adapt=False):
     """Evaluate agent on env, storing obses, actions and next obses
     Params : - agent: IL agent visual
@@ -20,8 +20,9 @@ def evaluate_agent(ep_agent, env, args, buffer, exp_type="",
 
     ep_rewards = []
     obses, actions = [], []
-    buff = deepcopy(buffer) # Because we don't want to modify buffer batch size outside the function
-    buff.batch_size = args.pad_batch_size
+    if buffer :
+        buff = deepcopy(buffer) # Because we don't want to modify buffer batch size outside the function
+        buff.batch_size = args.pad_batch_size
 
     for i in tqdm(range(args.num_rollouts)):
 
@@ -35,7 +36,7 @@ def evaluate_agent(ep_agent, env, args, buffer, exp_type="",
 
             # Take a step
             # Trajectory : (obs, act, obs, act, obs)
-            traj = buff.sample_traj()
+            traj = buff.sample_traj() if buffer else None
 
             with utils.eval_mode(ep_agent):
                 action = ep_agent.select_action(obs, traj)
@@ -47,7 +48,7 @@ def evaluate_agent(ep_agent, env, args, buffer, exp_type="",
             actions.append(action)
 
             # Adapt
-            if adapt:
+            if adapt and buffer:
                 # Prepare batch of observations
                 batch_obs = utils.batch_from_obs(torch.Tensor(obs).cuda(), batch_size=args.pad_batch_size)
                 batch_next_obs = utils.batch_from_obs(torch.Tensor(next_obs).cuda(), batch_size=args.pad_batch_size)
