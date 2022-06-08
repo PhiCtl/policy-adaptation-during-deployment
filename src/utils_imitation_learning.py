@@ -27,6 +27,7 @@ def evaluate_agent(agent, env, args, buffer=None, exp_type="",
 
     for i in tqdm(range(args.num_rollouts)):
 
+        # If we adapt agent at test time, we need to each time load a new agent
         if adapt:
             ep_agent = deepcopy(agent)
             ep_agent.train()
@@ -82,7 +83,7 @@ def evaluate_agent(agent, env, args, buffer=None, exp_type="",
 
 def eval_adapt(agent, env, args, adapt=False, video=None, recorder=None):
     """Evaluate agent on env, storing obses, actions and next obses
-    Params : - agent : IL agent GT
+    Params : - agent : IL agent Ground truth (with the groundtruth dynamics as input to domain specific)
              - env : env to evaluate this agent in
              - args"""
 
@@ -154,12 +155,12 @@ def collect_trajectory(RL_reference, env, args):
     return buffer
 
 
-def collect_expert_samples(agent, env, args, label): # OK
+def collect_expert_samples(agent, env, args, label):
     """Collect data samples for Imitation learning training
        Args : - agent : expert RL agent trained on env
               - env : dm_control environment
               - args
-              - label : env specificity, eg. the cartmass, the opponent force
+              - label : env specificity, eg. the cartmass, the applied force
        """
     # Create replay buffer with label
     buffer = utils.SimpleBuffer(
@@ -174,7 +175,7 @@ def collect_expert_samples(agent, env, args, label): # OK
     buffer.add_path(obses, actions) # add policy rollout to buffer
     return buffer, ep_rewards.mean(), ep_rewards.std()
 
-def relabel(obses, expert): # OK
+def relabel(obses, expert):
     """Relabel observations with expert agent for DAgger algorithm"""
     with utils.eval_mode(expert):
         actions_new = []
@@ -182,7 +183,7 @@ def relabel(obses, expert): # OK
             actions_new.append(expert.select_action(obs))
     return actions_new
 
-def load_agent(label, action_shape, args): # OK
+def load_agent(label, action_shape, args):
     """Load RL expert agent model from directory"""
 
     work_dir = args.work_dir + label # example : logs/cartpole_swingup + "_0_3"
@@ -205,7 +206,7 @@ def setup(args,
           labels = ["_0_4", "_0_3", "_0_2", "_0_25"],
           domains = [0.4, 0.3, 0.2, 0.25],
           checkpoint="final",
-          type="force",
+          type="mass",
           gt=False,
           train_IL=True,
           seed=None):
@@ -217,7 +218,7 @@ def setup(args,
                  - type : type of dynamics, either mass or force
                  - gt : if we need il agents trained with ground truth dynamics or with visual input only
                  - train_IL : if we are to train IL agents or evaluate them
-        Return : - """
+                 - seed : for initialisation"""
 
     assert type in ["mass", "force"], "Dynamics not implemented"
     if seed is None : seed = args.seed
