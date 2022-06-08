@@ -141,7 +141,7 @@ def collect_trajectory(RL_reference, env, args):
         capacity=10000,
         batch_size=args.batch_size
     )
-    _, obses, actions, _ = evaluate_agent(RL_reference, env, args)
+    _, obses, actions = evaluate_agent(RL_reference, env, args)
     buffer.add_path(obses, actions)
 
     return buffer
@@ -163,7 +163,7 @@ def collect_expert_samples(agent, env, args, label): # OK
         label=label
     )
 
-    ep_rewards, obses, actions, _ = evaluate_agent(agent, env, args)
+    ep_rewards, obses, actions = evaluate_agent(agent, env, args)
     buffer.add_path(obses, actions) # add policy rollout to buffer
     return buffer, ep_rewards.mean(), ep_rewards.std()
 
