@@ -1,6 +1,8 @@
 import argparse
 import numpy as np
 
+"""Adapted from https://github.com/nicklashansen/policy-adaptation-during-deployment"""
+
 
 def parse_args():
 	parser = argparse.ArgumentParser()
@@ -13,9 +15,9 @@ def parse_args():
 	parser.add_argument('--episode_length', default=1000, type=int)
 	parser.add_argument('--mode', default='train', type=str)
 	parser.add_argument('--dependent', default=False, action='store_true')
-	parser.add_argument('--window', default=100, type=int)
-	parser.add_argument('--cart_mass', default=1, type=float)
-	parser.add_argument('--force_walker', default=0.0, type=float)
+	# Domain specific
+	parser.add_argument('--cart_mass', default=None, type=float)
+	parser.add_argument('--force_walker', default=None, type=float)
 	
 	# agent
 	parser.add_argument('--init_steps', default=1000, type=int)
