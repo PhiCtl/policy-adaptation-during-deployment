@@ -195,8 +195,8 @@ def load_agent(label, action_shape, args): # OK
     return agent
 
 def setup(args,
-          labels = ["_0_-1", "_0_-2", "_0_-3"],
-          domains = [-1, -2, -3],
+          labels = ["_0_4", "_0_3", "_0_2", "_0_25"],
+          domains = [0.4, 0.3, 0.2, 0.25],
           checkpoint="final",
           type="force",
           gt=False,
