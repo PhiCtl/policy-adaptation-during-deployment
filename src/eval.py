@@ -107,6 +107,7 @@ def init_env(args, mass=None, force=None, seed=None):
         episode_length=args.episode_length,
         action_repeat=args.action_repeat,
         mode=args.mode,
+        window=args.window,
         dependent=args.dependent,
         mass= mass if mass else args.cart_mass,
         force=force if force else args.force_walker

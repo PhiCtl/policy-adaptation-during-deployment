@@ -13,8 +13,10 @@ def parse_args():
 	parser.add_argument('--frame_stack', default=3, type=int)
 	parser.add_argument('--action_repeat', default=4, type=int)
 	parser.add_argument('--episode_length', default=1000, type=int)
-	parser.add_argument('--mode', default='train', type=str)
+	parser.add_argument('--mode', default='train', type=str) # See below for all the possible options
+	# To build environment baselines
 	parser.add_argument('--dependent', default=False, action='store_true')
+	parser.add_argument('--window', default=100, type=int)
 	# Domain specific
 	parser.add_argument('--cart_mass', default=None, type=float)
 	parser.add_argument('--force_walker', default=None, type=float)
@@ -32,15 +34,17 @@ def parse_args():
 
 	# imitation learning
 	parser.add_argument('--num_rollouts', default=100, type=int)
-	parser.add_argument('--n_iter', default=10, type=int)
-	parser.add_argument('--il_steps', default=5000, type=int)
-	parser.add_argument('--dynamics_output_shape', default=10, type=int)
-	parser.add_argument('--domain_test', default=0.35, type=float)
-	parser.add_argument('--label', default="_0_3", type=str)
-	parser.add_argument('--domain_training', default=0.3, type=float)
-	parser.add_argument('--rd', default=False, action='store_true')
+	parser.add_argument('--n_iter', default=10, type=int) # Number of DAgger iterations
+	parser.add_argument('--il_steps', default=5000, type=int) # Number of training steps @ each iteration
+	parser.add_argument('--dynamics_output_shape', default=10, type=int) # Latent dynamics shape
+	# Imitation learning at test time
+	parser.add_argument('--domain_test', default=0.35, type=float) # Domain on which we test the agent
+	parser.add_argument('--label', default="_0_3", type=str) # Reference to the agent model we load
+	parser.add_argument('--domain_training', default=0.3, type=float) # Domain on which the agent was trained
+	# For ground truth input based agents only
+	parser.add_argument('--rd', default=False, action='store_true') # If we initialize the feature vector at random
 	parser.add_argument('--visual', default=False, action='store_true')
-	parser.add_argument('--il_lr', default=1e-3, type=float)
+	parser.add_argument('--il_lr', default=1e-3, type=float) # learning rate for test time adaptation
 
 	# critic
 	parser.add_argument('--critic_lr', default=1e-3, type=float)
@@ -93,7 +97,6 @@ def parse_args():
 	args = parser.parse_args()
 
 	assert args.mode in {'train', 'color_easy', 'color_hard'} or 'video' in args.mode, f'unrecognized mode "{args.mode}"'
-	#assert args.predictor in {'cart_mass', 'force_walker'}, f'unrecognized dynamics "{args.predictor}"'
 	assert args.seed is not None, 'must provide seed for experiment'
 	assert args.work_dir is not None, 'must provide a working directory for experiment'
 

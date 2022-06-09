@@ -22,6 +22,7 @@ def make_pad_env(
         frame_stack=3,
         action_repeat=4,
         mode='train',
+        window=100,
         mass=1.0,
         force=0.0,
         dependent=False
@@ -44,9 +45,9 @@ def make_pad_env(
     env = FrameStack(env, frame_stack)
     # If the domain is the cartpole, then we can introduce the custom mass
     if domain_name == 'cartpole' and mass:
-        env = ColorWrapper(env, mode, mass=mass, dependent=dependent)
+        env = ColorWrapper(env, mode, window, mass=mass, dependent=dependent)
     elif domain_name == 'walker' and force:
-        env = ColorWrapper(env, mode, force=force, dependent=dependent)
+        env = ColorWrapper(env, mode, window, force=force, dependent=dependent)
     else :
         env = ColorWrapper(env, mode)
 
@@ -59,7 +60,7 @@ def make_pad_env(
 class ColorWrapper(gym.Wrapper):
     """Wrapper for the color experiments"""
 
-    def __init__(self, env, mode, mass=None, force=None, dependent=False):
+    def __init__(self, env, mode, window, mass=None, force=None, dependent=False):
         assert isinstance(env, FrameStack), 'wrapped env must be a framestack'
         gym.Wrapper.__init__(self, env)
         self._max_episode_steps = env._max_episode_steps
@@ -68,6 +69,7 @@ class ColorWrapper(gym.Wrapper):
         self.time_step = 0
         self.mass = mass
         self.force = force
+        self._window = window
         self.change = None
         self._dependent = dependent
         if 'color' in self._mode:
