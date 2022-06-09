@@ -1,5 +1,6 @@
-# Self-Supervised Policy Adaptation during Deployment
-PyTorch implementation of PAD and evaluation benchmarks from
+# Self-Supervised Policy Adaptation during Deployment revisited
+
+This work is an adaptation from
 
 **Self-Supervised Policy Adaptation during Deployment**
 
@@ -10,20 +11,7 @@ PyTorch implementation of PAD and evaluation benchmarks from
 
 ![samples](images/method.png)
 
-
-## Citation
-If you find our work useful in your research, please consider citing the paper as follows:
-
-```
-@article{hansen2020deployment,
-  title={Self-Supervised Policy Adaptation during Deployment},
-  author={Nicklas Hansen and Rishabh Jangir and Yu Sun and Guillem Alenyà and Pieter Abbeel and Alexei A. Efros and Lerrel Pinto and Xiaolong Wang},
-  year={2020},
-  eprint={2007.04309},
-  archivePrefix={arXiv},
-  primaryClass={cs.LG}
-}
-```
+The paper and the code can be found [here](https://nicklashansen.github.io/PAD/).
 
 ## Setup
 We assume that you have access to a GPU with CUDA >=9.2 support. All dependencies can then be installed with the following commands:
@@ -34,8 +22,8 @@ conda activate pad
 sh setup/install_envs.sh
 ```
 
-## Training & Evaluation
-We have prepared training and evaluation scripts that can be run by ```sh scripts/train.sh``` and ```sh scripts/eval.sh```. Alternatively, you can call the python scripts directly, e.g. for training call
+## Adapting agents Training & Evaluation
+We have prepared training and evaluation scripts that can be run on a cluster by ```sbatch scripts/sbatch_train.sh``` and ```sbatch scripts/sbatch_eval.sh```. Alternatively, you can call the python scripts directly, e.g. for training call. 
 
 ```
 CUDA_VISIBLE_DEVICES=0 python3 src/train.py \
@@ -49,43 +37,45 @@ CUDA_VISIBLE_DEVICES=0 python3 src/train.py \
     --work_dir logs/cartpole_swingup/inv/0 \
     --save_model
 ```
-which should give you an output of the form
 ```
-| train | E: 1 | S: 1000 | D: 0.8 s | R: 0.0000 | BR: 0.0000 | 
-  ALOSS: 0.0000 | CLOSS: 0.0000 | RLOSS: 0.0000
-```
-
-We provide a pre-trained model that can be used for evaluation. To run Policy Adaptation during Deployment, call
-
-```
-CUDA_VISIBLE_DEVICES=0 python3 src/eval.py \
-    --domain_name cartpole \
-    --task_name swingup \
-    --action_repeat 8 \
-    --mode color_hard \
+CUDA_VISIBLE_DEVICES=0 python3 src/train.py \
+    --domain_name walker \
+    --task_name walk \
+    --action_repeat 4 \
+    --mode train \
     --use_inv \
     --num_shared_layers 8 \
     --seed 0 \
-    --work_dir logs/cartpole_swingup/inv/0 \
-    --pad_checkpoint 500k
-```
-which should give you an output of the form
-```
-Evaluating logs/cartpole_swingup/inv/0 for 100 episodes (mode: color_hard)
-eval reward: 666
-
-Policy Adaptation during Deployment of logs/cartpole_swingup/inv/0 for 100 episodes (mode: color_hard)
-pad reward: 722
+    --work_dir logs/walker_walk/inv/0 \
+    --save_model
 ```
 
-Here's a few samples from the training and test environments of our benchmark:
+We provide two pre-trained models that can be used for evaluation, namely the cartpole and the walker. To run Policy Adaptation during Deployment, call
+Please refer to the original paper and to `src/arguments.py` for more information on the commands. 
 
-![samples](images/samples.png)
+## Building environment baselines
+To build the experiments leading to environment baselines, we provided the following script : `scripts/sbatch_baselines.sh`. The domain, the task, the window and the dynamics (eg. cart_mass) specifications can be changed.
 
-Please refer to the project page and paper for results and experimental details.
+## Imitation learning
 
+Below we list the available scripts and their usage. Please refer to our report and to `src/arguments.py` for more information on the commands. 
+To evaluate any agent on a particular domain, we provided the script `scripts/sbatch_eval_domain.sh`. The dynamics specifications along with the agent domain and task can be modified if needed. 
+
+### Experts training
+To train an expert agent, we provided the script `scripts/sbatch_train_expert.sh`. The dynamics options (eg. force_walker or cart_mass) along with the working directory can be changed to train an agent on another domain. 
+To train domain-generic agents, we provided the script `scripts/sbatch_domain_generic.sh`. 
+
+### Imitation learning agents with groundtruth input
+To train an imitation learning agent with experts, based on the ground truth value of the domain dynamics, we used the script `scripts/sbatch_il_agent.sh`. 
+
+### Imitation learning agents with visual input
+To train an imitation learning with experts, based on a visual input only, we used the script `scripts/sbatch_il_agent_visual.sh`. 
+
+### Imitation learning agents and test-time adaptation
+Several functions and tests are detailed and available in `src/tta_il_agent.py`. Please have a look to select one of them. 
+The current commands provided in `scripts/sbatch_eval_il_agent.sh` perform learning rate screening for an imitation learning agent trained on domain with cart mass 0.4 and evaluated on domain with cart mass 0.5. 
 
 ## Acknowledgements
 
-We want to thank the numerous researchers and engineers involved in work of which this implementation is based on.
-Our SAC implementation is based on [this repository](https://github.com/denisyarats/pytorch_sac_ae), the original DeepMind Control suite is available [here](https://github.com/deepmind/dm_control) and the gym wrapper for it is available [here](https://github.com/denisyarats/dmc2gym). Go check them out!
+We got inspiration from and used the work of [Nicklas Hansen et al.](https://nicklashansen.github.io/PAD/) and Berkeley Deep RL [CS-285](https://github.com/berkeleydeeprlcourse/homework_fall2021/tree/main/hw1) course.
+The original DeepMind Control suite is available [here](https://github.com/deepmind/dm_control) and the gym wrapper for it is available [here](https://github.com/denisyarats/dmc2gym).
