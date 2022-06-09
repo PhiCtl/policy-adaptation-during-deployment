@@ -6,7 +6,7 @@
 #SBATCH --time 11:00:00
 #SBATCH --gres gpu:1
 
-python3 src/imitation_learning.py \
+python3 src/tta_il_agent.py \
     --domain_name cartpole \
     --task_name swingup \
     --action_repeat 8 \
@@ -17,4 +17,7 @@ python3 src/imitation_learning.py \
     --seed 0 \
     --train_steps 100000 \
     --work_dir logs/cartpole_swingup \
-    --save_dir logs/IL/shared/cartpole_swingup
+    --save_dir logs/IL/shared/cartpole_swingup \
+    --domain_training 0.4 \
+    --domain_test 0.5 \
+    --label _0_4
