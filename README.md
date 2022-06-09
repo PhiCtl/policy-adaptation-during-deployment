@@ -64,15 +64,15 @@ To evaluate any agent on a particular domain, we provided the script `scripts/sb
 ### Experts training
 To train an expert agent, we provided the script `scripts/sbatch_train_expert.sh`. The dynamics options (eg. force_walker or cart_mass) along with the working directory can be changed to train an agent on another domain. 
 To train domain-generic agents, we provided the script `scripts/sbatch_domain_generic.sh`. 
-The train experts are available in [Recovery](https://github.com/PhiCtl/Recovery) under `models\RL_expert` and need to be extracted in `logs\cartpole_swingup_0_{mass}\inv\0\model`.
+The train experts are available in [Recovery](https://github.com/PhiCtl/Recovery) under `models\cartpole\RL_expert` and need to be extracted in `logs\cartpole_swingup_0_{mass}\inv\0\model`.
 
 ### Imitation learning agents with groundtruth input
 To train an imitation learning agent with experts, based on the ground truth value of the domain dynamics, we used the script `scripts/sbatch_il_agent.sh`. 
-The trained agents are available in [Recovery](https://github.com/PhiCtl/Recovery) under `models\IL_gt` and need to be extracted in `logs\IL\shared\cartpole_swingup\_0_{mass}\model`.
+The trained agents are available in [Recovery](https://github.com/PhiCtl/Recovery) under `models\cartpole\IL_gt` and need to be extracted in `logs\IL\shared\cartpole_swingup\_0_{mass}\model`.
 
 ### Imitation learning agents with visual input
 To train an imitation learning with experts, based on a visual input only, we used the script `scripts/sbatch_il_agent_visual.sh`. 
-The trained agents are available in [Recovery](https://github.com/PhiCtl/Recovery) under `models\IL_visual` and need to be extracted in `logs\IL_visual\shared\cartpole_swingup\_0_{mass}\model`.
+The trained agents are available in [Recovery](https://github.com/PhiCtl/Recovery) under `models\cartpole\IL_visual` and need to be extracted in `logs\IL_visual\shared\cartpole_swingup\_0_{mass}\model`.
 
 ### Imitation learning agents and test-time adaptation
 Several functions and tests are detailed and available in `src/tta_il_agent.py`. Please have a look to select one of them. 
