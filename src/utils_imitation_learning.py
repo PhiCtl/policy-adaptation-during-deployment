@@ -6,8 +6,9 @@ from copy import deepcopy
 
 import utils
 from agent.agent import make_agent
-from agent.IL_agent import make_il_agent
-from agent.IL_agent_visual import make_il_agent_visual
+#from agent.IL_agent import make_il_agent
+#from agent.IL_agent_visual import make_il_agent_visual
+from agent.IL_agents import make_il_agent
 from eval import init_env
 
 def evaluate_agent(agent, env, args, buffer=None, exp_type="",
@@ -205,7 +206,7 @@ def load_agent(label, action_shape, args):
         action_shape=action_shape,
         args=args
     )
-    agent.load(model_dir, args.pad_checkpoint)
+    agent.load(model_dir, 500000)# TODO generalize
 
     return agent
 
@@ -282,20 +283,10 @@ def setup(args,
 
     for d, label in zip(dynamics, labels):
 
-        # Either we need agents with ground truth dynamics input
-        if gt : # TODO refractor in a single function
-            il_agent = make_il_agent(
-                obs_shape=cropped_obs_shape,
-                action_shape=envs[0].action_space.shape,
-                dynamics_input_shape=d.shape[0],
-                args=args
-            )
-        # Either we need agents with visual input only
-        else :
-            il_agent = make_il_agent_visual(
-                obs_shape=cropped_obs_shape,
-                action_shape=envs[0].action_space.shape,
-                args=args)
+        il_agent = make_il_agent(cropped_obs_shape,
+                                 envs[0].action_space.shape, args,
+                                 visual=not gt,
+                                 dynamics_input_shape=d.shape[0])
 
         # If test time, we load pre-trained agents
         if not train_IL:
@@ -330,17 +321,11 @@ def setup_small(args, domains, labels, checkpoint="final", seed=None, visual=Fal
 
         # Load IL agent
         cropped_obs_shape = (3 * args.frame_stack, 84, 84)
-        if visual :
-            il_agent = make_il_agent_visual(
-                obs_shape=cropped_obs_shape,
-                action_shape=envs[0].action_space.shape,
-                args=args)
-        else :
-            il_agent = make_il_agent(
-                obs_shape=cropped_obs_shape,
-                action_shape=envs[0].action_space.shape,
-                dynamics_input_shape=d.shape[0],
-                args=args)
+        il_agent = make_il_agent(cropped_obs_shape,
+                                 envs[0].action_space.shape,
+                                 args,
+                                 visual=visual,
+                                 dynamics_input_shape=d.shape[0])
         load_dir = utils.make_dir(os.path.join(args.save_dir, label, 'model'))
 
         # I needed two different load functions for IL GT vs IL visual agents
