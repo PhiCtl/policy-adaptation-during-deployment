@@ -1,20 +1,18 @@
 import numpy as np
-import pandas as pd
 from numpy.random import randint
-from ast import literal_eval
 import os
 import gym
 import torch
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
-from torchvision.transforms import Grayscale, ColorJitter
-from PIL import Image
+
 import dmc2gym
 from dm_control.suite import common
 import cv2
 from collections import deque
 from utils import moving_average_reward
 
+"""Adapted from https://github.com/nicklashansen/policy-adaptation-during-deployment"""
 
 def make_pad_env(
         domain_name,
@@ -24,11 +22,9 @@ def make_pad_env(
         frame_stack=3,
         action_repeat=4,
         mode='train',
-        dependent=False,
-        threshold=0,
-        window=3,
         mass=1.0,
-        force=0.0
+        force=0.0,
+        dependent=False
 ):
     """Make environment for PAD experiments"""
     env = dmc2gym.make(
@@ -44,15 +40,15 @@ def make_pad_env(
     )
     env.seed(seed)
 
-    env = GreenScreen(env, mode, threshold, dependent, window)
+    env = GreenScreen(env, mode)
     env = FrameStack(env, frame_stack)
     # If the domain is the cartpole, then we can introduce the custom mass
-    if domain_name == 'cartpole' :
-        env = ColorWrapper(env, mode, threshold, dependent, window, mass=mass)
-    elif domain_name == 'walker':
-        env = ColorWrapper(env, mode, threshold, dependent, window, force=force)
+    if domain_name == 'cartpole' and mass:
+        env = ColorWrapper(env, mode, mass=mass, dependent=dependent)
+    elif domain_name == 'walker' and force:
+        env = ColorWrapper(env, mode, force=force, dependent=dependent)
     else :
-        env = ColorWrapper(env, mode, threshold, dependent, window, mass=None, force=None)
+        env = ColorWrapper(env, mode)
 
     assert env.action_space.low.min() >= -1
     assert env.action_space.high.max() <= 1
@@ -63,28 +59,27 @@ def make_pad_env(
 class ColorWrapper(gym.Wrapper):
     """Wrapper for the color experiments"""
 
-    def __init__(self, env, mode, threshold, dependent, window, mass=None, force=None):
+    def __init__(self, env, mode, mass=None, force=None, dependent=False):
         assert isinstance(env, FrameStack), 'wrapped env must be a framestack'
         gym.Wrapper.__init__(self, env)
         self._max_episode_steps = env._max_episode_steps
         self._mode = mode
-        self._threshold = threshold
-        self._dependent = dependent
-        self._window = window
         self._color = None
         self.time_step = 0
-        self._change = 1
         self.mass = mass
         self.force = force
+        self.change = None
+        self._dependent = dependent
         if 'color' in self._mode:
             self._load_colors()
 
         _env = self._get_dmc_wrapper()
         if mass:  # If a mass is specified -> cart pole domain, then we change the mass of the cart
             _env.physics.model.body_mass[1] = mass
-            self._change = mass
+            self.change = mass
         elif force:
             _env.physics.model.opt.gravity[:2] = -force
+            self.change = -force
 
     def reset(self):
         self.time_step = 0
@@ -97,14 +92,14 @@ class ColorWrapper(gym.Wrapper):
                  'skybox_rgb2': [.2, .8, .2],
                  'skybox_markrgb': [.2, .8, .2]
                  })
-        self._change = self.mass
         _env = self._get_dmc_wrapper()
         if self.mass :
             _env.physics.model.body_mass[1] = self.mass
+            self.change = self.mass
         if self.force :
+            # Force given in magnitude
             _env.physics.model.opt.gravity[:2] = -self.force
-        #print(_env.physics.model.body_mass[1]) # TODO remove when it is ok
-        #print(_env.physics.model.opt.gravity[:2])
+            self.change = -self.force
         return self.env.reset()
 
     def step(self, action, rewards=None):
@@ -112,17 +107,17 @@ class ColorWrapper(gym.Wrapper):
         # Make a step
         next_obs, reward, done, info = self.env.step(action)
         rewards.append(reward)
-        has_changed = False # To reload the pre-trained weights whenever a change happened
+        # To reload the pre-trained weights of the agent whenever a change happened outside the class
+        # To prevent catastrophic forgetting
+        has_changed = False
         _env = self._get_dmc_wrapper()
 
-        if self._dependent: # Won't be true in the actual training setting
-            avg_reward = moving_average_reward(rewards, current_ep=len(rewards) - 1, wind_lgth=self._window)
-
-            if self.time_step % self._window == 0 :
+        # If we're in the dependent mode, we change the dynamics in a time-dependent manner
+        if self._dependent and self.time_step % self._window == 0 :
                 self.modify_physics_model()
                 has_changed = True
 
-        return next_obs, reward, done, info, _env.physics.model.body_mass[1], has_changed
+        return next_obs, reward, done, info, self.change, has_changed
 
     def randomize(self):
         if 'color' in self._mode :
@@ -150,16 +145,18 @@ class ColorWrapper(gym.Wrapper):
         self._set_state(state)
 
     def modify_physics_model(self):
-        """Won't be used in current training setting
+        """Used to screen for meaningful baseline environments
         Is a bit dubious"""
         _env = self._get_dmc_wrapper()
-        #self._change *= -1
-        #self._change = 0.2
-        #self._change = self._change*10 if self._change < 1 else self._change / 10
-        self._change -= 0.1
-        if self._change < 0.1 : self._change = 0.4
-        #_env.physics.model.opt.gravity[:2] = self._change
-        _env.physics.model.body_mass[1] = self._change
+
+        # Each time this function is called, either the mass or the force is changed
+        if self.mass :
+            self.change = self.change - 0.2 if self.change > 0.1 else 1
+            _env.physics.model.body_mass[1] = self._change
+        elif self.force :
+            self.change = self.change - 1 if self.change > -5 else -1
+            _env.physics.model.opt.gravity[:2] = self._change
+
 
     def get_state(self):
         return self._get_state()
@@ -296,13 +293,10 @@ def do_green_screen(x, bg):
 class GreenScreen(gym.Wrapper):
     """Green screen for video experiments"""
 
-    def __init__(self, env, mode, threshold, dependent, window):
+    def __init__(self, env, mode):
         gym.Wrapper.__init__(self, env)
         self._mode = mode
-        self._threshold = threshold
-        self._dependent = dependent
-        self._window = window
-        self._current_frame = 0  # When speed is left unchanged to 1, is equivalent to steps we take
+        self._current_frame = 0
 
         if 'video' in mode:
             self._video = mode
