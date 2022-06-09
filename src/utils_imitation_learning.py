@@ -206,7 +206,7 @@ def load_agent(label, action_shape, args):
         action_shape=action_shape,
         args=args
     )
-    agent.load(model_dir, 500000)# TODO generalize
+    agent.load(model_dir, args.pad_checkpoint)# TODO generalize
 
     return agent
 
