@@ -60,7 +60,7 @@ def make_pad_env(
 class ColorWrapper(gym.Wrapper):
     """Wrapper for the color experiments"""
 
-    def __init__(self, env, mode, window, mass=None, force=None, dependent=False):
+    def __init__(self, env, mode, window=100, mass=None, force=None, dependent=False):
         assert isinstance(env, FrameStack), 'wrapped env must be a framestack'
         gym.Wrapper.__init__(self, env)
         self._max_episode_steps = env._max_episode_steps
