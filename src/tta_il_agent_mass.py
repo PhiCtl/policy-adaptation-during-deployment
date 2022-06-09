@@ -41,7 +41,7 @@ def seeds_summary(args, num_seeds=6, lr=None):
     for i in range(num_seeds):
 
         # Load environment
-        envs, forces, il_agents = setup_small(args, [args.domain_test], [args.label], seed=i)
+        envs, forces, il_agents = setup_small(args, [args.domain_test], [args.label], seed=i, visual=False, mass=True)
         il_agent, env = il_agents[0], envs[0]
         if lr: il_agent.il_lr = lr
 
@@ -49,7 +49,7 @@ def seeds_summary(args, num_seeds=6, lr=None):
         if args.rd:
             init = np.random.rand(args.dynamics_output_shape)
         else:
-            init = il_agent.extract_feat_vect([args.domain_training, 0.1])  # [tgt_domain, 0.1]
+            init = il_agent.extract_feat_vect([args.domain_training, 0.1])  # TODO change for forces
         il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
 
         # Non adapting agent
