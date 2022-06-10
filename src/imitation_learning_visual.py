@@ -106,7 +106,7 @@ def main(args):
     for agent, env, traj_buffer, label in zip(il_agents_train, envs, trajs_buffers,
                                                              labels):
         # Evaluate agent on envt
-        rewards, obses, actions, _ = evaluate_agent(agent, env, args, buffer=traj_buffer)
+        rewards, obses, actions = evaluate_agent(agent, env, args, buffer=traj_buffer)
         # Save intermediary score
         stats_il[label].append([rewards.mean(), rewards.std()])
         print(f'Performance of agent on force {label} : {rewards.mean()} +/- {rewards.std()}')
