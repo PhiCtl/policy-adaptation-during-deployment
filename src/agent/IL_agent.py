@@ -101,6 +101,7 @@ class Actor(nn.Module):
                 utils.tie_weights(src=src, trg=tgt)
 
     def verify_weights_from(self, source):
+        """Check if weights are the same between two actors"""
         # Both objects should be actor models
         assert type(self) == type(source)
 
@@ -144,6 +145,7 @@ class DomainSpecificGT(nn.Module):
 
 class InvFunction(nn.Module):
     """MLP for inverse dynamics model."""
+
     def __init__(self, obs_dim, action_dim, dynamics_output_shape, hidden_dim):
         super().__init__()
 
@@ -165,6 +167,7 @@ class InvFunction(nn.Module):
                 utils.tie_weights(src=src, trg=tgt)
 
     def verify_weights_from(self, source):
+        """Check if weights are the same between two inv"""
         is_equal = True
         assert type(self) == type(source)
         # Copy linear layers
@@ -288,7 +291,7 @@ class ILSSAgent(object):
                 mu  = self.actor(obs, dyn_feat)
                 return mu.cpu().data.numpy().flatten()
 
-    def predict_action(self, obs, next_obs, gt, force=None, mass=None, L=None, step=None):
+    def predict_action(self, obs, next_obs, gt, force=None, mass=None):
         """Make the forward pass for actor, domain specific and ss head"""
 
         # 1. Reset gradients
@@ -327,14 +330,11 @@ class ILSSAgent(object):
         # 3. Compute losses
         actor_loss = F.mse_loss(mu, gt)
         inv_loss = F.mse_loss(pred_action, gt)
-        if L is not None:
-            L.log('train_actor/loss', actor_loss, step)
-            L.log('train_inv/inv_loss', inv_loss, step)
 
         return mu, pred_action, actor_loss + inv_loss
 
 
-    def update_inv(self, obs, next_obs, action, L=None, step=None):
+    def update_inv(self, obs, next_obs, action):
 
         assert obs.shape[-1] == 84 and next_obs.shape[-1] == 84
         assert self.feat_vect is not None # Assert we can use this member
@@ -347,22 +347,13 @@ class ILSSAgent(object):
             o = o.unsqueeze(0)
             n_o = n_o.unsqueeze(0)
             act = act.unsqueeze(0)
-            #dyn_feat = self.domain_spe(self.feat_vect)
-            #pred_action = self.inv(o, n_o, dyn_feat)
             pred_action = self.inv(o, n_o, self.feat_vect)
             inv_loss += F.mse_loss(pred_action, act)
 
-        # self.encoder_optimizer.zero_grad()
-        # self.inv_optimizer.zero_grad()
+
         self.feat_vect_optimizer.zero_grad()
         inv_loss.backward()
-
-        # self.encoder_optimizer.step()
-        # self.inv_optimizer.step()
         self.feat_vect_optimizer.step()
-
-        if L is not None:
-            L.log('train_inv/inv_loss', inv_loss, step)
 
         return inv_loss.item()
 
