@@ -139,7 +139,7 @@ def test_agents(args):
         print(f'Label {label}')
         print("-"*60)
         #for env, env_lab in zip(envs, ["_0_4", "_0_3", "_0_25", "_0_2"]):
-        init = np.zeros(args.dynamics_output_shape)
+        init = np.ones(args.dynamics_output_shape)*1000
         agent.init_feat_vect(init)
         rewards, _, _ = eval_adapt(agent, env, args)
         print(f'For {label} agent : {rewards.mean()} +/- {rewards.std()}')
@@ -168,4 +168,5 @@ def test_agents(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    verify_weights(args, [0.4, 0.3, 0.25, 0.2],["_0_4", "_0_3", "_0_25", "_0_2"], mass=True, visual=False)
+    #verify_weights(args, [0.4, 0.3, 0.25, 0.2],["_0_4", "_0_3", "_0_25", "_0_2"], mass=True, visual=False)
+    test_agents(args)
