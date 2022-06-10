@@ -10,7 +10,7 @@ from utils_imitation_learning import evaluate_agent, eval_adapt, setup, setup_sm
     - evaluate agents again on their training environment"""
 
 
-def verify_weights(args, domains, dynamics, mass, visual):
+def verify_weights(args, domains, labels, mass, visual):
     """Verify if agents indeed share weights
     PArams : - args
              - domains : [0.4, 0.3] for instance for different cart masses
@@ -18,7 +18,7 @@ def verify_weights(args, domains, dynamics, mass, visual):
              - mass : boolean either mass dynamics change either force (in this case set mass to False)
              - visual : boolean for visual input based agents """
 
-    envs, masses, il_agents = setup_small(args, domains, dynamics, mass=mass, visual=visual)
+    envs, masses, il_agents = setup_small(args, domains, labels, mass=mass, visual=visual)
 
     print(il_agents[0].verify_weights_from(il_agents[1]))
     print("-"*60)
@@ -168,4 +168,4 @@ def test_agents(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    main(args)
+    verify_weights(args, [0.4, 0.3, 0.25, 0.2],["_0_4", "_0_3", "_0_25", "_0_2"], mass=True, visual=False)
