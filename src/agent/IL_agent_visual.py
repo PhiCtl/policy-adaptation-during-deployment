@@ -7,8 +7,6 @@ from agent.encoder import make_encoder
 
 LOG_FREQ = 10000
 
-
-
 def tie_weights(src, trg):
     assert type(src) == type(trg)
     trg.weight = src.weight
@@ -110,6 +108,7 @@ class Actor(nn.Module):
                 utils.tie_weights(src=src, trg=tgt)
 
     def verify_weights_from(self, source):
+        """Check if weights are the same between two actors"""
         # Both objects should be actor models
         assert type(self) == type(source)
 
@@ -145,10 +144,10 @@ class DomainSpecificVisual(nn.Module):
                                       nn.Linear(hidden_dim, hidden_dim), nn.ReLU(),
                                       nn.Linear(hidden_dim, dynamics_output_shape))
 
-    def forward(self, obs1, act1, obs2, act2, obs3, detach=False):
-        obs1 = self.encoder(obs1, detach)
-        obs2 = self.encoder(obs2, detach)
-        obs3 = self.encoder(obs3, detach)
+    def forward(self, obs1, act1, obs2, act2, obs3):
+        obs1 = self.encoder(obs1)
+        obs2 = self.encoder(obs2)
+        obs3 = self.encoder(obs3)
         joint_input = torch.cat([obs1, act1, obs2, act2, obs3], dim=1)
         res = self.specific(joint_input)
         return res
@@ -229,6 +228,7 @@ class SacSSAgent(object):
         self.encoder_tau = encoder_tau
         self.actor_update_freq = actor_update_freq
         self.ss_update_freq = ss_update_freq
+        self.il_lr = il_lr
 
         assert num_layers >= num_shared_layers, 'num shared layers cannot exceed total amount'
         self.num_shared_layers = num_shared_layers
@@ -262,7 +262,7 @@ class SacSSAgent(object):
 
         # domain specific optimizer
         self.domain_spe_optimizer = torch.optim.Adam(
-            self.domain_spe.parameters(), lr=il_lr
+            self.domain_spe.parameters(), lr=self.il_lr
         )
 
 
@@ -312,7 +312,6 @@ class SacSSAgent(object):
         # 2 . Do the forward pass
         if obs.dim() < 3:
             obs = obs.unsqueeze(0)
-        # TODO should we move obs to cuda ?
 
         dyn_feat = self.domain_spe(*traj)  # compute dynamics features
 
