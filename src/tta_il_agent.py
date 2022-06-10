@@ -124,7 +124,7 @@ def main(args):
 
     for lr in [0.0001, 0.001, 0.005, 0.01, 0.05, 0.1]:
         print("Learning rate :", lr)
-        seeds_summary(args, lr=lr, num_seeds=1) # change to seeds_summary(args, lr=lr) if needed
+        seeds_summary_visual(args, lr=lr, num_seeds=1) # change to seeds_summary(args, lr=lr) if needed
 
 def test_agents(args):
 
@@ -139,7 +139,7 @@ def test_agents(args):
         print(f'Label {label}')
         print("-"*60)
         for env, env_lab in zip(envs, ["_0_4", "_0_3", "_0_25", "_0_2"]):
-            init = np.ones(args.dynamics_output_shape)*1000
+            init = np.ones(args.dynamics_output_shape)*10
             agent.init_feat_vect(init, batch_size=args.pad_batch_size)
             rewards, _, _ = eval_adapt(agent, env, args)
             print(f'For {label} agent and env {env_lab} : {rewards.mean()} +/- {rewards.std()}')
@@ -169,4 +169,4 @@ def test_agents(args):
 if __name__ == "__main__":
     args = parse_args()
     #verify_weights(args, [0.4, 0.3, 0.25, 0.2],["_0_4", "_0_3", "_0_25", "_0_2"], mass=True, visual=False)
-    test_agents(args)
+    main(args)
