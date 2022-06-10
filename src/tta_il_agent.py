@@ -140,7 +140,7 @@ def test_agents(args):
         print("-"*60)
         #for env, env_lab in zip(envs, ["_0_4", "_0_3", "_0_25", "_0_2"]):
         init = np.ones(args.dynamics_output_shape)*1000
-        agent.init_feat_vect(init)
+        agent.init_feat_vect(init, batch_size=args.pad_batch_size)
         rewards, _, _ = eval_adapt(agent, env, args)
         print(f'For {label} agent : {rewards.mean()} +/- {rewards.std()}')
 
