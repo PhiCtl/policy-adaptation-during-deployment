@@ -47,7 +47,7 @@ def seeds_summary(args, num_seeds=6, lr=None):
 
         # Initialize feature vector either at random either with domain_specific feature vector
         if args.rd:
-            init = np.zeros(args.dynamics_output_shape)
+            init = np.ones(args.dynamics_output_shape)*1000
         else:
             init = il_agent.extract_feat_vect([args.domain_training, 0.1])  # TODO change for forces
         il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
