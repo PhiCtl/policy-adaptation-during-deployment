@@ -47,7 +47,7 @@ def seeds_summary(args, num_seeds=6, lr=None):
 
         # Initialize feature vector either at random either with domain_specific feature vector
         if args.rd:
-            init = np.random.rand(args.dynamics_output_shape)
+            init = np.zeros(args.dynamics_output_shape)
         else:
             init = il_agent.extract_feat_vect([args.domain_training, 0.1])  # TODO change for forces
         il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
@@ -135,14 +135,14 @@ def test_agents(args):
                                     ["_0_4", "_0_3", "_0_25", "_0_2"])
 
 
-    for agent, label, mass in zip(il_agents_train, ["_0_4", "_0_3", "_0_25", "_0_2"], masses):
+    for agent, label, mass, env in zip(il_agents_train, ["_0_4", "_0_3", "_0_25", "_0_2"], masses, envs):
         print(f'Label {label}')
         print("-"*60)
-        for env, env_lab in zip(envs, ["_0_4", "_0_3", "_0_25", "_0_2"]):
-            init = agent.extract_feat_vect(mass, batch_size=args.pad_batch_size)#np.random.rand(args.dynamics_output_shape)
-            agent.init_feat_vect(init)
-            rewards, _, _ = eval_adapt(agent, env, args)
-            print(f'For {label} agent in {env_lab} : {rewards.mean()} +/- {rewards.std()}')
+        #for env, env_lab in zip(envs, ["_0_4", "_0_3", "_0_25", "_0_2"]):
+        init = np.zeros(args.dynamics_output_shape)
+        agent.init_feat_vect(init)
+        rewards, _, _ = eval_adapt(agent, env, args)
+        print(f'For {label} agent : {rewards.mean()} +/- {rewards.std()}')
 
     # Test of visual input based agents
     # labels = ["_0_4", "_0_3", "_0_2", "_0_25"] # Shoudl be in same order as domaines
@@ -168,4 +168,4 @@ def test_agents(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    test_agents(args)
+    main(args)
