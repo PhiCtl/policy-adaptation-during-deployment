@@ -135,14 +135,14 @@ def test_agents(args):
                                     ["_0_4", "_0_3", "_0_25", "_0_2"])
 
 
-    for agent, label, mass, env in zip(il_agents_train, ["_0_4", "_0_3", "_0_25", "_0_2"], masses, envs):
+    for agent, label, mass in zip(il_agents_train, ["_0_4", "_0_3", "_0_25", "_0_2"], masses):
         print(f'Label {label}')
         print("-"*60)
-        #for env, env_lab in zip(envs, ["_0_4", "_0_3", "_0_25", "_0_2"]):
-        init = np.ones(args.dynamics_output_shape)*1000
-        agent.init_feat_vect(init, batch_size=args.pad_batch_size)
-        rewards, _, _ = eval_adapt(agent, env, args)
-        print(f'For {label} agent : {rewards.mean()} +/- {rewards.std()}')
+        for env, env_lab in zip(envs, ["_0_4", "_0_3", "_0_25", "_0_2"]):
+            init = np.ones(args.dynamics_output_shape)*1000
+            agent.init_feat_vect(init, batch_size=args.pad_batch_size)
+            rewards, _, _ = eval_adapt(agent, env, args)
+            print(f'For {label} agent and env {env_lab} : {rewards.mean()} +/- {rewards.std()}')
 
     # Test of visual input based agents
     # labels = ["_0_4", "_0_3", "_0_2", "_0_25"] # Shoudl be in same order as domaines

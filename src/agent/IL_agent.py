@@ -127,6 +127,7 @@ class DomainSpecificGT(nn.Module):
                                       nn.Linear(hidden_dim, dynamics_output_shape))
 
     def forward(self, gt):
+        print("Used domain spe")
         res = self.specific(gt)
         return res
 
