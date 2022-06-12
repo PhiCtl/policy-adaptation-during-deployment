@@ -265,6 +265,10 @@ class SacSSAgent(object):
             self.domain_spe.parameters(), lr=self.il_lr
         )
 
+        self.domain_MLP_optimizer = torch.optim.Adam(
+            self.domain_spe.specific.parameters(), lr=self.il_lr
+        )
+
 
         # ss optimizers
         self.init_ss_optimizers(encoder_lr, ss_lr)
@@ -344,9 +348,11 @@ class SacSSAgent(object):
 
         inv_loss = F.mse_loss(pred_action, action)
 
-        self.domain_spe_optimizer.zero_grad()
+        #self.domain_spe_optimizer.zero_grad()
+        self.domain_MLP_optimizer.zero_grad()
         inv_loss.backward()
-        self.domain_spe_optimizer.step()
+        #self.domain_spe_optimizer.step()
+        self.domain_MLP_optimizer.step()
 
     def update(self):
 
