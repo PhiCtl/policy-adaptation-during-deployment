@@ -47,7 +47,7 @@ def seeds_summary(args, num_seeds=6, lr=None):
 
         # Initialize feature vector either at random either with domain_specific feature vector
         if args.rd:
-            init = np.ones(args.dynamics_output_shape)*1000
+            init = np.ones(args.dynamics_output_shape)*-10
         else:
             init = il_agent.extract_feat_vect([args.domain_training, 0.1])  # TODO change for forces
         il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
@@ -122,9 +122,9 @@ def main(args):
           else f'domain {args.domain_test} label {args.label} initialized on {args.domain_training}')
     print(f'learning rate {args.il_lr}')
 
-    for lr in [0.00001, 0.00005] : #[0.0001,0.001, 0.005, 0.01, 0.05, 0.1]:
+    for lr in [0.0001,0.001, 0.005, 0.01, 0.05, 0.1]:
         print("Learning rate :", lr)
-        seeds_summary_visual(args, lr=lr, num_seeds=3) # change to seeds_summary_visual(args, lr=lr) if needed
+        seeds_summary(args, lr=lr, num_seeds=3) # change to seeds_summary_visual(args, lr=lr) if needed
 
 def test_agents(args):
 
