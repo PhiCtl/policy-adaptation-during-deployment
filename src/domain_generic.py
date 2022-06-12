@@ -58,7 +58,7 @@ def main(args):
     # masses = []
     forces = []
     for force in domains:
-        env = init_env(args, force)
+        env = init_env(args, force=force) # Be careful here to specify mass=mass or force=force
         forces.append(env.get_forces())
         # masses.append(env.get_masses())
         envs.append(env)
