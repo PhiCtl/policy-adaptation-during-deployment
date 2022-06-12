@@ -41,7 +41,7 @@ def seeds_summary(args, num_seeds=6, lr=None):
     for i in range(num_seeds):
 
         # Load environment
-        envs, dynamics, il_agents = setup_small(args, [args.domain_test], [args.label], seed=i, visual=False, mass=False)
+        envs, dynamics, il_agents = setup_small(args, [args.domain_test], [args.label], seed=i, visual=False, mass=False) # TODO change to mass
         il_agent, env = il_agents[0], envs[0]
         if lr: il_agent.il_lr = lr
 
