@@ -49,7 +49,9 @@ def seeds_summary(args, num_seeds=6, lr=None):
         if args.rd:
             init = np.ones(args.dynamics_output_shape)*-10
         else:
-            init = il_agent.extract_feat_vect(env.get_forces())  # TODO change for forces
+            forces = env.physics.model.opt.gravity
+            forces[:2] = -args.domain_test
+            init = il_agent.extract_feat_vect(forces)  # TODO change for forces
         il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
 
         # Non adapting agent
