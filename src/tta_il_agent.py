@@ -126,7 +126,7 @@ def main(args):
 
     for lr in [0.0001,0.001, 0.005, 0.01, 0.05, 0.1]:
         print("Learning rate :", lr)
-        seed_summary(args, lr=lr, num_seeds=5) # change to seeds_summary_visual(args, lr=lr) if needed
+        seeds_summary(args, lr=lr, num_seeds=5) # change to seeds_summary_visual(args, lr=lr) if needed
 
 def test_agents(args):
 
