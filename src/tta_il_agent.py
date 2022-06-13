@@ -41,7 +41,7 @@ def seeds_summary(args, num_seeds=6, lr=None):
     for i in range(num_seeds):
 
         # Load environment
-        envs, dynamics, il_agents = setup_small(args, [args.domain_test], [args.label], seed=i, visual=False, mass=False) # TODO change to mass
+        envs, dynamics, il_agents = setup_small(args, [args.domain_test], [args.label], seed=i, visual=False, mass=True) # TODO change to mass
         il_agent, env = il_agents[0], envs[0]
         if lr: il_agent.il_lr = lr
 
@@ -49,9 +49,8 @@ def seeds_summary(args, num_seeds=6, lr=None):
         if args.rd:
             init = np.ones(args.dynamics_output_shape)*-10
         else:
-            forces = env.physics.model.opt.gravity
-            forces[:2] = -args.domain_test
-            init = il_agent.extract_feat_vect(forces)  # TODO change for forces
+            init = il_agent.extract_feat_vect([-args.domain_training,-args.domain_training ])  # TODO change for forces
+            #init = il_agent.extract_feat_vect([args.domain_training, 0.1])
         il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
 
         # Non adapting agent
