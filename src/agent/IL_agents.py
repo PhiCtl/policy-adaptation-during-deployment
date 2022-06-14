@@ -274,6 +274,7 @@ class ILSSAgent(object):
             encoder_lr=1e-3,
             encoder_tau=0.005,
             ss_lr=1e-3,
+            il_lr=1e-3,
             ss_update_freq=1,
             num_layers=4,
             num_shared_layers=4,
@@ -282,6 +283,7 @@ class ILSSAgent(object):
         self.encoder_tau = encoder_tau
         self.actor_update_freq = actor_update_freq
         self.ss_update_freq = ss_update_freq
+        self.il_lr = il_lr
 
         assert num_layers >= num_shared_layers, 'num shared layers cannot exceed total amount'
         self.num_shared_layers = num_shared_layers
@@ -315,13 +317,6 @@ class ILSSAgent(object):
         self.init_ss_optimizers(encoder_lr, ss_lr)
 
         self.train()
-
-    def init_feat_vect(self, init_value, batch_size):
-        self.feat_vect = torch.tensor(init_value).unsqueeze(0).float().cuda()
-        self.feat_vect.requires_grad = True
-        self.feat_vect_optimizer = torch.optim.Adam(
-            [self.feat_vect], lr=self.il_lr
-        )
 
     def init_ss_optimizers(self, encoder_lr=1e-3, ss_lr=1e-3):
 
@@ -460,6 +455,7 @@ class ILVisualAgent(ILSSAgent):
             encoder_lr=encoder_lr,
             encoder_tau=encoder_tau,
             ss_lr=ss_lr,
+            il_lr=il_lr,
             ss_update_freq=ss_update_freq,
             num_layers=num_layers,
             num_shared_layers=num_shared_layers,
@@ -472,7 +468,7 @@ class ILVisualAgent(ILSSAgent):
 
         # Domain specific optimizer
         self.domain_spe_optimizer = torch.optim.Adam(
-            self.domain_spe.parameters(), lr=il_lr
+            self.domain_spe.parameters(), lr=self.il_lr
         )
 
 
@@ -487,7 +483,7 @@ class ILVisualAgent(ILSSAgent):
             return mu.cpu().data.numpy().flatten()
 
 
-    def predict_action(self, obs, next_obs, traj, gt, L=None, step=None):
+    def predict_action(self, obs, next_obs, traj, gt):
         """Make the forward pass for actor, domain specific and ss head"""
 
         # 1. Reset gradients
@@ -513,9 +509,7 @@ class ILVisualAgent(ILSSAgent):
         # 3. Compute losses
         actor_loss = F.mse_loss(mu, gt)
         inv_loss = F.mse_loss(pred_action, gt)
-        if L is not None:
-            L.log('train_actor/loss', actor_loss, step)
-            L.log('train_inv/inv_loss', inv_loss, step)
+
 
         return mu, pred_action, actor_loss + inv_loss
 
@@ -585,12 +579,12 @@ class ILGTAgent(ILSSAgent):
                  encoder_lr=encoder_lr,
                  encoder_tau=encoder_tau,
                  ss_lr=ss_lr,
+                 il_lr=il_lr,
                  ss_update_freq=ss_update_freq,
                  num_layers=num_layers,
                  num_shared_layers=num_shared_layers,
                  num_filters=num_filters)
 
-        self.il_lr = il_lr
 
         # Domain specific part
         self.domain_spe = DomainSpecificGT(dynamics_input_shape, dynamics_output_shape).cuda()
