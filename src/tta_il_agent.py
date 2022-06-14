@@ -41,7 +41,7 @@ def seeds_summary(args, num_seeds=6, lr=None):
     for i in range(num_seeds):
 
         # Load environment
-        envs, dynamics, il_agents = setup_small(args, [args.domain_test], [args.label], seed=i, visual=False, mass=True) # TODO change to mass
+        envs, dynamics, il_agents = setup_small(args, [args.domain_test], [args.label], seed=i, visual=False, mass=False) # TODO change to mass
         il_agent, env = il_agents[0], envs[0]
         if lr: il_agent.il_lr = lr
 
@@ -49,19 +49,19 @@ def seeds_summary(args, num_seeds=6, lr=None):
         if args.rd:
             init = np.ones(args.dynamics_output_shape)*-10
         else:
-            #init = il_agent.extract_feat_vect([-args.domain_training,-args.domain_training ])  # TODO change for forces
-            init = il_agent.extract_feat_vect([args.domain_training, 0.1])
+            init = il_agent.extract_feat_vect([-args.domain_training,-args.domain_training ])  # TODO change for forces
+            #init = il_agent.extract_feat_vect([args.domain_training, 0.1])
         il_agent.init_feat_vect(init, batch_size=args.pad_batch_size)
 
         # Non adapting agent
-        reward, _, _ = eval_adapt(il_agent, env, args, recorder=recorder, mass=True) # TODO change to forces
+        reward, _, _ = eval_adapt(il_agent, env, args, recorder=recorder, mass=False) # TODO change to forces
         rw.append(reward)
         print('non adapting reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', args.label)
 
         # Adapting agent
         print(
             f'Policy Adaptation during Deployment for IL agent of {args.work_dir} for {args.pad_num_episodes} episodes (mode: {args.mode})')
-        reward, _, _ = eval_adapt(il_agent, env, args, adapt=True, recorder=adapt_recorder, mass=True)
+        reward, _, _ = eval_adapt(il_agent, env, args, adapt=True, recorder=adapt_recorder, mass=False)
         adapt_rw.append(reward)
         print('pad reward:', int(reward.mean()), ' +/- ', int(reward.std()), ' for label ', args.label)
 
