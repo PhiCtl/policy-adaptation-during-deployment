@@ -348,11 +348,9 @@ class SacSSAgent(object):
 
         inv_loss = F.mse_loss(pred_action, action)
 
-        #self.domain_spe_optimizer.zero_grad()
-        self.domain_MLP_optimizer.zero_grad()
+        self.domain_spe_optimizer.zero_grad()
         inv_loss.backward()
-        #self.domain_spe_optimizer.step()
-        self.domain_MLP_optimizer.step()
+        self.domain_spe_optimizer.step()
 
     def update(self):
 
