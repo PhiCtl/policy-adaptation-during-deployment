@@ -123,9 +123,9 @@ def main(args):
           else f'domain {args.domain_test} label {args.label} initialized on {args.domain_training}')
     print(f'learning rate {args.il_lr}')
 
-    for lr in [0.1]:#[0.0001,0.001, 0.005, 0.01, 0.05, 0.1]:
+    for lr in [0.0001,0.001, 0.005, 0.01, 0.05, 0.1]:
         print("Learning rate :", lr)
-        seeds_summary(args, lr=lr, num_seeds=10) # change to seeds_summary_visual(args, lr=lr) if needed
+        seeds_summary(args, lr=lr, num_seeds=5) # change to seeds_summary_visual(args, lr=lr) if needed
 
 def test_agents(args):
 
