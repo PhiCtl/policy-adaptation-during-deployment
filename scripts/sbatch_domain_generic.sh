@@ -13,7 +13,7 @@ python3 src/domain_generic.py \
     --mode train \
     --use_inv \
     --num_shared_layers 8 \
-    --pad_checkpoint 1000k \
+    --pad_checkpoint 500k \
     --seed 0 \
     --work_dir logs/cartpole_swingup \
     --save_dir logs/domain_generic/cartpole_swingup
