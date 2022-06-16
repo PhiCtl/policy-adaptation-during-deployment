@@ -448,6 +448,7 @@ class ILVisualAgent(ILSSAgent):
 
         super().__init__(obs_shape,
             action_shape,
+            dynamics_output_shape,
             hidden_dim=hidden_dim,
             actor_lr=actor_lr,
             actor_update_freq=actor_update_freq,
