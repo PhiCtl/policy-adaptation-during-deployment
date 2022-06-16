@@ -50,7 +50,6 @@ def main(args):
 
 	utils.make_dir(args.work_dir)
 	model_dir = utils.make_dir(os.path.join(args.work_dir, 'model'))
-	init_dir = os.path.join(args.init_dir, 'model')
 	video_dir = utils.make_dir(os.path.join(args.work_dir, 'video'))
 	video = VideoRecorder(video_dir if args.save_video else None)
 
@@ -71,6 +70,7 @@ def main(args):
 
 	# If we want to load a pretrained agent and train it further
 	if args.pad_checkpoint and args.init_dir :
+		init_dir = os.path.join(args.init_dir, 'model')
 		agent.load(init_dir, args.pad_checkpoint)
 
 	# Tensorboard output activated
