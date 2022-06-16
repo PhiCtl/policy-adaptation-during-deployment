@@ -15,17 +15,17 @@ shared encoder, as input to SS and actor heads
     
 def main(args):
 
-    #labels = ["_0_4", "_0_2", "_0_25", "_0_3"] #for cart-pole mass
-    labels = ["_0_-1", "_0_-2", "_0_-3"] #for walker-walk force
-    #domains = [0.4, 0.2, 0.25, 0.3] #for cart-pole mass
-    domains = [-1, -2, -3] #for walker-walk force
+    labels = ["_0_4", "_0_2", "_0_25", "_0_3"] #for cart-pole mass
+    #labels = ["_0_-1", "_0_-2", "_0_-3"] #for walker-walk force
+    domains = [0.4, 0.2, 0.25, 0.3] #for cart-pole mass
+    #domains = [-1, -2, -3] #for walker-walk force
     # TODO change below for forces
     il_agents, experts, envs, dynamics, buffers, _, stats_expert = setup(args,
                                                                          labels=labels,
                                                                          domains=domains,
                                                                          gt=True,
                                                                          train_IL=True,
-                                                                         type="force")
+                                                                         type="mass")
     il_agents_train = [il_agents[0]]
     for il_agent in il_agents[1:]:
         il_agent.tie_agent_from(il_agents_train[0])
@@ -51,9 +51,9 @@ def main(args):
             preds, pred_invs, gts, losses = [], [], [], 0
 
             # Forward pass sequentially for all agents
-            for agent, buffer, force in zip(il_agents_train, buffers, dynamics):
+            for agent, buffer, mass in zip(il_agents_train, buffers, dynamics):
                 obs, action, next_obs = buffer.sample() # sample a batch
-                action_pred, action_inv, loss = agent.predict_action(obs, next_obs, action, force=force) # TODO change here for forces
+                action_pred, action_inv, loss = agent.predict_action(obs, next_obs, action, mass=mass) # TODO change here for forces
 
                 preds.append(action_pred) # Action from actor network
                 pred_invs.append(action_inv) # Action from SS head
@@ -69,12 +69,12 @@ def main(args):
 
         # Evaluate - Perform IL agent policy rollouts
         print("\n\n********** Evaluation and relabeling %i ************" % it)
-        for agent, expert, env, buffer, force in zip(il_agents_train, experts, envs, buffers, labels):
+        for agent, expert, env, buffer, mass in zip(il_agents_train, experts, envs, buffers, labels):
             # evaluate agent on environment
             # TODO change for forces
-            rewards, obses, actions = eval_adapt(agent, env, args, mass=False, adapt=False, train=True)
-            stats_il[force].append([rewards.mean(), rewards.std()]) # save intermediary score
-            print(f'Performance of agent on mass {force} : {rewards.mean()} +/- {rewards.std()}')
+            rewards, obses, actions = eval_adapt(agent, env, args, mass=True, adapt=False, train=True)
+            stats_il[mass].append([rewards.mean(), rewards.std()]) # save intermediary score
+            print(f'Performance of agent on mass {mass} : {rewards.mean()} +/- {rewards.std()}')
             actions_new = relabel(obses, expert)
             buffer.add_path(obses, actions_new)
 
@@ -98,7 +98,7 @@ def main(args):
     # 7. Evaluate expert vs IL
     for label in labels :
         print("-"*60)
-        print(f'Force of {label}')
+        print(f'Mass of {label}')
         print(f'Expert performance : {stats_expert[label][0]} +/- {stats_expert[label][1]}')
         print(f'Imitation learning agent with dagger performance : {stats_il[label][-1][0]} +/- {stats_il[label][-1][1]}')
 

@@ -14,16 +14,16 @@ shared encoder, as input to SS and actor heads.
 
 def main(args):
 
-    #labels = ["_0_4", "_0_2", "_0_25", "_0_3"]
-    labels = ["_0_-1", "_0_-2", "_0_-3"]
-    #domains = [0.4, 0.2, 0.25, 0.3]
-    domains = [-1, -2, -3]
+    labels = ["_0_4", "_0_2", "_0_25", "_0_3"]
+    #labels = ["_0_-1", "_0_-2", "_0_-3"]
+    domains = [0.4, 0.2, 0.25, 0.3]
+    #domains = [-1, -2, -3]
     stats_il = {k: [] for k in labels}  # save score of Il agents
 
     il_agents, experts, envs, _, buffers, trajs_buffers, stats_expert = setup(args,
                                                                                  labels=labels,
                                                                                  domains=domains,
-                                                                                  type="force",
+                                                                                  type="mass",
                                                                                   gt=False,
                                                                                   train_IL=True
                                                                                 )
@@ -114,7 +114,7 @@ def main(args):
     # 8. Evaluate expert vs IL
     for label in labels:
         print("-" * 60)
-        print(f'Force of {label}')
+        print(f'Mass of {label}')
         print(f'Expert performance : {stats_expert[label][0]} +/- {stats_expert[label][1]}')
         print(f'Imitation learning agent with dagger performance : {stats_il[label][-1][0]} +/- {stats_il[label][-1][1]}')
 
