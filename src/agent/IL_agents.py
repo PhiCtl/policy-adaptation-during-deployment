@@ -543,7 +543,7 @@ class ILVisualAgent(ILSSAgent):
 
     def verify_weights_from(self, source):
 
-        super().verify_weights_from()
+        super().verify_weights_from(source)
         print("Domain spe and actors shared encoders are the same : ", self.actor.encoder.verify_weights_from(
             self.domain_spe.encoder, num=self.num_shared_layers))
         print("Domain spe are not the same", self.domain_spe.verify_weights_from(source.domain_spe))
@@ -694,7 +694,7 @@ class ILGTAgent(ILSSAgent):
         self.domain_spe_optimizer.step()
 
     def verify_weights_from(self, source):
-        super().verify_weights_from()
+        super().verify_weights_from(source)
         print("Domain specifics should not be the same", not self.domain_spe.verify_weights(source.domain_spe))
 
     def extract_feat_vect(self, mass= None, force = None):
