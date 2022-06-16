@@ -70,18 +70,18 @@ class ColorWrapper(gym.Wrapper):
         self.mass = mass
         self.force = force
         self._window = window
-        self.change = None
+        self._change = None
         self._dependent = dependent
         if 'color' in self._mode:
             self._load_colors()
 
         _env = self._get_dmc_wrapper()
-        if mass:  # If a mass is specified -> cart pole domain, then we change the mass of the cart
+        if mass:  # If a mass is specified -> cart pole domain, then we _change the mass of the cart
             _env.physics.model.body_mass[1] = mass
-            self.change = mass
+            self._change = mass
         elif force:
             _env.physics.model.opt.gravity[:2] = -force
-            self.change = -force
+            self._change = -force
 
     def reset(self):
         self.time_step = 0
@@ -97,11 +97,11 @@ class ColorWrapper(gym.Wrapper):
         _env = self._get_dmc_wrapper()
         if self.mass :
             _env.physics.model.body_mass[1] = self.mass
-            self.change = self.mass
+            self._change = self.mass
         if self.force :
             # Force given in magnitude
             _env.physics.model.opt.gravity[:2] = -self.force
-            self.change = -self.force
+            self._change = -self.force
         return self.env.reset()
 
     def step(self, action, rewards=None):
@@ -109,17 +109,17 @@ class ColorWrapper(gym.Wrapper):
         # Make a step
         next_obs, reward, done, info = self.env.step(action)
         rewards.append(reward)
-        # To reload the pre-trained weights of the agent whenever a change happened outside the class
+        # To reload the pre-trained weights of the agent whenever a _change happened outside the class
         # To prevent catastrophic forgetting
         has_changed = False
         _env = self._get_dmc_wrapper()
 
-        # If we're in the dependent mode, we change the dynamics in a time-dependent manner
+        # If we're in the dependent mode, we _change the dynamics in a time-dependent manner
         if self._dependent and self.time_step % self._window == 0 :
                 self.modify_physics_model()
                 has_changed = True
 
-        return next_obs, reward, done, info, self.change, has_changed
+        return next_obs, reward, done, info, self._change, has_changed
 
     def randomize(self):
         if 'color' in self._mode :
@@ -153,10 +153,10 @@ class ColorWrapper(gym.Wrapper):
 
         # Each time this function is called, either the mass or the force is changed
         if self.mass :
-            self.change = self.change - 0.2 if self.change > 0.1 else 1
+            self._change = self._change - 0.2 if self._change > 0.1 else 1
             _env.physics.model.body_mass[1] = self._change
         elif self.force :
-            self.change = self.change - 1 if self.change > -5 else -1
+            self._change = self._change - 1 if self._change > -5 else -1
             _env.physics.model.opt.gravity[:2] = self._change
 
 

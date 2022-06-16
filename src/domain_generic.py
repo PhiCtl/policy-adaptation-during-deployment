@@ -46,21 +46,22 @@ def evaluate_agent(agent, env, args):
 
 def main(args):
     # TODO better practise than lists
-    # labels = ["_0_4", "_0_2", "_0_25", "_0_3"]
-    labels = ["_0_-1", "_0_-2", "_0_-3"]
-    domains = [-1, -2, -3]
+    labels = ["_0_4", "_0_2", "_0_25", "_0_3"]
+    #labels = ["_0_-1", "_0_-2", "_0_-3"]
+    #domains = [-1, -2, -3]
+    domains = [0.4, 0.2, 0.25, 0.3]
 
     # Define 4 envts
     print("-" * 60)
     print("Define environment")
     # all the enviroments for different domains
     envs = []
-    # masses = []
-    forces = []
-    for force in domains:
-        env = init_env(args, force=force) # Be careful here to specify mass=mass or force=force
-        forces.append(env.get_forces())
-        # masses.append(env.get_masses())
+    masses = []
+    #forces = []
+    for mass in domains:
+        env = init_env(args, mass=mass) # TODO Be careful here to specify mass=mass or force=force
+        #forces.append(env.get_forces())
+        masses.append(env.get_masses())
         envs.append(env)
 
     # Load expert agents
